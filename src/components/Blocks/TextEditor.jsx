@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 
@@ -7,6 +7,16 @@ const TextEditor = ({ id, onRemove }) => {
   const [value, setValue] = useState("");
   const [editorVisible, setEditorVisible] = useState(false);
   const quillRef = useRef(null);
+
+  useEffect(() => {
+    if (editorVisible && quillRef.current) {
+      // Add no-print class to the toolbar when editor becomes visible
+      const toolbar = quillRef.current.getEditor().getModule('toolbar').container;
+      if (toolbar) {
+        toolbar.classList.add('no-print');
+      }
+    }
+  }, [editorVisible]);
 
   const handleFocusEditor = () => {
     setEditorVisible(true);

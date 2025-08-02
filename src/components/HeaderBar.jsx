@@ -13,54 +13,7 @@ const HeaderBar = ({ toggleSidebar, hasElementsOnCanvas, canvasRef }) => {
   const [showSaveOptions, setShowSaveOptions] = useState(false);
   const dropdownRef = useRef(null);
 
-  //  const handleSaveAction = async (action) => {
-  //   if (action === "save-pdf" && canvasRef?.current) {
-  //     const canvasElement = canvasRef.current;
 
-  //     // Hide all design-time elements (buttons, controls)
-  //     const controls = canvasElement.querySelectorAll(".no-print");
-  //     controls.forEach((el) => (el.style.display = "none"));
-
-  //     const canvas = await html2canvas(canvasElement, {
-  //       scale: 2,
-  //       useCORS: true,
-  //       windowWidth: canvasElement.scrollWidth,
-  //     });
-
-  //     // Restore visibility
-  //     controls.forEach((el) => (el.style.display = ""));
-
-  //     const imgData = canvas.toDataURL("image/png");
-  //     const pdf = new jsPDF("p", "mm", "a4");
-
-  //     const pdfWidth = pdf.internal.pageSize.getWidth();
-  //     const pageHeight = pdf.internal.pageSize.getHeight();
-
-  //     const imgProps = {
-  //       width: pdfWidth,
-  //       height: (canvas.height * pdfWidth) / canvas.width,
-  //     };
-
-  //     let heightLeft = imgProps.height;
-  //     let position = 0;
-
-  //     pdf.addImage(imgData, "PNG", 0, position, imgProps.width, imgProps.height);
-  //     heightLeft -= pageHeight;
-
-  //     while (heightLeft > 0) {
-  //       position -= pageHeight;
-  //       pdf.addPage();
-  //       pdf.addImage(imgData, "PNG", 0, position, imgProps.width, imgProps.height);
-  //       heightLeft -= pageHeight;
-  //     }
-
-  //     pdf.save("document.pdf");
-  //   }
-
-  //   if (action === "generate-link") {
-  //     console.log("Generate link logic here...");
-  //   }
-  // };
 
   const handleSaveAction = async (action) => {
   if (action === "save-pdf" && canvasRef?.current) {

@@ -89,7 +89,7 @@ const HeaderBlock = () => {
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="border-0 bg-transparent text-white fw-bold fs-2 mb-4"
+              className="border-0 bg-transparent text-white fw-bold fs-3 mb-4"
               style={{
                 outline: "none",
               }}
