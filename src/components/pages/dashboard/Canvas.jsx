@@ -19,9 +19,10 @@ import HeaderBlock2 from "../../Blocks/HeaderBlocks/HeaderBlock2";
 import HeaderBlock3 from "../../Blocks/HeaderBlocks/HeaderBlock3";
 import HeaderBlock4 from "../../Blocks/HeaderBlocks/HeaderBlock4";
 import TermsBlock from "../../Blocks/TermsBlock";
+import { Button } from "react-bootstrap";
 
 const Canvas = forwardRef(
-  ({ blocks, onAddBlock, onRemoveBlock, onMoveBlock }, ref) => {
+  ({ blocks, onAddBlock, onRemoveBlock, onMoveBlock, onEditBlock }, ref) => {
     useEffect(() => {
       const listener = (e) => {
         const newBlock = { id: Date.now(), type: e.detail };
@@ -178,36 +179,103 @@ const Canvas = forwardRef(
                   backgroundColor: "#E8EAED",
                 }}
               >
-                <div className="position-absolute top-0 end-0 d-flex flex-column p-1 z-3">
-                  <div className="bg-white rounded d-flex flex-column border">
+                <div className="position-relative hover-wrapper">
+                  {/* Render the block content */}
+                  <div style={{ width: "100%" }}>{renderBlock(block)}</div>
+
+                  {/* Control Panel (visible on hover) */}
+                  <div className="control-panel position-absolute top-0 end-0 p-1 z-3 d-flex flex-column align-items-end">
+                    {/* Edit and Move */}
+                    <div className="d-flex align-items-start gap-1 mb-1">
+                      {/* Edit Button */}
+                      <Button
+                        className="bg-white rounded d-flex align-items-center border px-2 py-1 shadow-sm"
+                        onClick={() => onEditBlock(block)} // Open sidebar
+                      > 
+                        <span className="me-2 fw-semibold text-secondary">Edit</span>
+                        <div
+                          className="d-flex flex-wrap"
+                          style={{ width: 16, height: 16, gap: 2 }}
+                        >
+                          <span
+                            className="rounded-circle"
+                            style={{
+                              width: 6,
+                              height: 6,
+                              backgroundColor: "red",
+                            }}
+                          ></span>
+                          <span
+                            className="rounded-circle"
+                            style={{
+                              width: 6,
+                              height: 6,
+                              backgroundColor: "orange",
+                            }}
+                          ></span>
+                          <span
+                            className="rounded-circle"
+                            style={{
+                              width: 6,
+                              height: 6,
+                              backgroundColor: "cyan",
+                            }}
+                          ></span>
+                          <span
+                            className="rounded-circle"
+                            style={{
+                              width: 6,
+                              height: 6,
+                              backgroundColor: "blue",
+                            }}
+                          ></span>
+                        </div>
+                      </Button>
+
+                      {/* Move Controls */}
+                      <div className="bg-white rounded d-flex flex-column border shadow-sm">
+                        <button
+                          className="btn btn-sm btn-white border-0 p-1"
+                          onClick={() => onMoveBlock(index, -1)}
+                          disabled={index === 0}
+                        >
+                          <ChevronUp size={14} className="text-dark" />
+                        </button>
+                        <button
+                          className="btn btn-sm btn-white border-0 p-1"
+                          onClick={() => onMoveBlock(index, 1)}
+                          disabled={index === blocks.length - 1}
+                        >
+                          <ChevronDown size={14} className="text-dark" />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Delete Button */}
                     <button
-                      className="btn btn-sm btn-white border-0 p-1"
-                      onClick={() => onMoveBlock(index, -1)}
-                      disabled={index === 0}
+                      onClick={() => onRemoveBlock(block.id)}
+                      className="btn btn-white border p-1 shadow-sm"
                     >
-                      <ChevronUp size={14} className="text-dark no-print" />
-                    </button>
-                    <button
-                      className="btn btn-sm btn-white border-0 p-1"
-                      onClick={() => onMoveBlock(index, 1)}
-                      disabled={index === blocks.length - 1}
-                    >
-                      <ChevronDown size={14} className="text-dark no-print" />
+                      <X size={14} className="text-danger" />
                     </button>
                   </div>
-                  <button
-                    onClick={() => onRemoveBlock(block.id)}
-                    className="btn btn-white border p-1 mt-1"
-                  >
-                    <X size={14} className="text-danger no-print" />
-                  </button>
                 </div>
-
-                <div style={{ width: "100%" }}>{renderBlock(block)}</div>
               </div>
             ))}
           </div>
         )}
+        <style>{`
+            .hover-wrapper .control-panel {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease-in-out;
+}
+
+.hover-wrapper:hover .control-panel {
+  opacity: 1;
+  pointer-events: auto;
+}
+        `}</style>
       </div>
     );
   }

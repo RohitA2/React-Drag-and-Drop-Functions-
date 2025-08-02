@@ -2,10 +2,12 @@ import React, { useState, useRef } from "react";
 import Sidebar from "./Sidebar";
 import Canvas from "./pages/dashboard/Canvas";
 import HeaderBar from "./HeaderBar";
+import BlockSettingsPanel from "./pages/dashboard/BlockSettingsPanel";
 
 const AppLayout = () => {
   const [sidebarVisible, setSidebarVisible] = useState(true);
   const [blocks, setBlocks] = useState([]);
+  const [activeBlock, setActiveBlock] = useState(null);
   const canvasRef = useRef(null);
 
   // Handler functions remain the same
@@ -68,8 +70,14 @@ const AppLayout = () => {
             onRemoveBlock={handleRemoveBlock}
             onMoveBlock={handleMoveBlock}
             onGenerateLink={handleGenerateLink}
+            onEditBlock={setActiveBlock}
           />
         </div>
+        {/* Settings Panel Sidebar - rendered separately */}
+        <BlockSettingsPanel
+          activeBlock={activeBlock}
+          onClose={() => setActiveBlock(null)}
+        />
       </div>
     </div>
   );
