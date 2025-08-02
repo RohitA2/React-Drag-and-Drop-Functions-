@@ -1,4 +1,3 @@
-// src/components/HeaderPreviewPortal.jsx
 import React from "react";
 import ReactDOM from "react-dom";
 import HeaderBlock from "./Blocks/HeaderBlocks/HeaderBlock";
@@ -18,32 +17,41 @@ const HeaderPreviewPortal = ({ position, onSelect, onClose }) => {
 
   return ReactDOM.createPortal(
     <div
-      className="bg-white border rounded shadow p-2 position-absolute"
+      className="bg-white rounded-lg shadow-lg p-2 absolute flex flex-col"
       style={{
         top: position.top,
         left: position.left,
         zIndex: 9999,
-        backgroundColor: "#fff",
-        width: "320px",
-        maxHeight: "400px",
-        overflowY: "auto",
+        width: "300px",
+        maxHeight: "min(620px, calc(100vh - ${position.top}px - 20px))", // Ensures it doesn't go off screen
       }}
       onMouseEnter={() => clearTimeout(window.__hoverTimeout)}
       onMouseLeave={onClose}
     >
-      {previewBlocks.map(({ id, component: Component }) => (
-        <div
-          key={id}
-          className="mb-3 border rounded overflow-hidden shadow-sm"
-          onClick={() => {
-            onSelect(id);
-            onClose();
-          }}
-          style={{ cursor: "pointer" }}
-        >
-          <Component isPreview />
+      <div
+        className="overflow-y-auto thin-scrollbar pr-1 flex-grow"
+        style={{
+          maxHeight: "600px",
+          scrollBehavior: "smooth", // For smooth scrolling
+        }}
+      >
+        <div className="space-y-2">
+          {" "}
+          {/* Changed from mb-2 to space-y-2 for consistent spacing */}
+          {previewBlocks.map(({ id, component: Component }) => (
+            <div
+              key={id}
+              className="rounded-lg overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
+              onClick={() => {
+                onSelect(id);
+                onClose();
+              }}
+            >
+              <Component isPreview />
+            </div>
+          ))}
         </div>
-      ))}
+      </div>
     </div>,
     document.body
   );

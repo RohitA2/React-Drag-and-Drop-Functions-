@@ -86,7 +86,7 @@ const Sidebar = () => {
   };
 
   return (
-    <div className="sidebar d-flex flex-column p-2 bg-white border-end h-100 mb-6 border rounded overflow-hidden shadow-sm mt-1">
+    <div className="sidebar  d-flex flex-column p-2 bg-white border-end h-100 mb-6 border rounded overflow-hidden shadow-sm mt-1">
       {/* Tabs */}
       <div className="d-flex align-items-center border-bottom mb-2">
         {blockSections.map((section) => (

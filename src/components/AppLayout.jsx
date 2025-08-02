@@ -8,27 +8,23 @@ const AppLayout = () => {
   const [blocks, setBlocks] = useState([]);
   const canvasRef = useRef(null);
 
-  // Handler for adding new blocks
+  // Handler functions remain the same
   const handleAddBlock = (newBlock) => {
     setBlocks((prev) => [...prev, newBlock]);
   };
 
-  // Handler for removing blocks
   const handleRemoveBlock = (id) => {
     setBlocks((prev) => prev.filter((block) => block.id !== id));
   };
 
   const handleSavePdf = () => {
-    // You can add any pre-processing here
     console.log("Generating PDF...");
   };
 
   const handleGenerateLink = () => {
-    // You can add any pre-processing here
     console.log("Generating shareable link...");
   };
 
-  // Handler for moving blocks
   const handleMoveBlock = (index, direction) => {
     const newIndex = index + direction;
     if (newIndex < 0 || newIndex >= blocks.length) return;
@@ -53,7 +49,7 @@ const AppLayout = () => {
       <div className="d-flex flex-grow-1 overflow-hidden">
         {/* Sidebar */}
         <div
-          className="h-100 bg-[#E8EAED] border-end shadow-sm"
+          className="h-100 bg-[#E8EAED] border-end shadow-sm thin-scrollbar"
           style={{
             width: sidebarVisible ? "230px" : "0",
             transition: "width 0.3s ease",
@@ -63,8 +59,8 @@ const AppLayout = () => {
           <Sidebar onAddBlock={handleAddBlock} />
         </div>
 
-        {/* Canvas scrolls */}
-        <div className="flex-grow-1 overflow-auto p-0 bg-[#E8EAED]">
+        {/* Canvas */}
+        <div className="flex-grow-1 overflow-auto p-0 bg-[#E8EAED] thin-scrollbar">
           <Canvas
             ref={canvasRef}
             blocks={blocks}

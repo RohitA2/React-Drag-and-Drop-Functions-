@@ -90,7 +90,7 @@ const Canvas = forwardRef(({ blocks, onAddBlock, onRemoveBlock, onMoveBlock }, r
   return (
     <div
       ref={ref}
-      className="flex-grow-1 bg-[#E8EAED] canvas-area overflow-auto p-4"
+      className="flex-grow-1 bg-[#E8EAED] canvas-area  overflow-auto p-4"
       style={{
         maxWidth: "100%",
         minHeight: "100vh",
