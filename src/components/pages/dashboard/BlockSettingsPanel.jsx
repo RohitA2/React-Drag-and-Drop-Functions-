@@ -9,6 +9,8 @@ import {
   AlignLeft,
   AlignCenter,
   AlignRight,
+  Image,
+  Upload,
 } from "lucide-react";
 
 const layoutOptions = [
@@ -19,13 +21,11 @@ const layoutOptions = [
   {
     id: "grid",
     icon: <LayoutGrid size={20} />,
-    // label: "Grid",
     description: "Content overlays image background",
   },
   {
     id: "default",
     icon: <Layout size={20} />,
-    // label: "Default"
   },
 ];
 
@@ -38,7 +38,6 @@ const BlockSettingsPanel = ({
   if (!activeBlock) return null;
 
   const handleLayoutChange = (layoutType) => {
-    // Reset background color for grid layout
     const updates = { layoutType };
     if (layoutType === "grid") {
       updates.backgroundColor = "transparent";
@@ -48,6 +47,17 @@ const BlockSettingsPanel = ({
 
   const handleColorChange = (field, value) => {
     onSettingsChange(activeBlock.id, { [field]: value });
+  };
+
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        onSettingsChange(activeBlock.id, { backgroundImage: reader.result });
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const getActiveLayout = () => {
@@ -101,6 +111,51 @@ const BlockSettingsPanel = ({
       {/* Background Section */}
       <div>
         <p className="fw-bold">Background</p>
+
+        {/* Background Image */}
+        <div className="mb-3">
+          <label className="form-label">Background Image</label>
+          <div className="d-flex align-items-center gap-2">
+            {blockSettings?.backgroundImage && (
+              <div className="position-relative">
+                <img
+                  src={blockSettings.backgroundImage}
+                  alt="Background preview"
+                  className="rounded border"
+                  style={{
+                    width: 200,
+                    height: 200,
+                    objectFit: "cover",
+                    opacity: blockSettings?.imageOpacity || 1,
+                  }}
+                />
+                <label
+                  htmlFor="background-image-upload"
+                  className="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1"
+                >
+                  <Upload size={16} />
+                  Upload
+                </label>
+                <input
+                  id="background-image-upload"
+                  type="file"
+                  accept="image/*"
+                  className="d-none"
+                  onChange={handleImageUpload}
+                />
+                <button
+                  className="position-absolute top-0 end-0 translate-middle btn btn-sm btn-danger rounded-circle p-0"
+                  style={{ width: 16, height: 16 }}
+                  onClick={() =>
+                    onSettingsChange(activeBlock.id, { backgroundImage: null })
+                  }
+                >
+                  <span className="visually-hidden">Remove image</span>×
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
 
         {/* Background Color - Disabled for grid layout */}
         <div
@@ -161,8 +216,8 @@ const BlockSettingsPanel = ({
           </div>
         </div>
 
-        {/* Background Image Opacity - Only for grid layout */}
-        {blockSettings?.layoutType === "grid" && (
+        {/* Background Image Opacity - Only when image exists */}
+        {blockSettings?.backgroundImage && (
           <div className="d-flex justify-content-between align-items-center border-bottom py-2">
             <label className="form-label mb-0">Image opacity</label>
             <input
