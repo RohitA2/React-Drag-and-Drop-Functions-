@@ -4,12 +4,14 @@ import HeaderBlock from "./Blocks/HeaderBlocks/HeaderBlock";
 import HeaderBlock2 from "./Blocks/HeaderBlocks/HeaderBlock2";
 import HeaderBlock3 from "./Blocks/HeaderBlocks/HeaderBlock3";
 import HeaderBlock4 from "./Blocks/HeaderBlocks/HeaderBlock4";
+import HeaderBlock5 from "./Blocks/HeaderBlocks/HeaderBlock5";
 
 const previewBlocks = [
   { id: "header-1", component: HeaderBlock },
   { id: "header-2", component: HeaderBlock2 },
   { id: "header-3", component: HeaderBlock3 },
   { id: "header-4", component: HeaderBlock4 },
+  { id: "header-5", component: HeaderBlock5 },
 ];
 
 const HeaderPreviewPortal = ({ position, onSelect, onClose }) => {

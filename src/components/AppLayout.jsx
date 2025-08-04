@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useCallback } from "react";
 import Sidebar from "./Sidebar";
 import Canvas from "./pages/dashboard/Canvas";
 import HeaderBar from "./HeaderBar";
@@ -10,7 +10,7 @@ const AppLayout = () => {
   const [activeBlock, setActiveBlock] = useState(null);
   const canvasRef = useRef(null);
 
-  const handleAddBlock = (newBlock) => {
+  const handleAddBlock = useCallback((newBlock) => {
     const blockId = Date.now().toString();
     setBlocks((prev) => [
       ...prev,
@@ -18,41 +18,37 @@ const AppLayout = () => {
         ...newBlock,
         id: blockId,
         settings: {
-          layoutType: "left-panel",
-          backgroundColor: "#2d5000",
-          textColor: "#ffffff",
-          backgroundImage: "images/bird.jpg"
+          ...newBlock.settings, // Preserve any settings from the newBlock
+          layoutType: newBlock.settings?.layoutType || "left-panel",
+          backgroundColor: newBlock.settings?.backgroundColor || "#2d5000",
+          textColor: newBlock.settings?.textColor || "#ffffff",
+          backgroundImage: newBlock.settings?.backgroundImage || "images/bird.jpg"
         }
       }
     ]);
     setActiveBlock({ id: blockId, type: newBlock.type });
-  };
+  }, []);
 
-  const handleRemoveBlock = (id) => {
+  const handleRemoveBlock = useCallback((id) => {
     setBlocks((prev) => prev.filter((block) => block.id !== id));
     if (activeBlock?.id === id) {
       setActiveBlock(null);
     }
-  };
+  }, [activeBlock]);
 
-  const handleSavePdf = () => {
-    console.log("Generating PDF...");
-  };
-
-  const handleGenerateLink = () => {
-    console.log("Generating shareable link...");
-  };
-
-  const handleMoveBlock = (index, direction) => {
+  const handleMoveBlock = useCallback((index, direction) => {
     const newIndex = index + direction;
     if (newIndex < 0 || newIndex >= blocks.length) return;
-    const updated = [...blocks];
-    const [moved] = updated.splice(index, 1);
-    updated.splice(newIndex, 0, moved);
-    setBlocks(updated);
-  };
+    
+    setBlocks((prev) => {
+      const updated = [...prev];
+      const [moved] = updated.splice(index, 1);
+      updated.splice(newIndex, 0, moved);
+      return updated;
+    });
+  }, [blocks.length]);
 
-  const handleBlockSettingsChange = (blockId, newSettings) => {
+  const handleBlockSettingsChange = useCallback((blockId, newSettings) => {
     setBlocks(prev =>
       prev.map(block =>
         block.id === blockId
@@ -60,20 +56,24 @@ const AppLayout = () => {
           : block
       )
     );
-  };
+  }, []);
 
-  const getActiveBlockSettings = () => {
+  const getActiveBlockSettings = useCallback(() => {
     if (!activeBlock) return null;
     const block = blocks.find(b => b.id === activeBlock.id);
     return block ? block.settings : null;
-  };
+  }, [activeBlock, blocks]);
+
+  const toggleSidebar = useCallback(() => {
+    setSidebarVisible(prev => !prev);
+  }, []);
 
   return (
     <div className="d-flex flex-column vh-100">
       {/* Header - sticky */}
       <div className="flex-shrink-0" style={{ zIndex: 1020 }}>
         <HeaderBar
-          toggleSidebar={() => setSidebarVisible(!sidebarVisible)}
+          toggleSidebar={toggleSidebar}
           hasElementsOnCanvas={blocks.length > 0}
           canvasRef={canvasRef}
         />
@@ -101,18 +101,20 @@ const AppLayout = () => {
             onAddBlock={handleAddBlock}
             onRemoveBlock={handleRemoveBlock}
             onMoveBlock={handleMoveBlock}
-            onGenerateLink={handleGenerateLink}
             onEditBlock={setActiveBlock}
+            onSettingsChange={handleBlockSettingsChange}
           />
         </div>
         
         {/* Settings Panel Sidebar */}
-        <BlockSettingsPanel
-          activeBlock={activeBlock}
-          onClose={() => setActiveBlock(null)}
-          blockSettings={getActiveBlockSettings()}
-          onSettingsChange={handleBlockSettingsChange}
-        />
+        {activeBlock && (
+          <BlockSettingsPanel
+            activeBlock={activeBlock}
+            onClose={() => setActiveBlock(null)}
+            blockSettings={getActiveBlockSettings()}
+            onSettingsChange={handleBlockSettingsChange}
+          />
+        )}
       </div>
     </div>
   );

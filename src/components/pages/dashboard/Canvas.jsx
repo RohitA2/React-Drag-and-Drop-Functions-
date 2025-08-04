@@ -19,19 +19,27 @@ import HeaderBlock from "../../Blocks/HeaderBlocks/HeaderBlock";
 import HeaderBlock2 from "../../Blocks/HeaderBlocks/HeaderBlock2";
 import HeaderBlock3 from "../../Blocks/HeaderBlocks/HeaderBlock3";
 import HeaderBlock4 from "../../Blocks/HeaderBlocks/HeaderBlock4";
+import HeaderBlock5 from "../../Blocks/HeaderBlocks/HeaderBlock5";
 import TermsBlock from "../../Blocks/TermsBlock";
 
 const Canvas = forwardRef(
   (
-    { blocks, onAddBlock, onRemoveBlock, onMoveBlock, onEditBlock, onSettingsChange },
+    {
+      blocks,
+      onAddBlock,
+      onRemoveBlock,
+      onMoveBlock,
+      onEditBlock,
+      onSettingsChange,
+    },
     ref
   ) => {
     useEffect(() => {
       const listener = (e) => {
-        const newBlock = { 
-          id: Date.now(), 
+        const newBlock = {
+          id: Date.now(),
           type: e.detail,
-          settings: getDefaultSettings(e.detail)
+          settings: getDefaultSettings(e.detail),
         };
         onAddBlock(newBlock);
       };
@@ -40,30 +48,86 @@ const Canvas = forwardRef(
     }, [onAddBlock]);
 
     const getDefaultSettings = (blockType) => {
-      if (blockType.includes('header')) {
-        return {
+      const defaults = {
+        // Header blocks
+        "header-1": {
           layoutType: "left-panel",
           backgroundColor: "#2d5000",
           textColor: "#ffffff",
-          backgroundImage: "images/bird.jpg",
+          backgroundImage: "images/headers/leaf.avif",
           title: "Sales Proposal",
           subtitle: "Optional",
           clientName: "Client name",
           senderName: "Sender name",
-          logo: null
-        };
-      }
-      return {};
+          logo: null,
+        },
+        "header-2": {
+          backgroundColor: "#1a1a2e",
+          textColor: "#ffffff",
+          backgroundImage: "images/headers/header1.jpg",
+          title: "Project Proposal",
+          subtitle: "For your consideration",
+          clientName: "Client name",
+          senderName: "Sender name",
+          logo: null,
+        },
+        "header-3": {
+          backgroundColor: "#16213e",
+          textColor: "#ffffff",
+          backgroundImage: "images/headers/header4.jpg",
+          title: "Business Proposal",
+          subtitle: "Confidential",
+          clientName: "Client name",
+          senderName: "Sender name",
+          logo: null,
+        },
+        "header-4": {
+          backgroundColor: "#0f3460",
+          textColor: "#ffffff",
+          backgroundImage: "images/headers/header3.jpg",
+          title: "Service Proposal",
+          subtitle: "Custom solution",
+          clientName: "Client name",
+          senderName: "Sender name",
+          logo: null,
+        },
+        "header-5": {
+          backgroundColor: "#0f3460",
+          textColor: "#ffffff",
+          backgroundImage: "images/headers/bird.jpg",
+          title: "Service Proposal",
+          subtitle: "Custom solution",
+          clientName: "Client name",
+          senderName: "Sender name",
+          logo: null,
+        },
+        // Cover blocks
+        cover: {
+          backgroundColor: "#f8f9fa",
+          textColor: "#333333",
+          title: "Project Proposal",
+          subtitle: "Prepared for",
+          companyName: "Client Company",
+        },
+        // Other blocks
+        text: {
+          content: "Enter your text here...",
+          fontSize: "16px",
+          textColor: "#333333",
+        },
+      };
+
+      return defaults[blockType] || {};
     };
 
     const handleDrop = (e) => {
       e.preventDefault();
       const blockType = e.dataTransfer.getData("blockType");
       if (blockType) {
-        const newBlock = { 
-          id: Date.now(), 
+        const newBlock = {
+          id: Date.now(),
           type: blockType,
-          settings: getDefaultSettings(blockType)
+          settings: getDefaultSettings(blockType),
         };
         onAddBlock(newBlock);
       }
@@ -73,47 +137,28 @@ const Canvas = forwardRef(
     const handleRemoveBlock = (id) => onRemoveBlock(id);
 
     const renderBlock = (block) => {
-      const commonProps = { 
-        id: block.id, 
+      const commonProps = {
+        id: block.id,
         onRemove: handleRemoveBlock,
-        onSettingsChange: (newSettings) => onSettingsChange(block.id, newSettings)
+        onSettingsChange: (newSettings) =>
+          onSettingsChange(block.id, newSettings),
+        ...block.settings,
       };
 
-      // For header blocks, pass all settings as props
-      if (block.type.includes('header')) {
-        const headerProps = {
-          ...commonProps,
-          ...block.settings,
-          onClick: () => onEditBlock(block)
-        };
-
-        switch (block.type) {
-          case "header":
-          case "header-1":
-            return <HeaderBlock {...headerProps} />;
-          case "header-2":
-            return <HeaderBlock2 {...headerProps} />;
-          case "header-3":
-            return <HeaderBlock3 {...headerProps} />;
-          case "header-4":
-            return <HeaderBlock4 {...headerProps} />;
-          default:
-            return <HeaderBlock {...headerProps} />;
-        }
-      }
-
-      // For other blocks
       switch (block.type) {
-        case "text":
-          return <TextEditor {...commonProps} />;
-        case "signature":
-          return <SignatureBlock {...commonProps} />;
-        case "video":
-          return <VideoBlock {...commonProps} />;
-        case "pdf":
-          return <PDFBlock {...commonProps} />;
-        case "attachment":
-          return <AttachmentBlock {...commonProps} />;
+        // Header blocks
+        case "header":
+        case "header-1":
+          return <HeaderBlock {...commonProps} />;
+        case "header-2":
+          return <HeaderBlock2 {...commonProps} />;
+        case "header-3":
+          return <HeaderBlock3 {...commonProps} />;
+        case "header-4":
+          return <HeaderBlock4 {...commonProps} />;
+        case "header-5":
+          return <HeaderBlock5 {...commonProps} />;
+        // Cover blocks
         case "cover":
         case "cover-1":
           return <CoverBlock {...commonProps} />;
@@ -125,6 +170,18 @@ const Canvas = forwardRef(
           return <CoverBlock4 {...commonProps} />;
         case "cover-5":
           return <CoverBlock5 {...commonProps} />;
+
+        // Other blocks
+        case "text":
+          return <TextEditor {...commonProps} />;
+        case "signature":
+          return <SignatureBlock {...commonProps} />;
+        case "video":
+          return <VideoBlock {...commonProps} />;
+        case "pdf":
+          return <PDFBlock {...commonProps} />;
+        case "attachment":
+          return <AttachmentBlock {...commonProps} />;
         case "parties":
           return <Parties {...commonProps} />;
         case "pricing & services":
@@ -220,63 +277,44 @@ const Canvas = forwardRef(
             {blocks.map((block, index) => (
               <div
                 key={block.id}
-                className="position-relative"
+                className="position-relative block-container"
                 style={{
                   width: "100%",
-                  backgroundColor: "#E8EAED",
-                  marginBottom: "2rem"
+                  marginBottom: "2rem",
+                  transition: "transform 0.2s ease",
                 }}
               >
                 <div className="position-relative hover-wrapper">
                   {/* Render the block content */}
                   <div style={{ width: "100%" }}>{renderBlock(block)}</div>
 
-                  {/* Control Panel (visible on hover) */}
+                  {/* Control Panel */}
                   <div className="control-panel position-absolute top-0 end-0 p-1 z-3 d-flex flex-column align-items-end">
-                    {/* Edit and Move */}
                     <div className="d-flex align-items-start gap-1 mb-1">
                       {/* Edit Button */}
                       <Button
-                        className="bg-white rounded d-flex align-items-center border px-2 py-1 shadow-sm"
+                        variant="light"
+                        className="rounded d-flex align-items-center border px-2 py-1 shadow-sm"
                         onClick={() => onEditBlock(block)}
-                      > 
-                        <span className="me-2 fw-semibold text-secondary">Edit</span>
+                      >
+                        <span className="me-2 fw-semibold text-secondary">
+                          Edit
+                        </span>
                         <div
                           className="d-flex flex-wrap"
                           style={{ width: 16, height: 16, gap: 2 }}
                         >
-                          <span
-                            className="rounded-circle"
-                            style={{
-                              width: 6,
-                              height: 6,
-                              backgroundColor: "red",
-                            }}
-                          ></span>
-                          <span
-                            className="rounded-circle"
-                            style={{
-                              width: 6,
-                              height: 6,
-                              backgroundColor: "orange",
-                            }}
-                          ></span>
-                          <span
-                            className="rounded-circle"
-                            style={{
-                              width: 6,
-                              height: 6,
-                              backgroundColor: "cyan",
-                            }}
-                          ></span>
-                          <span
-                            className="rounded-circle"
-                            style={{
-                              width: 6,
-                              height: 6,
-                              backgroundColor: "blue",
-                            }}
-                          ></span>
+                          {["red", "orange", "cyan", "blue"].map((color) => (
+                            <span
+                              key={color}
+                              className="rounded-circle"
+                              style={{
+                                width: 6,
+                                height: 6,
+                                backgroundColor: color,
+                              }}
+                            />
+                          ))}
                         </div>
                       </Button>
 
@@ -303,6 +341,7 @@ const Canvas = forwardRef(
                     <button
                       onClick={() => onRemoveBlock(block.id)}
                       className="btn btn-white border p-1 shadow-sm"
+                      aria-label="Remove block"
                     >
                       <X size={14} className="text-danger" />
                     </button>
@@ -313,15 +352,23 @@ const Canvas = forwardRef(
           </div>
         )}
         <style>{`
-          .hover-wrapper .control-panel {
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.2s ease-in-out;
-          }
-
           .hover-wrapper:hover .control-panel {
             opacity: 1;
             pointer-events: auto;
+          }
+          
+          .block-container:hover {
+            transform: translateY(-2px);
+          }
+          
+          .control-panel {
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+          }
+          
+          .hover-wrapper:hover .control-panel {
+            opacity: 1;
           }
         `}</style>
       </div>
@@ -329,4 +376,5 @@ const Canvas = forwardRef(
   }
 );
 
+Canvas.displayName = "Canvas";
 export default Canvas;

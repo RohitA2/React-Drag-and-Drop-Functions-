@@ -2,19 +2,46 @@ import React, { useRef, useState } from "react";
 import { Button, Form } from "react-bootstrap";
 import { X } from "lucide-react";
 
-const HeaderBlock = () => {
-  const [title, setTitle] = useState("Sales Proposal");
-  const [subtitle, setSubtitle] = useState("Optional");
-  const [clientName, setClientName] = useState("Client name");
-  const [senderName, setSenderName] = useState("Sender name");
-  const [logo, setLogo] = useState(null);
-
+const HeaderBlock = ({
+  id,
+  onSettingsChange,
+  title: initialTitle = "Sales Proposal",
+  subtitle: initialSubtitle = "Optional",
+  clientName: initialClientName = "Client name",
+  senderName: initialSenderName = "Sender name",
+  logo: initialLogo = null,
+  backgroundImage = "images/headers/header1.jpg",
+  backgroundColor = "#ACCCFC",
+  textColor = "#ffffff",
+}) => {
+  const [title, setTitle] = useState(initialTitle);
+  const [subtitle, setSubtitle] = useState(initialSubtitle);
+  const [clientName, setClientName] = useState(initialClientName);
+  const [senderName, setSenderName] = useState(initialSenderName);
+  const [logo, setLogo] = useState(initialLogo);
   const fileInputRef = useRef();
 
   const handleLogoUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
-      setLogo(URL.createObjectURL(file));
+      const logoUrl = URL.createObjectURL(file);
+      setLogo(logoUrl);
+      if (onSettingsChange) {
+        onSettingsChange(id, { logo: logoUrl });
+      }
+    }
+  };
+
+  const handleTextChange = (field, value) => {
+    const setters = {
+      title: setTitle,
+      subtitle: setSubtitle,
+      clientName: setClientName,
+      senderName: setSenderName,
+    };
+    setters[field](value);
+    if (onSettingsChange) {
+      onSettingsChange(id, { [field]: value });
     }
   };
 
@@ -31,7 +58,7 @@ const HeaderBlock = () => {
         <div
           className="col-md-5 p-0"
           style={{
-            backgroundImage: "url('images/headers/leaf.avif')",
+            backgroundImage: `url('${backgroundImage}')`,
             backgroundSize: "cover",
             backgroundPosition: "center",
           }}
@@ -39,8 +66,8 @@ const HeaderBlock = () => {
 
         {/* Right Side (Content) */}
         <div
-          className="col-md-7 d-flex flex-column justify-content-between text-white p-4"
-          style={{ backgroundColor: "#ACCCFC" }}
+          className="col-md-7 d-flex flex-column justify-content-between p-4"
+          style={{ backgroundColor, color: textColor }}
         >
           {/* Top controls and logo */}
           <div className="d-flex justify-content-between">
@@ -50,7 +77,7 @@ const HeaderBlock = () => {
                 <img
                   src={logo}
                   alt="Logo"
-                  style={{ height: "60px", marginRight: "10px" }}
+                  style={{ height: "60px", maxWidth: "200px", objectFit: "contain" }}
                 />
               ) : (
                 <Button
@@ -74,24 +101,30 @@ const HeaderBlock = () => {
           {/* Middle content */}
           <div className="mt-5">
             <Form.Control
-              type="text"
+              as="textarea"
+              rows={1}
               value={subtitle}
-              onChange={(e) => setSubtitle(e.target.value)}
-              className="border-0 bg-transparent text-white mb-2 fs-6"
+              onChange={(e) => handleTextChange("subtitle", e.target.value)}
+              className="border-0 bg-transparent mb-2 fs-6 p-0"
               style={{
-                fontStyle: "stalic",
-                outline: "none",
+                fontStyle: "italic",
+                color: textColor,
+                resize: "none",
+                overflow: "hidden",
               }}
               onFocus={(e) => (e.target.style.border = "1px solid #66b2ff")}
               onBlur={(e) => (e.target.style.border = "none")}
             />
             <Form.Control
-              type="text"
+              as="textarea"
+              rows={2}
               value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="border-0 bg-transparent text-white fw-bold fs-2 mb-4"
+              onChange={(e) => handleTextChange("title", e.target.value)}
+              className="border-0 bg-transparent fw-bold fs-2 mb-4 p-0"
               style={{
-                outline: "none",
+                color: textColor,
+                resize: "none",
+                overflow: "hidden",
               }}
               onFocus={(e) => (e.target.style.border = "1px solid #66b2ff")}
               onBlur={(e) => (e.target.style.border = "none")}
@@ -100,24 +133,24 @@ const HeaderBlock = () => {
 
           {/* Bottom content */}
           <div>
-            <div className="text-white">
+            <div>
               <span className="fw-semibold me-2">Prepared for</span>
               <Form.Control
                 type="text"
                 value={clientName}
-                onChange={(e) => setClientName(e.target.value)}
-                className="d-inline-block w-auto px-2 py-1 border border-danger bg-light text-danger rounded"
-                style={{ fontSize: "0.875rem" }}
+                onChange={(e) => handleTextChange("clientName", e.target.value)}
+                className="d-inline-block px-2 py-1 border bg-white text-dark rounded"
+                style={{ width: "auto", minWidth: "150px", fontSize: "0.875rem" }}
               />
             </div>
-            <div className="text-white mt-2">
+            <div className="mt-2">
               <span className="fw-semibold me-2">By</span>
               <Form.Control
                 type="text"
                 value={senderName}
-                onChange={(e) => setSenderName(e.target.value)}
-                className="d-inline-block w-auto px-2 py-1 border bg-light text-primary rounded"
-                style={{ fontSize: "0.875rem" }}
+                onChange={(e) => handleTextChange("senderName", e.target.value)}
+                className="d-inline-block px-2 py-1 border bg-white text-dark rounded"
+                style={{ width: "auto", minWidth: "150px", fontSize: "0.875rem" }}
               />
             </div>
           </div>

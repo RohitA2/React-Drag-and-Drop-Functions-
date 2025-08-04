@@ -11,7 +11,7 @@ const HeaderBlock = ({
   senderName: initialSenderName = "Sender name",
   price: initialPrice = "INCL.VAT",
   logo: initialLogo = null,
-  backgroundImage = "images/bird.jpg",
+  backgroundImage = "images/headers/leaf.avif",
   backgroundColor = "#2d5000",
   textColor = "#ffffff",
 }) => {
@@ -169,7 +169,7 @@ const HeaderBlock = ({
                   size="sm"
                   onClick={() => fileInputRef.current.click()}
                 >
-                  Upload Logo
+                   Logo
                 </Button>
               )}
               <Form.Control
@@ -216,12 +216,12 @@ const HeaderBlock = ({
             <div style={priceSection}>
               <h3 className="mb-2">Price</h3>
               <Form.Control
-              type="text"
-              value={price}
-              onChange={(e) => handleTextChange("price", e.target.value)}
-              className="border-0 bg-transparent text-center fw-bold fs-4"
-              style={{ width: "100%" }}
-            />
+                type="text"
+                value={price}
+                onChange={(e) => handleTextChange("price", e.target.value)}
+                className="border-0 bg-transparent text-center fw-bold fs-4"
+                style={{ width: "100%" }}
+              />
             </div>
           )}
 
