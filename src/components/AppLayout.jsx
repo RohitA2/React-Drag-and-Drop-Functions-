@@ -4,11 +4,14 @@ import Canvas from "./pages/dashboard/Canvas";
 import HeaderBar from "./HeaderBar";
 import BlockSettingsPanel from "./pages/dashboard/BlockSettingsPanel";
 
+
 const AppLayout = () => {
   const [sidebarVisible, setSidebarVisible] = useState(true);
   const [blocks, setBlocks] = useState([]);
   const [activeBlock, setActiveBlock] = useState(null);
+  const [layoutType, setLayoutType] = useState("left-panel");
   const canvasRef = useRef(null);
+  
 
   // Handler functions remain the same
   const handleAddBlock = (newBlock) => {
@@ -77,6 +80,8 @@ const AppLayout = () => {
         <BlockSettingsPanel
           activeBlock={activeBlock}
           onClose={() => setActiveBlock(null)}
+          layoutType={layoutType}
+          setLayoutType={setLayoutType}
         />
       </div>
     </div>
