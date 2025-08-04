@@ -6,20 +6,27 @@ import {
   LayoutDashboard,
   LayoutTemplate,
   LayoutGrid,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
 } from "lucide-react";
 
 const layoutOptions = [
-  { id: "left-panel", icon: <LayoutPanelLeft size={20} />, label: "Left" },
-  { id: "right-panel", icon: <LayoutDashboard size={20} />, label: "Right" },
-  { id: "top-panel", icon: <LayoutPanelTop size={20} />, label: "Top" },
-  { id: "bottom-panel", icon: <LayoutTemplate size={20} />, label: "Bottom" },
+  { id: "left-panel", icon: <LayoutPanelLeft size={20} /> },
+  { id: "right-panel", icon: <LayoutDashboard size={20} /> },
+  { id: "top-panel", icon: <LayoutPanelTop size={20} /> },
+  { id: "bottom-panel", icon: <LayoutTemplate size={20} /> },
   {
     id: "grid",
     icon: <LayoutGrid size={20} />,
-    label: "Grid",
+    // label: "Grid",
     description: "Content overlays image background",
   },
-  { id: "default", icon: <Layout size={20} />, label: "Default" },
+  {
+    id: "default",
+    icon: <Layout size={20} />,
+    // label: "Default"
+  },
 ];
 
 const BlockSettingsPanel = ({
@@ -124,6 +131,34 @@ const BlockSettingsPanel = ({
             onChange={(e) => handleColorChange("textColor", e.target.value)}
             style={{ width: 36, height: 36 }}
           />
+        </div>
+
+        {/* Text Alignment */}
+        <div className="d-flex justify-content-between align-items-center border-bottom py-2">
+          <label className="form-label mb-0">Text align</label>
+          <div className="btn-group" role="group" aria-label="Text align">
+            {["left", "center", "right"].map((align) => {
+              const icons = {
+                left: <AlignLeft size={16} />,
+                center: <AlignCenter size={16} />,
+                right: <AlignRight size={16} />,
+              };
+              return (
+                <button
+                  key={align}
+                  type="button"
+                  className={`btn btn-sm ${
+                    blockSettings?.textAlign === align
+                      ? "btn-primary"
+                      : "btn-outline-secondary"
+                  }`}
+                  onClick={() => handleColorChange("textAlign", align)}
+                >
+                  {icons[align]}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {/* Background Image Opacity - Only for grid layout */}

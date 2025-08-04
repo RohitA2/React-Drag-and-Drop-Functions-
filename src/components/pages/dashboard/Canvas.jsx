@@ -60,6 +60,7 @@ const Canvas = forwardRef(
           clientName: "Client name",
           senderName: "Sender name",
           logo: null,
+          textAlign: "center", 
         },
         "header-2": {
           backgroundColor: "#1a1a2e",
@@ -70,6 +71,7 @@ const Canvas = forwardRef(
           clientName: "Client name",
           senderName: "Sender name",
           logo: null,
+          textAlign: "center", 
         },
         "header-3": {
           backgroundColor: "#16213e",
@@ -80,6 +82,7 @@ const Canvas = forwardRef(
           clientName: "Client name",
           senderName: "Sender name",
           logo: null,
+          textAlign: "center", 
         },
         "header-4": {
           backgroundColor: "#0f3460",
@@ -90,6 +93,7 @@ const Canvas = forwardRef(
           clientName: "Client name",
           senderName: "Sender name",
           logo: null,
+          textAlign: "center", 
         },
         "header-5": {
           backgroundColor: "#0f3460",
@@ -100,6 +104,7 @@ const Canvas = forwardRef(
           clientName: "Client name",
           senderName: "Sender name",
           logo: null,
+          textAlign: "center", 
         },
         // Cover blocks
         cover: {

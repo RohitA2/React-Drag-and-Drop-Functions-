@@ -1,5 +1,7 @@
-import React, { useRef, useState } from "react";
-import { Button, Form } from "react-bootstrap";
+import React, { useRef, useState, useCallback } from "react";
+import { Button, Form, Modal } from "react-bootstrap";
+import Cropper from "react-easy-crop";
+import { getCroppedImg } from "../../../../utils/cropImage";
 
 const HeaderBlock = ({
   id,
@@ -14,6 +16,7 @@ const HeaderBlock = ({
   backgroundImage = "images/headers/leaf.avif",
   backgroundColor = "#2d5000",
   textColor = "#ffffff",
+  textAlign = "left",
 }) => {
   const [title, setTitle] = useState(initialTitle);
   const [subtitle, setSubtitle] = useState(initialSubtitle);
@@ -21,15 +24,35 @@ const HeaderBlock = ({
   const [senderName, setSenderName] = useState(initialSenderName);
   const [price, setPrice] = useState(initialPrice);
   const [logo, setLogo] = useState(initialLogo);
+  const [cropModalOpen, setCropModalOpen] = useState(false);
+  const [imageSrc, setImageSrc] = useState(null);
   const fileInputRef = useRef();
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(2);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
 
   const handleLogoUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
-      const logoUrl = URL.createObjectURL(file);
-      setLogo(logoUrl);
-      onSettingsChange(id, { logo: logoUrl });
+      const reader = new FileReader();
+      reader.addEventListener("load", () => {
+        setImageSrc(reader.result);
+        setCropModalOpen(true);
+      });
+      reader.readAsDataURL(file);
     }
+  };
+
+  const handleCropSave = async () => {
+    const croppedImageUrl = await getCroppedImg(
+      imageSrc,
+      crop,
+      zoom,
+      croppedAreaPixels
+    );
+    setLogo(croppedImageUrl);
+    onSettingsChange(id, { logo: croppedImageUrl });
+    setCropModalOpen(false);
   };
 
   const handleTextChange = (field, value) => {
@@ -43,6 +66,10 @@ const HeaderBlock = ({
     setters[field](value);
     onSettingsChange(id, { [field]: value });
   };
+
+  const onCropComplete = useCallback((croppedArea, croppedAreaPixels) => {
+    setCroppedAreaPixels(croppedAreaPixels);
+  }, []);
 
   const getLayoutClasses = () => {
     const layouts = {
@@ -158,7 +185,7 @@ const HeaderBlock = ({
                   src={logo}
                   alt="Logo"
                   style={{
-                    height: "60px",
+                    height: "80px",
                     maxWidth: "200px",
                     objectFit: "contain",
                   }}
@@ -169,7 +196,7 @@ const HeaderBlock = ({
                   size="sm"
                   onClick={() => fileInputRef.current.click()}
                 >
-                   Logo
+                  Logo
                 </Button>
               )}
               <Form.Control
@@ -182,8 +209,42 @@ const HeaderBlock = ({
             </div>
           </div>
 
+          {/* Crop Modal */}
+          <Modal
+            show={cropModalOpen}
+            onHide={() => setCropModalOpen(false)}
+            centered
+            size="lg"
+          >
+            <Modal.Body>
+              <div style={{ position: "relative", width: "100%", height: 500 }}>
+                <Cropper
+                  image={imageSrc}
+                  crop={crop}
+                  zoom={zoom}
+                  aspect={undefined}
+                  onCropChange={setCrop}
+                  onZoomChange={setZoom}
+                  onCropComplete={onCropComplete}
+                />
+              </div>
+            </Modal.Body>
+            <Modal.Footer>
+              <Button
+                variant="secondary"
+                onClick={() => setCropModalOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button onClick={handleCropSave}>Save</Button>
+            </Modal.Footer>
+          </Modal>
+
           {/* Main Content */}
-          <div className={layoutType.includes("panel") ? "mt-3" : "mt-5"}>
+          <div
+            className={layoutType.includes("panel") ? "mt-3" : "mt-5"}
+            style={{ textAlign }}
+          >
             <Form.Control
               as="textarea"
               rows={1}
