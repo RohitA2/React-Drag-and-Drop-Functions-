@@ -31,7 +31,7 @@ const HeaderBlock = () => {
         <div
           className="col-md-5 p-0"
           style={{
-            backgroundImage: "url('images/headers/header1.jpg')",
+            backgroundImage: "url('images/headers/leaf.avif')",
             backgroundSize: "cover",
             backgroundPosition: "center",
           }}

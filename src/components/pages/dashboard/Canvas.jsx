@@ -1,12 +1,13 @@
 import { useEffect, forwardRef } from "react";
 import { X, Hand, ChevronUp, ChevronDown } from "lucide-react";
+import { Button } from "react-bootstrap";
 
+// Import all your block components
 import TextEditor from "../../Blocks/TextEditor";
 import SignatureBlock from "../../Blocks/SignatureBlock";
 import VideoBlock from "../../Blocks/VideoBlock";
 import PDFBlock from "../../Blocks/PDFBlock";
 import AttachmentBlock from "../../Blocks/AttachmentBlock";
-
 import CoverBlock from "../../Blocks/CoverBlocks/CoverBlock";
 import CoverBlock2 from "../../Blocks/CoverBlocks/CoverBlock2";
 import CoverBlock3 from "../../Blocks/CoverBlocks/CoverBlock3";
@@ -19,24 +20,51 @@ import HeaderBlock2 from "../../Blocks/HeaderBlocks/HeaderBlock2";
 import HeaderBlock3 from "../../Blocks/HeaderBlocks/HeaderBlock3";
 import HeaderBlock4 from "../../Blocks/HeaderBlocks/HeaderBlock4";
 import TermsBlock from "../../Blocks/TermsBlock";
-import { Button } from "react-bootstrap";
 
 const Canvas = forwardRef(
-  ({ blocks, onAddBlock, onRemoveBlock, onMoveBlock, onEditBlock }, ref) => {
+  (
+    { blocks, onAddBlock, onRemoveBlock, onMoveBlock, onEditBlock, onSettingsChange },
+    ref
+  ) => {
     useEffect(() => {
       const listener = (e) => {
-        const newBlock = { id: Date.now(), type: e.detail };
+        const newBlock = { 
+          id: Date.now(), 
+          type: e.detail,
+          settings: getDefaultSettings(e.detail)
+        };
         onAddBlock(newBlock);
       };
       window.addEventListener("sidebar-block-click", listener);
       return () => window.removeEventListener("sidebar-block-click", listener);
     }, [onAddBlock]);
 
+    const getDefaultSettings = (blockType) => {
+      if (blockType.includes('header')) {
+        return {
+          layoutType: "left-panel",
+          backgroundColor: "#2d5000",
+          textColor: "#ffffff",
+          backgroundImage: "images/bird.jpg",
+          title: "Sales Proposal",
+          subtitle: "Optional",
+          clientName: "Client name",
+          senderName: "Sender name",
+          logo: null
+        };
+      }
+      return {};
+    };
+
     const handleDrop = (e) => {
       e.preventDefault();
       const blockType = e.dataTransfer.getData("blockType");
       if (blockType) {
-        const newBlock = { id: Date.now(), type: blockType };
+        const newBlock = { 
+          id: Date.now(), 
+          type: blockType,
+          settings: getDefaultSettings(blockType)
+        };
         onAddBlock(newBlock);
       }
     };
@@ -45,45 +73,64 @@ const Canvas = forwardRef(
     const handleRemoveBlock = (id) => onRemoveBlock(id);
 
     const renderBlock = (block) => {
-      const props = { id: block.id, onRemove: handleRemoveBlock };
+      const commonProps = { 
+        id: block.id, 
+        onRemove: handleRemoveBlock,
+        onSettingsChange: (newSettings) => onSettingsChange(block.id, newSettings)
+      };
 
+      // For header blocks, pass all settings as props
+      if (block.type.includes('header')) {
+        const headerProps = {
+          ...commonProps,
+          ...block.settings,
+          onClick: () => onEditBlock(block)
+        };
+
+        switch (block.type) {
+          case "header":
+          case "header-1":
+            return <HeaderBlock {...headerProps} />;
+          case "header-2":
+            return <HeaderBlock2 {...headerProps} />;
+          case "header-3":
+            return <HeaderBlock3 {...headerProps} />;
+          case "header-4":
+            return <HeaderBlock4 {...headerProps} />;
+          default:
+            return <HeaderBlock {...headerProps} />;
+        }
+      }
+
+      // For other blocks
       switch (block.type) {
         case "text":
-          return <TextEditor {...props} />;
+          return <TextEditor {...commonProps} />;
         case "signature":
-          return <SignatureBlock {...props} />;
+          return <SignatureBlock {...commonProps} />;
         case "video":
-          return <VideoBlock {...props} />;
+          return <VideoBlock {...commonProps} />;
         case "pdf":
-          return <PDFBlock {...props} />;
+          return <PDFBlock {...commonProps} />;
         case "attachment":
-          return <AttachmentBlock {...props} />;
+          return <AttachmentBlock {...commonProps} />;
         case "cover":
         case "cover-1":
-          return <CoverBlock {...props} />;
+          return <CoverBlock {...commonProps} />;
         case "cover-2":
-          return <CoverBlock2 {...props} />;
+          return <CoverBlock2 {...commonProps} />;
         case "cover-3":
-          return <CoverBlock3 {...props} />;
+          return <CoverBlock3 {...commonProps} />;
         case "cover-4":
-          return <CoverBlock4 {...props} />;
+          return <CoverBlock4 {...commonProps} />;
         case "cover-5":
-          return <CoverBlock5 {...props} />;
+          return <CoverBlock5 {...commonProps} />;
         case "parties":
-          return <Parties {...props} />;
+          return <Parties {...commonProps} />;
         case "pricing & services":
-          return <PricingAndServices {...props} />;
-        case "header":
-        case "header-1":
-          return <HeaderBlock {...props} />;
-        case "header-2":
-          return <HeaderBlock2 {...props} />;
-        case "header-3":
-          return <HeaderBlock3 {...props} />;
-        case "header-4":
-          return <HeaderBlock4 {...props} />;
+          return <PricingAndServices {...commonProps} />;
         case "terms":
-          return <TermsBlock {...props} />;
+          return <TermsBlock {...commonProps} />;
         default:
           return null;
       }
@@ -92,7 +139,7 @@ const Canvas = forwardRef(
     return (
       <div
         ref={ref}
-        className="flex-grow-1 bg-[#E8EAED] canvas-area  overflow-auto p-4"
+        className="flex-grow-1 bg-[#E8EAED] canvas-area overflow-auto p-4"
         style={{
           maxWidth: "100%",
           minHeight: "100vh",
@@ -161,12 +208,12 @@ const Canvas = forwardRef(
             </p>
 
             <style>{`
-            @keyframes handMove {
-              0% { transform: translateX(0); }
-              50% { transform: translateX(50px); }
-              100% { transform: translateX(0); }
-            }
-          `}</style>
+              @keyframes handMove {
+                0% { transform: translateX(0); }
+                50% { transform: translateX(50px); }
+                100% { transform: translateX(0); }
+              }
+            `}</style>
           </div>
         ) : (
           <div className="w-100">
@@ -177,6 +224,7 @@ const Canvas = forwardRef(
                 style={{
                   width: "100%",
                   backgroundColor: "#E8EAED",
+                  marginBottom: "2rem"
                 }}
               >
                 <div className="position-relative hover-wrapper">
@@ -190,7 +238,7 @@ const Canvas = forwardRef(
                       {/* Edit Button */}
                       <Button
                         className="bg-white rounded d-flex align-items-center border px-2 py-1 shadow-sm"
-                        onClick={() => onEditBlock(block)} // Open sidebar
+                        onClick={() => onEditBlock(block)}
                       > 
                         <span className="me-2 fw-semibold text-secondary">Edit</span>
                         <div
@@ -265,16 +313,16 @@ const Canvas = forwardRef(
           </div>
         )}
         <style>{`
-            .hover-wrapper .control-panel {
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.2s ease-in-out;
-}
+          .hover-wrapper .control-panel {
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease-in-out;
+          }
 
-.hover-wrapper:hover .control-panel {
-  opacity: 1;
-  pointer-events: auto;
-}
+          .hover-wrapper:hover .control-panel {
+            opacity: 1;
+            pointer-events: auto;
+          }
         `}</style>
       </div>
     );

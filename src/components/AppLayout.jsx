@@ -4,22 +4,35 @@ import Canvas from "./pages/dashboard/Canvas";
 import HeaderBar from "./HeaderBar";
 import BlockSettingsPanel from "./pages/dashboard/BlockSettingsPanel";
 
-
 const AppLayout = () => {
   const [sidebarVisible, setSidebarVisible] = useState(true);
   const [blocks, setBlocks] = useState([]);
   const [activeBlock, setActiveBlock] = useState(null);
-  const [layoutType, setLayoutType] = useState("left-panel");
   const canvasRef = useRef(null);
-  
 
-  // Handler functions remain the same
   const handleAddBlock = (newBlock) => {
-    setBlocks((prev) => [...prev, newBlock]);
+    const blockId = Date.now().toString();
+    setBlocks((prev) => [
+      ...prev,
+      {
+        ...newBlock,
+        id: blockId,
+        settings: {
+          layoutType: "left-panel",
+          backgroundColor: "#2d5000",
+          textColor: "#ffffff",
+          backgroundImage: "images/bird.jpg"
+        }
+      }
+    ]);
+    setActiveBlock({ id: blockId, type: newBlock.type });
   };
 
   const handleRemoveBlock = (id) => {
     setBlocks((prev) => prev.filter((block) => block.id !== id));
+    if (activeBlock?.id === id) {
+      setActiveBlock(null);
+    }
   };
 
   const handleSavePdf = () => {
@@ -37,6 +50,22 @@ const AppLayout = () => {
     const [moved] = updated.splice(index, 1);
     updated.splice(newIndex, 0, moved);
     setBlocks(updated);
+  };
+
+  const handleBlockSettingsChange = (blockId, newSettings) => {
+    setBlocks(prev =>
+      prev.map(block =>
+        block.id === blockId
+          ? { ...block, settings: { ...block.settings, ...newSettings } }
+          : block
+      )
+    );
+  };
+
+  const getActiveBlockSettings = () => {
+    if (!activeBlock) return null;
+    const block = blocks.find(b => b.id === activeBlock.id);
+    return block ? block.settings : null;
   };
 
   return (
@@ -76,12 +105,13 @@ const AppLayout = () => {
             onEditBlock={setActiveBlock}
           />
         </div>
-        {/* Settings Panel Sidebar - rendered separately */}
+        
+        {/* Settings Panel Sidebar */}
         <BlockSettingsPanel
           activeBlock={activeBlock}
           onClose={() => setActiveBlock(null)}
-          layoutType={layoutType}
-          setLayoutType={setLayoutType}
+          blockSettings={getActiveBlockSettings()}
+          onSettingsChange={handleBlockSettingsChange}
         />
       </div>
     </div>
