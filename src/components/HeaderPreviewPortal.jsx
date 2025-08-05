@@ -25,7 +25,7 @@ const HeaderPreviewPortal = ({ position, onSelect, onClose }) => {
         left: position.left,
         zIndex: 9999,
         width: "300px",
-        maxHeight: "min(620px, calc(100vh - ${position.top}px - 20px))", // Ensures it doesn't go off screen
+        maxHeight: `min(620px, calc(100vh - ${position.top}px - 20px))`,
       }}
       onMouseEnter={() => clearTimeout(window.__hoverTimeout)}
       onMouseLeave={onClose}
