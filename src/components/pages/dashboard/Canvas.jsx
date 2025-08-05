@@ -65,7 +65,7 @@ const Canvas = forwardRef(
         "header-2": {
           backgroundColor: "#1a1a2e",
           textColor: "#ffffff",
-          backgroundImage: "images/headers/header1.jpg",
+          backgroundImage: "images/headers/buid.avif",
           title: "Project Proposal",
           subtitle: "For your consideration",
           clientName: "Client name",
@@ -76,7 +76,7 @@ const Canvas = forwardRef(
         "header-3": {
           backgroundColor: "#16213e",
           textColor: "#ffffff",
-          backgroundImage: "images/headers/header4.jpg",
+          backgroundImage: "images/headers/cam.avif",
           title: "Business Proposal",
           subtitle: "Confidential",
           clientName: "Client name",
@@ -87,7 +87,7 @@ const Canvas = forwardRef(
         "header-4": {
           backgroundColor: "#0f3460",
           textColor: "#ffffff",
-          backgroundImage: "images/headers/header3.jpg",
+          backgroundImage: "images/headers/header4.jpg",
           title: "Service Proposal",
           subtitle: "Custom solution",
           clientName: "Client name",
@@ -96,7 +96,7 @@ const Canvas = forwardRef(
           textAlign: "center",
         },
         "header-5": {
-          backgroundColor: "#0f3460",
+          backgroundColor: "#B4D2E5",
           textColor: "#ffffff",
           backgroundImage: "images/headers/bird.jpg",
           title: "Service Proposal",

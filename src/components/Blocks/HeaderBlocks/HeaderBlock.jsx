@@ -155,7 +155,7 @@ const HeaderBlock = ({
     return layouts[layoutType] || layouts.default;
   };
 
-  const { container, imageCol, contentCol, imageStyle, priceSection } =
+  const { container, imageCol, contentCol, imageStyle, priceSection ,} =
     getLayoutClasses();
 
   return (

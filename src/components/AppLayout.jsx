@@ -87,6 +87,7 @@ const AppLayout = () => {
           toggleSidebar={toggleSidebar}
           hasElementsOnCanvas={blocks.length > 0}
           canvasRef={canvasRef}
+          defaultSettings={getActiveBlockSettings()}
         />
       </div>
 
