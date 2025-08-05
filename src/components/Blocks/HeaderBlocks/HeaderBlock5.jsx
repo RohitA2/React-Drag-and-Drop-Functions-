@@ -5,7 +5,7 @@ import { getCroppedImg } from "../../../../utils/cropImage";
 
 const HeaderBlock = ({
   id,
-  layoutType = "left-panel",
+  layoutType = "default",
   onSettingsChange,
   title: initialTitle = "Sales Proposal",
   subtitle: initialSubtitle = "Optional",
@@ -183,7 +183,10 @@ const HeaderBlock = ({
           style={{ backgroundColor, color: textColor }}
         >
           {/* Logo and Controls */}
-          <div className="d-flex justify-content-between align-items-start control-panel">
+          <div
+            className="d-flex justify-content-between align-items-start control-panel"
+            style={{ textAlign }}
+          >
             <div>
               {logo ? (
                 <img
@@ -260,6 +263,7 @@ const HeaderBlock = ({
                 color: textColor,
                 resize: "none",
                 overflow: "hidden",
+                textAlign: "inherit",
               }}
             />
             <Form.Control
@@ -272,6 +276,7 @@ const HeaderBlock = ({
                 color: textColor,
                 resize: "none",
                 overflow: "hidden",
+                textAlign: "inherit",
               }}
             />
           </div>
@@ -283,12 +288,13 @@ const HeaderBlock = ({
                 backgroundColor: "#f8f9fa",
                 padding: "1rem",
                 borderRadius: "0.5rem",
-                textAlign: "center",
                 marginTop: "auto",
                 minHeight: "120px",
                 display: "flex",
                 flexDirection: "column",
                 justifyContent: "center",
+                ...priceSection,
+                textAlign,
               }}
             >
               <h3
@@ -326,74 +332,84 @@ const HeaderBlock = ({
           )}
 
           {/* Client/Sender Info - Not shown in default layout */}
-          {layoutType !== "default" && (
-            <div className="mt-2">
-              {/* Prepared for - Client name with error badge */}
-              <div className="mb-1 d-flex align-items-center">
-                <span
-                  className="fw-semibold me-1 text-white"
-                  style={{ fontSize: "0.9rem" }}
-                >
-                  Prepared for
-                </span>
-                <span className="badge bg-white text-danger d-flex align-items-center py-1 px-2">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="12"
-                    height="12"
-                    fill="currentColor"
-                    className="bi bi-exclamation-circle me-1"
-                    viewBox="0 0 16 16"
-                  >
-                    <path d="M7.001 4a.905.905 0 0 1 .999 1l-.35 3.481a.55.55 0 0 1-1.098 0L6.2 5a.905.905 0 0 1 .801-1zm.002 7a1 1 0 1 1-.002-2 1 1 0 0 1 .002 2z" />
-                    <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM8 15A7 7 0 1 0 8 1a7 7 0 0 0 0 14z" />
-                  </svg>
-                  <Form.Control
-                    type="text"
-                    value={clientName}
-                    onChange={(e) =>
-                      handleTextChange("clientName", e.target.value)
-                    }
-                    placeholder="Client name"
-                    className="bg-transparent border-0 text-danger p-0 m-0"
-                    style={{
-                      width: "90px",
-                      fontSize: "0.85rem",
-                      outline: "none",
-                      boxShadow: "none",
-                    }}
-                  />
-                </span>
-              </div>
+         {layoutType !== "default" && (
+  <div className="mt-2" style={{ textAlign }}>
+    {/* Prepared for - Client name with error badge */}
+    <div 
+      className="mb-1 d-flex"
+      style={{ 
+        justifyContent: textAlign === "left" ? "flex-start" : 
+                      textAlign === "center" ? "center" : "flex-end" 
+      }}
+    >
+      <span
+        className="fw-semibold me-1 text-white"
+        style={{ fontSize: "0.9rem" }}
+      >
+        Prepared for
+      </span>
+      <span className="badge bg-white text-danger d-flex align-items-center py-1 px-2">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="12"
+          height="12"
+          fill="currentColor"
+          className="bi bi-exclamation-circle me-1"
+          viewBox="0 0 16 16"
+        >
+          <path d="M7.001 4a.905.905 0 0 1 .999 1l-.35 3.481a.55.55 0 0 1-1.098 0L6.2 5a.905.905 0 0 1 .801-1zm.002 7a1 1 0 1 1-.002-2 1 1 0 0 1 .002 2z" />
+          <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM8 15A7 7 0 1 0 8 1a7 7 0 0 0 0 14z" />
+        </svg>
+        <Form.Control
+          type="text"
+          value={clientName}
+          onChange={(e) => handleTextChange("clientName", e.target.value)}
+          placeholder="Client name"
+          className="bg-transparent border-0 text-danger p-0 m-0"
+          style={{
+            width: "90px",
+            fontSize: "0.85rem",
+            outline: "none",
+            boxShadow: "none",
+            textAlign: "inherit" // Inherit from parent
+          }}
+        />
+      </span>
+    </div>
 
-              {/* Prepared by - Sender name with blue badge */}
-              <div className="d-flex align-items-center">
-                <span
-                  className="fw-semibold me-1 text-white"
-                  style={{ fontSize: "0.9rem" }}
-                >
-                  By
-                </span>
-                <span className="badge bg-white text-primary py-1 px-2">
-                  <Form.Control
-                    type="text"
-                    value={senderName}
-                    onChange={(e) =>
-                      handleTextChange("senderName", e.target.value)
-                    }
-                    placeholder="Sender name"
-                    className="bg-transparent border-0 text-primary p-0 m-0"
-                    style={{
-                      width: "90px",
-                      fontSize: "0.85rem",
-                      outline: "none",
-                      boxShadow: "none",
-                    }}
-                  />
-                </span>
-              </div>
-            </div>
-          )}
+    {/* Prepared by - Sender name with blue badge */}
+    <div 
+      className="d-flex"
+      style={{ 
+        justifyContent: textAlign === "left" ? "flex-start" : 
+                      textAlign === "center" ? "center" : "flex-end" 
+      }}
+    >
+      <span
+        className="fw-semibold me-1 text-white"
+        style={{ fontSize: "0.9rem" }}
+      >
+        By
+      </span>
+      <span className="badge bg-white text-primary py-1 px-2">
+        <Form.Control
+          type="text"
+          value={senderName}
+          onChange={(e) => handleTextChange("senderName", e.target.value)}
+          placeholder="Sender name"
+          className="bg-transparent border-0 text-primary p-0 m-0"
+          style={{
+            width: "90px",
+            fontSize: "0.85rem",
+            outline: "none",
+            boxShadow: "none",
+            textAlign: "inherit" // Inherit from parent
+          }}
+        />
+      </span>
+    </div>
+  </div>
+)}
         </div>
       </div>
       <style>{`

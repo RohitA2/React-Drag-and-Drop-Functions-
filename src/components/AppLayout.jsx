@@ -22,7 +22,7 @@ const AppLayout = () => {
         backgroundColor: newBlock.settings?.backgroundColor || "#2d5000",
         textColor: newBlock.settings?.textColor || "#ffffff",
         backgroundImage: newBlock.settings?.backgroundImage || "images/bird.jpg",
-        textAlign: newBlock.settings?.textAlign || "center", 
+        textAlign: newBlock.settings?.textAlign || "left",
         ...newBlock.settings,
       },
     },

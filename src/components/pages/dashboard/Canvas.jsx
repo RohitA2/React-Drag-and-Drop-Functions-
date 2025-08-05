@@ -39,7 +39,10 @@ const Canvas = forwardRef(
         const newBlock = {
           id: Date.now(),
           type: e.detail,
-          settings: getDefaultSettings(e.detail),
+          settings: {
+            ...getDefaultSettings(e.detail),
+            textAlign: "left", // Explicit default
+          },
         };
         onAddBlock(newBlock);
       };
@@ -60,7 +63,7 @@ const Canvas = forwardRef(
           clientName: "Client name",
           senderName: "Sender name",
           logo: null,
-          textAlign: "center",
+          textAlign: "left",
         },
         "header-2": {
           backgroundColor: "#1a1a2e",
@@ -71,7 +74,7 @@ const Canvas = forwardRef(
           clientName: "Client name",
           senderName: "Sender name",
           logo: null,
-          textAlign: "center",
+          textAlign: "left",
         },
         "header-3": {
           backgroundColor: "#16213e",
@@ -132,7 +135,10 @@ const Canvas = forwardRef(
         const newBlock = {
           id: Date.now(),
           type: blockType,
-          settings: getDefaultSettings(blockType),
+          settings: {
+            ...getDefaultSettings(blockType),
+            textAlign: "left", // Explicit default for new blocks
+          },
         };
         onAddBlock(newBlock);
       }
@@ -148,6 +154,7 @@ const Canvas = forwardRef(
         onSettingsChange: (newSettings) =>
           onSettingsChange(block.id, newSettings),
         ...block.settings,
+        textAlign: block.settings?.textAlign || "left",
       };
 
       switch (block.type) {

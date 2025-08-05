@@ -177,9 +177,7 @@ const BlockSettingsPanel = ({
             />
           </div>
         </div>
-
         {/* Background filter */}
-        {/* if i choose a filter then this is show on the image */}
         <div className="d-flex justify-content-between align-items-center border-bottom py-1">
           <label className="form-label mb-0" style={{ fontSize: "0.8rem" }}>
             Background filter
@@ -194,7 +192,6 @@ const BlockSettingsPanel = ({
             style={{ width: 30, height: 30 }}
           />
         </div>
-
         {/* Background Color - Disabled for grid layout */}
         <div
           className={`d-flex justify-content-between align-items-center border-bottom py-1 ${
@@ -215,7 +212,6 @@ const BlockSettingsPanel = ({
             disabled={blockSettings?.layoutType === "grid"}
           />
         </div>
-
         {/* Text Color */}
         <div className="d-flex justify-content-between align-items-center border-bottom py-1">
           <label className="form-label mb-0" style={{ fontSize: "0.8rem" }}>
@@ -229,8 +225,8 @@ const BlockSettingsPanel = ({
             style={{ width: 30, height: 30 }}
           />
         </div>
-
         {/* Text Alignment */}
+        {/* // In your BlockSettingsPanel component, ensure you have: */}
         <div className="d-flex justify-content-between align-items-center border-bottom py-1">
           <label className="form-label mb-0" style={{ fontSize: "0.8rem" }}>
             Text align
@@ -251,7 +247,9 @@ const BlockSettingsPanel = ({
                       ? "btn-primary"
                       : "btn-outline-secondary"
                   }`}
-                  onClick={() => handleColorChange("textAlign", align)}
+                  onClick={() =>
+                    onSettingsChange(activeBlock.id, { textAlign: align })
+                  }
                   style={{ padding: "0.15rem 0.3rem" }}
                 >
                   {icons[align]}

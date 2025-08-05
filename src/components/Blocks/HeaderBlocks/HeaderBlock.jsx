@@ -3,6 +3,7 @@ import { Button, Form, Modal } from "react-bootstrap";
 import Cropper from "react-easy-crop";
 import { getCroppedImg } from "../../../../utils/cropImage";
 
+
 const HeaderBlock = ({
   id,
   layoutType = "left-panel",
@@ -155,7 +156,7 @@ const HeaderBlock = ({
     return layouts[layoutType] || layouts.default;
   };
 
-  const { container, imageCol, contentCol, imageStyle, priceSection ,} =
+  const { container, imageCol, contentCol, imageStyle, priceSection } =
     getLayoutClasses();
 
   return (
@@ -183,7 +184,10 @@ const HeaderBlock = ({
           style={{ backgroundColor, color: textColor }}
         >
           {/* Logo and Controls */}
-          <div className="d-flex justify-content-between align-items-start control-panel">
+          <div
+            className="d-flex justify-content-between align-items-start control-panel"
+            style={{ textAlign }}
+          >
             <div>
               {logo ? (
                 <img
@@ -260,6 +264,7 @@ const HeaderBlock = ({
                 color: textColor,
                 resize: "none",
                 overflow: "hidden",
+                textAlign: "inherit",
               }}
             />
             <Form.Control
@@ -272,6 +277,7 @@ const HeaderBlock = ({
                 color: textColor,
                 resize: "none",
                 overflow: "hidden",
+                textAlign: "inherit",
               }}
             />
           </div>
@@ -283,12 +289,13 @@ const HeaderBlock = ({
                 backgroundColor: "#f8f9fa",
                 padding: "1rem",
                 borderRadius: "0.5rem",
-                textAlign: "center",
                 marginTop: "auto",
                 minHeight: "120px",
                 display: "flex",
                 flexDirection: "column",
                 justifyContent: "center",
+                ...priceSection,
+                textAlign,
               }}
             >
               <h3
@@ -327,9 +334,19 @@ const HeaderBlock = ({
 
           {/* Client/Sender Info - Not shown in default layout */}
           {layoutType !== "default" && (
-            <div className="mt-2">
+            <div className="mt-2" style={{ textAlign }}>
               {/* Prepared for - Client name with error badge */}
-              <div className="mb-1 d-flex align-items-center">
+              <div
+                className="mb-1 d-flex"
+                style={{
+                  justifyContent:
+                    textAlign === "left"
+                      ? "flex-start"
+                      : textAlign === "center"
+                      ? "center"
+                      : "flex-end",
+                }}
+              >
                 <span
                   className="fw-semibold me-1 text-white"
                   style={{ fontSize: "0.9rem" }}
@@ -361,13 +378,24 @@ const HeaderBlock = ({
                       fontSize: "0.85rem",
                       outline: "none",
                       boxShadow: "none",
+                      textAlign: "inherit", // Inherit from parent
                     }}
                   />
                 </span>
               </div>
 
               {/* Prepared by - Sender name with blue badge */}
-              <div className="d-flex align-items-center">
+              <div
+                className="d-flex"
+                style={{
+                  justifyContent:
+                    textAlign === "left"
+                      ? "flex-start"
+                      : textAlign === "center"
+                      ? "center"
+                      : "flex-end",
+                }}
+              >
                 <span
                   className="fw-semibold me-1 text-white"
                   style={{ fontSize: "0.9rem" }}
@@ -388,6 +416,7 @@ const HeaderBlock = ({
                       fontSize: "0.85rem",
                       outline: "none",
                       boxShadow: "none",
+                      textAlign: "inherit", // Inherit from parent
                     }}
                   />
                 </span>
