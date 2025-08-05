@@ -5,7 +5,7 @@ import { getCroppedImg } from "../../../../utils/cropImage";
 
 const HeaderBlock = ({
   id,
-  layoutType = "left-panel",
+  layoutType = "top-panel",
   onSettingsChange,
   title: initialTitle = "Sales Proposal",
   subtitle: initialSubtitle = "Optional",
@@ -13,8 +13,8 @@ const HeaderBlock = ({
   senderName: initialSenderName = "Sender name",
   price: initialPrice = "INCL.VAT",
   logo: initialLogo = null,
-  backgroundImage = "images/headers/header4.jpg",
-  backgroundColor = "#118068",
+  backgroundImage = "images/headers/flowers.jfif",
+  backgroundColor = "#FCCAA4",
   textColor = "#CFCFCF",
   textAlign = "left",
 }) => {

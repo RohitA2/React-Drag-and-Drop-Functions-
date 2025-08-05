@@ -85,9 +85,9 @@ const Canvas = forwardRef(
           textAlign: "center",
         },
         "header-4": {
-          backgroundColor: "#0f3460",
+          backgroundColor: "#FCCAA4",
           textColor: "#ffffff",
-          backgroundImage: "images/headers/header4.jpg",
+          backgroundImage: "images/headers/flowers.jfif",
           title: "Service Proposal",
           subtitle: "Custom solution",
           clientName: "Client name",
