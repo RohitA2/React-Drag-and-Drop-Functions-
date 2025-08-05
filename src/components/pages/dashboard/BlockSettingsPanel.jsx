@@ -14,18 +14,18 @@ import {
 } from "lucide-react";
 
 const layoutOptions = [
-  { id: "left-panel", icon: <LayoutPanelLeft size={20} /> },
-  { id: "right-panel", icon: <LayoutDashboard size={20} /> },
-  { id: "top-panel", icon: <LayoutPanelTop size={20} /> },
-  { id: "bottom-panel", icon: <LayoutTemplate size={20} /> },
+  { id: "left-panel", icon: <LayoutPanelLeft size={18} /> },
+  { id: "right-panel", icon: <LayoutDashboard size={18} /> },
+  { id: "top-panel", icon: <LayoutPanelTop size={18} /> },
+  { id: "bottom-panel", icon: <LayoutTemplate size={18} /> },
   {
     id: "grid",
-    icon: <LayoutGrid size={20} />,
+    icon: <LayoutGrid size={18} />,
     description: "Content overlays image background",
   },
   {
     id: "default",
-    icon: <Layout size={20} />,
+    icon: <Layout size={18} />,
   },
 ];
 
@@ -70,26 +70,33 @@ const BlockSettingsPanel = ({
   return (
     <div
       className="position-fixed top-0 end-0 bg-white shadow p-3"
-      style={{ width: 320, height: "100vh", zIndex: 1040 }}
+      style={{ width: 240, height: "100vh", zIndex: 1040 }}
     >
-      <div className="d-flex justify-content-between align-items-center mb-3">
-        <h6 className="mb-0">Block Settings</h6>
-        <button className="btn-close" onClick={onClose} />
+      <div className="text-end">
+        {" "}
+        {/* Right-aligns the close button */}
+        <button
+          className="btn-close"
+          onClick={onClose}
+          style={{ transform: "scale(0.8)" }}
+        />
       </div>
 
       {/* Layout Section */}
-      <div className="mb-4">
-        <p className="fw-bold">Layouts</p>
+      <div className="mb-3">
+        <p className="fw-bold" style={{ fontSize: "0.85rem" }}>
+          Layouts
+        </p>
         <div className="row g-2">
           {layoutOptions.map((layout) => (
             <div key={layout.id} className="col-4">
               <button
-                className={`btn w-100 d-flex flex-column align-items-center justify-content-center border rounded p-2 ${
+                className={`btn w-100 d-flex flex-column align-items-center justify-content-center border rounded p-1 ${
                   blockSettings?.layoutType === layout.id
                     ? "bg-primary text-white"
                     : "bg-light"
                 }`}
-                style={{ height: 80 }}
+                style={{ height: 45, cursor: "pointer", fontSize: "0.7rem" }}
                 onClick={() => handleLayoutChange(layout.id)}
                 title={layout.description}
               >
@@ -100,70 +107,103 @@ const BlockSettingsPanel = ({
           ))}
         </div>
         {getActiveLayout()?.description && (
-          <p className="text-muted small mt-2 mb-0">
+          <p
+            className="text-muted small mt-2 mb-0"
+            style={{ fontSize: "0.7rem" }}
+          >
             {getActiveLayout().description}
           </p>
         )}
       </div>
 
-      <hr />
+      <hr className="my-2" />
 
       {/* Background Section */}
       <div>
-        <p className="fw-bold">Background</p>
-
+        <p className="fw-bold" style={{ fontSize: "0.85rem" }}>
+          Background
+        </p>
         {/* Background Image */}
         <div className="mb-3">
-          <label className="form-label">Background Image</label>
-          <div className="d-flex align-items-center gap-2">
-            {blockSettings?.backgroundImage && (
+          <div className="d-flex flex-column gap-2">
+            {blockSettings?.backgroundImage ? (
               <div className="position-relative">
-                <img
-                  src={blockSettings.backgroundImage}
-                  alt="Background preview"
-                  className="rounded border"
+                <div
+                  className="rounded border overflow-hidden position-relative"
                   style={{
-                    width: 200,
-                    height: 200,
-                    objectFit: "cover",
+                    height: 120,
+                    backgroundImage: `url(${blockSettings.backgroundImage})`,
+                    backgroundSize: "cover",
+                    backgroundPosition: "center",
                     opacity: blockSettings?.imageOpacity || 1,
                   }}
-                />
-                <label
-                  htmlFor="background-image-upload"
-                  className="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1"
                 >
-                  <Upload size={16} />
-                  Upload
-                </label>
-                <input
-                  id="background-image-upload"
-                  type="file"
-                  accept="image/*"
-                  className="d-none"
-                  onChange={handleImageUpload}
-                />
-                <button
-                  className="position-absolute top-0 end-0 translate-middle btn btn-sm btn-danger rounded-circle p-0"
-                  style={{ width: 16, height: 16 }}
-                  onClick={() =>
-                    onSettingsChange(activeBlock.id, { backgroundImage: null })
-                  }
-                >
-                  <span className="visually-hidden">Remove image</span>×
-                </button>
+                  <div
+                    className="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
+                    style={{ backgroundColor: "rgba(0,0,0,0.3)" }}
+                  >
+                    <label
+                      htmlFor="background-image-upload"
+                      className="btn btn-light btn-sm d-flex align-items-center gap-1"
+                      style={{ fontSize: "0.7rem" }}
+                    >
+                      <Upload size={14} />
+                      Change Image
+                    </label>
+                  </div>
+                </div>
               </div>
+            ) : (
+              <label
+                htmlFor="background-image-upload"
+                className="border rounded d-flex flex-column align-items-center justify-content-center py-3"
+                style={{
+                  height: 100,
+                  cursor: "pointer",
+                  borderStyle: "dashed",
+                  backgroundColor: "rgba(0,0,0,0.05)",
+                }}
+              >
+                <Upload size={18} className="mb-1" />
+                <span style={{ fontSize: "0.8rem" }}>Upload Background</span>
+              </label>
             )}
+            <input
+              id="background-image-upload"
+              type="file"
+              accept="image/*"
+              className="d-none"
+              onChange={handleImageUpload}
+            />
           </div>
+        </div>
+
+        {/* Background filter */}
+        {/* if i choose a filter then this is show on the image */}
+        <div className="d-flex justify-content-between align-items-center border-bottom py-1">
+          <label className="form-label mb-0" style={{ fontSize: "0.8rem" }}>
+            Background filter
+          </label>
+          <input
+            type="color"
+            className="form-control form-control-color border rounded-circle"
+            value={blockSettings?.backgroundFilter || "#2d5000"}
+            onChange={(e) =>
+              handleColorChange("backgroundFilter", e.target.value)
+            }
+            style={{ width: 30, height: 30 }}
+          />
         </div>
 
         {/* Background Color - Disabled for grid layout */}
         <div
-          className={`d-flex justify-content-between align-items-center border-bottom py-2 ${
+          className={`d-flex justify-content-between align-items-center border-bottom py-1 ${
             blockSettings?.layoutType === "grid" ? "opacity-50" : ""
           }`}
         >
-          <label className="form-label mb-0">Background color</label>
+          <label className="form-label mb-0" style={{ fontSize: "0.8rem" }}>
+            Background color
+          </label>
           <input
             type="color"
             className="form-control form-control-color border rounded-circle"
@@ -171,32 +211,36 @@ const BlockSettingsPanel = ({
             onChange={(e) =>
               handleColorChange("backgroundColor", e.target.value)
             }
-            style={{ width: 36, height: 36 }}
+            style={{ width: 30, height: 30 }}
             disabled={blockSettings?.layoutType === "grid"}
           />
         </div>
 
         {/* Text Color */}
-        <div className="d-flex justify-content-between align-items-center border-bottom py-2">
-          <label className="form-label mb-0">Text color</label>
+        <div className="d-flex justify-content-between align-items-center border-bottom py-1">
+          <label className="form-label mb-0" style={{ fontSize: "0.8rem" }}>
+            Text color
+          </label>
           <input
             type="color"
             className="form-control form-control-color border rounded-circle"
             value={blockSettings?.textColor || "#ffffff"}
             onChange={(e) => handleColorChange("textColor", e.target.value)}
-            style={{ width: 36, height: 36 }}
+            style={{ width: 30, height: 30 }}
           />
         </div>
 
         {/* Text Alignment */}
-        <div className="d-flex justify-content-between align-items-center border-bottom py-2">
-          <label className="form-label mb-0">Text align</label>
+        <div className="d-flex justify-content-between align-items-center border-bottom py-1">
+          <label className="form-label mb-0" style={{ fontSize: "0.8rem" }}>
+            Text align
+          </label>
           <div className="btn-group" role="group" aria-label="Text align">
             {["left", "center", "right"].map((align) => {
               const icons = {
-                left: <AlignLeft size={16} />,
-                center: <AlignCenter size={16} />,
-                right: <AlignRight size={16} />,
+                left: <AlignLeft size={14} />,
+                center: <AlignCenter size={14} />,
+                right: <AlignRight size={14} />,
               };
               return (
                 <button
@@ -208,6 +252,7 @@ const BlockSettingsPanel = ({
                       : "btn-outline-secondary"
                   }`}
                   onClick={() => handleColorChange("textAlign", align)}
+                  style={{ padding: "0.15rem 0.3rem" }}
                 >
                   {icons[align]}
                 </button>
@@ -215,25 +260,6 @@ const BlockSettingsPanel = ({
             })}
           </div>
         </div>
-
-        {/* Background Image Opacity - Only when image exists */}
-        {blockSettings?.backgroundImage && (
-          <div className="d-flex justify-content-between align-items-center border-bottom py-2">
-            <label className="form-label mb-0">Image opacity</label>
-            <input
-              type="range"
-              className="form-range"
-              min="0.1"
-              max="1"
-              step="0.1"
-              value={blockSettings?.imageOpacity || 0.8}
-              onChange={(e) =>
-                handleColorChange("imageOpacity", e.target.value)
-              }
-              style={{ width: "60%" }}
-            />
-          </div>
-        )}
       </div>
     </div>
   );
