@@ -30,6 +30,7 @@ const HeaderBlock = ({
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(2);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
+  const [isHovered, setIsHovered] = useState(false);
 
   const handleLogoUpload = (e) => {
     const file = e.target.files[0];
@@ -159,7 +160,12 @@ const HeaderBlock = ({
     getLayoutClasses();
 
   return (
-    <div className="container-fluid my-4 px-3" style={{ maxWidth: "1400px" }}>
+    <div
+      className="container-fluid my-4 px-3"
+      style={{ maxWidth: "1400px" }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
       <div
         className={`row rounded-3 overflow-hidden shadow d-flex ${container}`}
       >
@@ -178,7 +184,7 @@ const HeaderBlock = ({
           style={{ backgroundColor, color: textColor }}
         >
           {/* Logo and Controls */}
-          <div className="d-flex justify-content-between align-items-start">
+          <div className="d-flex justify-content-between align-items-start control-panel">
             <div>
               {logo ? (
                 <img
@@ -250,9 +256,8 @@ const HeaderBlock = ({
               rows={1}
               value={subtitle}
               onChange={(e) => handleTextChange("subtitle", e.target.value)}
-              className="border-0 bg-transparent mb-2 fs-6 p-0"
+              className="border-0 bg-transparent mb-2 fs-6 p-0 control-panel"
               style={{
-                fontStyle: "italic",
                 color: textColor,
                 resize: "none",
                 overflow: "hidden",
@@ -317,6 +322,26 @@ const HeaderBlock = ({
           )}
         </div>
       </div>
+      <style>{`
+          .hover-wrapper:hover .control-panel {
+            opacity: 1;
+            pointer-events: auto;
+          }
+          
+          .block-container:hover {
+            transform: translateY(-2px);
+          }
+          
+          .control-panel {
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+          }
+          
+          .hover-wrapper:hover .control-panel {
+            opacity: 1;
+          }
+        `}</style>
     </div>
   );
 };
