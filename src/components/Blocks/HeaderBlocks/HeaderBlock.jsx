@@ -161,7 +161,7 @@ const HeaderBlock = ({
 
   return (
     <div
-      className="container-fluid my-4 px-3"
+      className="container-fluid my-4 px-3 bg-[#FC0404]"
       style={{ maxWidth: "1400px" }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
@@ -293,30 +293,70 @@ const HeaderBlock = ({
 
           {/* Client/Sender Info - Not shown in default layout */}
           {layoutType !== "default" && (
-            <div>
-              <div className="mb-2">
-                <span className="fw-semibold me-2">Prepared for</span>
-                <Form.Control
-                  type="text"
-                  value={clientName}
-                  onChange={(e) =>
-                    handleTextChange("clientName", e.target.value)
-                  }
-                  className="d-inline-block px-2 py-1 border bg-white text-dark rounded"
-                  style={{ width: "auto", minWidth: "150px" }}
-                />
+            <div className="mt-2">
+              {/* Prepared for - Client name with error badge */}
+              <div className="mb-1 d-flex align-items-center">
+                <span
+                  className="fw-semibold me-1 text-white"
+                  style={{ fontSize: "0.9rem" }}
+                >
+                  Prepared for
+                </span>
+                <span className="badge bg-white text-danger d-flex align-items-center py-1 px-2">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="12"
+                    height="12"
+                    fill="currentColor"
+                    className="bi bi-exclamation-circle me-1"
+                    viewBox="0 0 16 16"
+                  >
+                    <path d="M7.001 4a.905.905 0 0 1 .999 1l-.35 3.481a.55.55 0 0 1-1.098 0L6.2 5a.905.905 0 0 1 .801-1zm.002 7a1 1 0 1 1-.002-2 1 1 0 0 1 .002 2z" />
+                    <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM8 15A7 7 0 1 0 8 1a7 7 0 0 0 0 14z" />
+                  </svg>
+                  <Form.Control
+                    type="text"
+                    value={clientName}
+                    onChange={(e) =>
+                      handleTextChange("clientName", e.target.value)
+                    }
+                    placeholder="Client name"
+                    className="bg-transparent border-0 text-danger p-0 m-0"
+                    style={{
+                      width: "90px",
+                      fontSize: "0.85rem",
+                      outline: "none",
+                      boxShadow: "none",
+                    }}
+                  />
+                </span>
               </div>
-              <div>
-                <span className="fw-semibold me-2">Prepared by</span>
-                <Form.Control
-                  type="text"
-                  value={senderName}
-                  onChange={(e) =>
-                    handleTextChange("senderName", e.target.value)
-                  }
-                  className="d-inline-block px-2 py-1 border bg-white text-dark rounded"
-                  style={{ width: "auto", minWidth: "150px" }}
-                />
+
+              {/* Prepared by - Sender name with blue badge */}
+              <div className="d-flex align-items-center">
+                <span
+                  className="fw-semibold me-1 text-white"
+                  style={{ fontSize: "0.9rem" }}
+                >
+                  By
+                </span>
+                <span className="badge bg-white text-primary py-1 px-2">
+                  <Form.Control
+                    type="text"
+                    value={senderName}
+                    onChange={(e) =>
+                      handleTextChange("senderName", e.target.value)
+                    }
+                    placeholder="Sender name"
+                    className="bg-transparent border-0 text-primary p-0 m-0"
+                    style={{
+                      width: "90px",
+                      fontSize: "0.85rem",
+                      outline: "none",
+                      boxShadow: "none",
+                    }}
+                  />
+                </span>
               </div>
             </div>
           )}
