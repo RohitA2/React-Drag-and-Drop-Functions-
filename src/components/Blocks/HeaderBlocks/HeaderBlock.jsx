@@ -15,7 +15,7 @@ const HeaderBlock = ({
   logo: initialLogo = null,
   backgroundImage = "images/headers/leaf.avif",
   backgroundColor = "#2d5000",
-  textColor = "#ffffff",
+  textColor = "#CFCFCF",
   textAlign = "left",
 }) => {
   const [title, setTitle] = useState(initialTitle);
@@ -79,7 +79,7 @@ const HeaderBlock = ({
         imageCol: "col-md-5 p-0 order-1",
         contentCol: "col-md-7 p-4 order-2",
         imageStyle: {
-          minHeight: "400px",
+          minHeight: "600px",
           backgroundSize: "cover",
           backgroundPosition: "center",
         },
@@ -89,7 +89,7 @@ const HeaderBlock = ({
         imageCol: "col-md-5 p-0 order-2",
         contentCol: "col-md-7 p-4 order-1",
         imageStyle: {
-          minHeight: "400px",
+          minHeight: "600px",
           backgroundSize: "cover",
           backgroundPosition: "center",
         },
@@ -123,15 +123,14 @@ const HeaderBlock = ({
         imageCol: "position-absolute w-100 h-100",
         contentCol: "position-relative col-md-6 p-4 z-index-1",
         imageStyle: {
-          minHeight: "400px",
+          minHeight: "600px",
           backgroundSize: "cover",
           backgroundPosition: "center",
           zIndex: 0,
         },
         contentStyle: {
-          backgroundColor: "rgba(0,0,0,0.5)",
-          color: "#ffffff",
-          minHeight: "400px",
+          backgroundColor: "#B40404",
+          minHeight: "600px",
         },
       },
       default: {
@@ -139,7 +138,7 @@ const HeaderBlock = ({
         imageCol: "col-md-5 p-0 order-1",
         contentCol: "col-md-7 p-4 order-2 d-flex flex-column",
         imageStyle: {
-          minHeight: "400px",
+          minHeight: "600px",
           backgroundSize: "cover",
           backgroundPosition: "center",
         },
@@ -161,7 +160,7 @@ const HeaderBlock = ({
 
   return (
     <div
-      className="container-fluid my-4 px-3 bg-[#FC0404]"
+      className="container-fluid my-4 px-3 "
       style={{ maxWidth: "1400px" }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
@@ -279,15 +278,50 @@ const HeaderBlock = ({
 
           {/* Price Section - Only shown in default layout */}
           {layoutType === "default" && (
-            <div style={priceSection}>
-              <h3 className="mb-2">Price</h3>
-              <Form.Control
-                type="text"
-                value={price}
-                onChange={(e) => handleTextChange("price", e.target.value)}
-                className="border-0 bg-transparent text-center fw-bold fs-4"
-                style={{ width: "100%" }}
-              />
+            <div
+              style={{
+                backgroundColor: "#f8f9fa",
+                padding: "1rem",
+                borderRadius: "0.5rem",
+                textAlign: "center",
+                marginTop: "auto",
+                minHeight: "120px",
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "center",
+              }}
+            >
+              <h3
+                className="mb-3"
+                style={{
+                  fontSize: "1.2rem",
+                  fontWeight: "600",
+                  color: "#333",
+                }}
+              >
+                Price
+              </h3>
+              <div
+                style={{
+                  backgroundColor: "white",
+                  borderRadius: "4px",
+                  padding: "0.5rem",
+                  boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                }}
+              >
+                <Form.Control
+                  type="text"
+                  value={price}
+                  onChange={(e) => handleTextChange("price", e.target.value)}
+                  className="border-0 bg-transparent text-center fw-bold"
+                  style={{
+                    width: "100%",
+                    fontSize: "1.5rem",
+                    color: "#2d5000",
+                    padding: "0.25rem",
+                  }}
+                />
+              </div>
             </div>
           )}
 

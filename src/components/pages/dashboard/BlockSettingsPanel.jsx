@@ -40,7 +40,7 @@ const BlockSettingsPanel = ({
   const handleLayoutChange = (layoutType) => {
     const updates = { layoutType };
     if (layoutType === "grid") {
-      updates.backgroundColor = "transparent";
+      updates.backgroundColor = blockSettings.backgroundColor;
     }
     onSettingsChange(activeBlock.id, updates);
   };
