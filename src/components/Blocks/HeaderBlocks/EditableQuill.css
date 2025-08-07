@@ -1,0 +1,90 @@
+/*
+  Styles for the EditableQuill component using the bubble theme.
+*/
+
+.editable-quill-wrapper {
+  position: relative;
+  /* Ensure a base font size/family for consistency */
+  font-family: inherit;
+  font-size: 1.4rem;
+}
+
+/* Custom placeholder for the bubble theme */
+.editable-quill-placeholder {
+  cursor: text;
+  padding: 1rem;
+  border-radius: 4px;
+  color: #c0c0c0; /* A placeholder color */
+  border: 1px dashed rgba(255, 255, 255, 0.3);
+  min-height: 100px;
+  transition: all 0.2s ease-in-out;
+}
+
+.editable-quill-placeholder:hover {
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+/* Style the placeholder text differently from real content */
+.editable-quill-placeholder:empty:before {
+  content: attr(data-placeholder);
+  color: #a9a9a9;
+}
+
+/* Base styles for the bubble editor */
+.editable-quill-wrapper .ql-container.ql-bubble {
+  border: none;
+  background-color: transparent;
+  color: inherit;
+  /* Add padding to prevent text from touching the edge */
+  padding: 1rem;
+}
+
+.ql-editor::before {
+  font-size: 2rem; /* Adjust as needed */
+  color: rgba(0, 0, 0, 0.4); /* Optional: make it slightly lighter */
+}
+
+
+.ql-editor [style] {
+  color: inherit;
+  background-color: inherit;
+}
+
+.editable-quill-wrapper .ql-editor {
+  font-size: 1.4rem; /* default */
+}
+
+.editable-quill-wrapper.title-editor .ql-editor {
+  font-size: 5rem;
+  font-weight: bold;
+}
+
+.editable-quill-wrapper.subtitle-editor .ql-editor {
+  font-size: 1.5rem;
+  font-weight: 500;
+}
+
+
+/* The bubble toolbar itself */
+.editable-quill-wrapper .ql-bubble .ql-toolbar {
+  /* Set a dark, translucent background for the toolbar */
+  background-color: rgba(0, 0, 0, 0.8);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  color: #fff;
+  padding: 8px 12px;
+  
+  /* Ensure all buttons and icons are white */
+  .ql-stroke { stroke: #fff; }
+  .ql-fill { fill: #fff; }
+  .ql-picker-label { color: #fff; }
+  
+  /* Style for active buttons */
+  .ql-active {
+    background-color: rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+  }
+  /* Make Quill placeholder text bigger */
+
+
+}

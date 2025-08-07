@@ -1,23 +1,118 @@
-import React, { useRef, useState, useCallback } from "react";
+import React, { useRef, useState, useCallback, useMemo } from "react";
 import { Button, Form, Modal } from "react-bootstrap";
 import Cropper from "react-easy-crop";
 import { getCroppedImg } from "../../../../utils/cropImage";
+import EditableQuill from "./EditableQuill";
 
+const LAYOUTS = {
+  "left-panel": {
+    container: "flex-row",
+    imageCol: "col-md-5 p-0 order-1",
+    contentCol: "col-md-7 p-4 order-2",
+    imageStyle: {
+      minHeight: "600px",
+      backgroundSize: "cover",
+      backgroundPosition: "center",
+    },
+  },
+  "right-panel": {
+    container: "flex-row",
+    imageCol: "col-md-5 p-0 order-2",
+    contentCol: "col-md-7 p-4 order-1",
+    imageStyle: {
+      minHeight: "600px",
+      backgroundSize: "cover",
+      backgroundPosition: "center",
+    },
+  },
+  "top-panel": {
+    container: "flex-column",
+    imageCol: "col-12 p-0 order-1",
+    contentCol: "col-12 p-4 order-2",
+    imageStyle: {
+      height: "250px",
+      backgroundSize: "cover",
+      backgroundPosition: "center",
+    },
+  },
+  "bottom-panel": {
+    container: "flex-column-reverse h-100",
+    imageCol: "col-12 p-0",
+    contentCol: "col-12 p-4",
+    imageStyle: {
+      height: "250px",
+      backgroundSize: "cover",
+      backgroundPosition: "center",
+      flex: "0 0 auto",
+    },
+    contentStyle: { flex: "1 1 auto" },
+  },
+  grid: {
+    container: "position-relative w-100 h-100",
+    imageCol: "position-absolute top-0 start-0 w-100 h-100",
+    contentCol:
+      "position-relative d-flex justify-content-center align-items-center w-100 h-100 z-index-1",
+    imageStyle: {
+      backgroundSize: "cover",
+      backgroundPosition: "center",
+      backgroundRepeat: "no-repeat",
+      width: "100%",
+      height: "600px",
+      minHeight: "600px",
+      zIndex: 0,
+    },
+    contentStyle: {
+      minHeight: "600px",
+      padding: "2rem",
+      textAlign: "center",
+    },
+  },
+  default: {
+    container: "position-relative flex-column w-100",
+    imageCol: "w-100",
+    contentCol:
+      "position-absolute top-50 start-50 translate-middle w-100 px-3 z-2 d-flex flex-column align-items-center",
+    imageStyle: {
+      width: "100%",
+      height: "600px",
+      backgroundSize: "cover",
+      backgroundPosition: "center",
+    },
+    priceSection: {
+      backgroundColor: "transparent", // Remove default color
+      padding: "1rem",
+      borderRadius: "0.5rem",
+      textAlign: "center",
+      marginTop: "1rem",
+      width: "100%",
+      maxWidth: "500px",
+    },
+    titleBox: {
+      backgroundColor: "#f8f9fa",
+      padding: "1rem",
+      borderRadius: "0.5rem",
+      width: "100%",
+      maxWidth: "500px",
+      boxShadow: "0 1px 4px rgba(0,0,0,0.1)",
+    },
+  },
+};
 
 const HeaderBlock = ({
   id,
   layoutType = "left-panel",
-  onSettingsChange,
-  title: initialTitle = "Sales Proposal",
-  subtitle: initialSubtitle = "Optional",
-  clientName: initialClientName = "Client name",
-  senderName: initialSenderName = "Sender name",
-  price: initialPrice = "INCL.VAT",
-  logo: initialLogo = null,
+  onSettingsChange = () => {},
+  initialTitle = "Sales Proposal",
+  initialSubtitle = "Optional",
+  initialClientName = "Client name",
+  initialSenderName = "Sender name",
+  initialPrice = "INCL.VAT",
+  initialLogo = null,
   backgroundImage = "images/headers/leaf.avif",
   backgroundColor = "#2d5000",
   textColor = "#CFCFCF",
   textAlign = "left",
+  isPreview = false, // Add isPreview prop
 }) => {
   const [title, setTitle] = useState(initialTitle);
   const [subtitle, setSubtitle] = useState(initialSubtitle);
@@ -31,9 +126,15 @@ const HeaderBlock = ({
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(2);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
-  const [isHovered, setIsHovered] = useState(false);
+
+  // Conditional logic for colors based on background
+  const isWhiteBackground = backgroundColor.toLowerCase() === "#ffffff";
+  const dynamicTextColor = isWhiteBackground ? "#333" : textColor;
+  const dynamicPriceSectionBg = isWhiteBackground ? "#e9ecef" : "#f8f9fa";
+  const dynamicPriceTextColor = isWhiteBackground ? "#000" : "#2d5000";
 
   const handleLogoUpload = (e) => {
+    if (isPreview) return; // Prevent interaction in preview mode
     const file = e.target.files[0];
     if (file) {
       const reader = new FileReader();
@@ -58,6 +159,7 @@ const HeaderBlock = ({
   };
 
   const handleTextChange = (field, value) => {
+    if (isPreview) return;
     const setters = {
       title: setTitle,
       subtitle: setSubtitle,
@@ -73,98 +175,27 @@ const HeaderBlock = ({
     setCroppedAreaPixels(croppedAreaPixels);
   }, []);
 
-  const getLayoutClasses = () => {
-    const layouts = {
-      "left-panel": {
-        container: "flex-row",
-        imageCol: "col-md-5 p-0 order-1",
-        contentCol: "col-md-7 p-4 order-2",
-        imageStyle: {
-          minHeight: "600px",
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        },
-      },
-      "right-panel": {
-        container: "flex-row",
-        imageCol: "col-md-5 p-0 order-2",
-        contentCol: "col-md-7 p-4 order-1",
-        imageStyle: {
-          minHeight: "600px",
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        },
-      },
-      "top-panel": {
-        container: "flex-column",
-        imageCol: "col-12 p-0 order-1",
-        contentCol: "col-12 p-4 order-2",
-        imageStyle: {
-          height: "250px",
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        },
-      },
-      "bottom-panel": {
-        container: "flex-column-reverse h-100",
-        imageCol: "col-12 p-0",
-        contentCol: "col-12 p-4",
-        imageStyle: {
-          height: "250px",
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          flex: "0 0 auto",
-        },
-        contentStyle: {
-          flex: "1 1 auto",
-        },
-      },
-      grid: {
-        container: "position-relative",
-        imageCol: "position-absolute w-100 h-100",
-        contentCol: "position-relative col-md-6 p-4 z-index-1",
-        imageStyle: {
-          minHeight: "600px",
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          zIndex: 0,
-        },
-        contentStyle: {
-          backgroundColor: "#B40404",
-          minHeight: "600px",
-        },
-      },
-      default: {
-        container: "flex-row",
-        imageCol: "col-md-5 p-0 order-1",
-        contentCol: "col-md-7 p-4 order-2 d-flex flex-column",
-        imageStyle: {
-          minHeight: "600px",
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        },
-        priceSection: {
-          backgroundColor: "#f8f9fa",
-          padding: "1rem",
-          borderRadius: "0.5rem",
-          textAlign: "center",
-          marginTop: "auto",
-        },
-      },
-    };
+  const {
+    container,
+    imageCol,
+    contentCol,
+    imageStyle,
+    priceSection,
+    contentStyle,
+  } = useMemo(() => {
+    return LAYOUTS[layoutType] || LAYOUTS.default;
+  }, [layoutType]);
 
-    return layouts[layoutType] || layouts.default;
-  };
-
-  const { container, imageCol, contentCol, imageStyle, priceSection } =
-    getLayoutClasses();
+  const wrapperStyle = isPreview
+    ? {}
+    : {
+        maxWidth: "1400px",
+      };
 
   return (
     <div
-      className="container-fluid my-4 px-3 "
-      style={{ maxWidth: "1400px" }}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      className={`container-fluid my-4 px-3 ${isPreview ? "p-0 my-0" : ""}`}
+      style={wrapperStyle}
     >
       <div
         className={`row rounded-3 overflow-hidden shadow d-flex ${container}`}
@@ -180,164 +211,261 @@ const HeaderBlock = ({
 
         {/* Content Section */}
         <div
-          className={`${contentCol} d-flex flex-column justify-content-between`}
-          style={{ backgroundColor, color: textColor }}
+          className={`${contentCol} ${
+            layoutType === "grid"
+              ? ""
+              : "d-flex flex-column justify-content-between"
+          }`}
+          style={{
+            ...(layoutType === "grid"
+              ? { ...contentStyle, color: dynamicTextColor }
+              : { backgroundColor, color: dynamicTextColor }),
+          }}
         >
           {/* Logo and Controls */}
-          <div
-            className="d-flex justify-content-between align-items-start control-panel"
-            style={{ textAlign }}
-          >
-            <div>
-              {logo ? (
-                <img
-                  src={logo}
-                  alt="Logo"
-                  style={{
-                    height: "80px",
-                    maxWidth: "200px",
-                    objectFit: "contain",
-                  }}
-                />
-              ) : (
-                <Button
-                  variant="light"
-                  size="sm"
-                  onClick={() => fileInputRef.current.click()}
-                >
-                  Logo
-                </Button>
-              )}
-              <Form.Control
-                type="file"
-                onChange={handleLogoUpload}
-                ref={fileInputRef}
-                style={{ display: "none" }}
-                accept="image/*"
-              />
-            </div>
-          </div>
-
-          {/* Crop Modal */}
-          <Modal
-            show={cropModalOpen}
-            onHide={() => setCropModalOpen(false)}
-            centered
-            size="lg"
-          >
-            <Modal.Body>
-              <div style={{ position: "relative", width: "100%", height: 500 }}>
-                <Cropper
-                  image={imageSrc}
-                  crop={crop}
-                  zoom={zoom}
-                  aspect={undefined}
-                  onCropChange={setCrop}
-                  onZoomChange={setZoom}
-                  onCropComplete={onCropComplete}
-                />
-              </div>
-            </Modal.Body>
-            <Modal.Footer>
-              <Button
-                variant="secondary"
-                onClick={() => setCropModalOpen(false)}
-              >
-                Cancel
-              </Button>
-              <Button onClick={handleCropSave}>Save</Button>
-            </Modal.Footer>
-          </Modal>
-
-          {/* Main Content */}
-          <div
-            className={layoutType.includes("panel") ? "mt-3" : "mt-5"}
-            style={{ textAlign }}
-          >
-            <Form.Control
-              as="textarea"
-              rows={1}
-              value={subtitle}
-              onChange={(e) => handleTextChange("subtitle", e.target.value)}
-              className="border-0 bg-transparent mb-2 fs-6 p-0 control-panel"
-              style={{
-                color: textColor,
-                resize: "none",
-                overflow: "hidden",
-                textAlign: "inherit",
-              }}
-            />
-            <Form.Control
-              as="textarea"
-              rows={2}
-              value={title}
-              onChange={(e) => handleTextChange("title", e.target.value)}
-              className="border-0 bg-transparent fw-bold fs-3 mb-4 p-0"
-              style={{
-                color: textColor,
-                resize: "none",
-                overflow: "hidden",
-                textAlign: "inherit",
-              }}
-            />
-          </div>
-
-          {/* Price Section - Only shown in default layout */}
-          {layoutType === "default" && (
+          {layoutType !== "default" && (
             <div
-              style={{
-                backgroundColor: "#f8f9fa",
-                padding: "1rem",
-                borderRadius: "0.5rem",
-                marginTop: "auto",
-                minHeight: "120px",
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "center",
-                ...priceSection,
-                textAlign,
-              }}
+              className="d-flex justify-content-between align-items-start"
+              style={{ textAlign }}
             >
-              <h3
-                className="mb-3"
-                style={{
-                  fontSize: "1.2rem",
-                  fontWeight: "600",
-                  color: "#333",
-                }}
-              >
-                Price
-              </h3>
-              <div
-                style={{
-                  backgroundColor: "white",
-                  borderRadius: "4px",
-                  padding: "0.5rem",
-                  boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-                }}
-              >
-                <Form.Control
-                  type="text"
-                  value={price}
-                  onChange={(e) => handleTextChange("price", e.target.value)}
-                  className="border-0 bg-transparent text-center fw-bold"
-                  style={{
-                    width: "100%",
-                    fontSize: "1.5rem",
-                    color: "#2d5000",
-                    padding: "0.25rem",
-                  }}
-                />
+              <div>
+                {logo ? (
+                  <img
+                    src={logo}
+                    alt="Logo"
+                    style={{
+                      height: "80px",
+                      maxWidth: "200px",
+                      objectFit: "contain",
+                    }}
+                    onClick={
+                      !isPreview
+                        ? () => fileInputRef.current.click()
+                        : undefined
+                    }
+                  />
+                ) : (
+                  <Button
+                    variant="light"
+                    size="sm"
+                    onClick={
+                      !isPreview
+                        ? () => fileInputRef.current.click()
+                        : undefined
+                    }
+                  >
+                    Logo
+                  </Button>
+                )}
+                {!isPreview && (
+                  <Form.Control
+                    type="file"
+                    onChange={handleLogoUpload}
+                    ref={fileInputRef}
+                    style={{ display: "none" }}
+                    accept="image/*"
+                  />
+                )}
               </div>
             </div>
           )}
 
-          {/* Client/Sender Info - Not shown in default layout */}
+          {/* Crop Modal */}
+          {!isPreview && (
+            <Modal
+              show={cropModalOpen}
+              onHide={() => setCropModalOpen(false)}
+              centered
+              size="lg"
+            >
+              <Modal.Body>
+                <div
+                  style={{ position: "relative", width: "100%", height: 500 }}
+                >
+                  {imageSrc && (
+                    <Cropper
+                      image={imageSrc}
+                      crop={crop}
+                      zoom={zoom}
+                      aspect={undefined}
+                      onCropChange={setCrop}
+                      onZoomChange={setZoom}
+                      onCropComplete={onCropComplete}
+                    />
+                  )}
+                </div>
+              </Modal.Body>
+              <Modal.Footer>
+                <Button
+                  variant="secondary"
+                  onClick={() => setCropModalOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button onClick={handleCropSave}>Save</Button>
+              </Modal.Footer>
+            </Modal>
+          )}
+
+          {/* Main Content */}
+          <div className="position-relative w-100">
+            {/* Text block overlay on image */}
+            <div
+              className="position-absolute top-50 start-0 translate-middle-y text-start"
+              style={{
+                zIndex: 2,
+                paddingLeft: "2rem",
+                paddingRight: "2rem",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "flex-start",
+                justifyContent: "center",
+              }}
+            >
+              <EditableQuill
+                value={subtitle}
+                onChange={(value) => handleTextChange("subtitle", value)}
+                placeholder="Optional Subtitle"
+                textColor="#fff"
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  fontSize: "1.2rem",
+                  marginBottom: "0.3rem",
+                  color: "#fff",
+                }}
+              />
+
+              <EditableQuill
+                value={title}
+                onChange={(value) => handleTextChange("title", value)}
+                placeholder="Sales Proposal"
+                textColor="#fff"
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  fontSize: "2rem",
+                  fontWeight: "bold",
+                  color: "#fff",
+                }}
+              />
+            </div>
+          </div>
+
+          {/* special for the default layout */}
+          {layoutType === "default" && (
+            <>
+              {/* Overlayed Title/SubTitle Box */}
+              <div style={{ ...LAYOUTS.default.titleBox, textAlign }}>
+                {/* Logo inside title box */}
+                <div className="d-flex justify-content-start align-items-start mb-2">
+                  {logo ? (
+                    <img
+                      src={logo}
+                      alt="Logo"
+                      style={{
+                        height: "80px",
+                        maxWidth: "200px",
+                        objectFit: "contain",
+                        cursor: !isPreview ? "pointer" : "default",
+                      }}
+                      onClick={
+                        !isPreview
+                          ? () => fileInputRef.current.click()
+                          : undefined
+                      }
+                    />
+                  ) : (
+                    <Button
+                      variant="light"
+                      size="sm"
+                      onClick={
+                        !isPreview
+                          ? () => fileInputRef.current.click()
+                          : undefined
+                      }
+                    >
+                      Logo
+                    </Button>
+                  )}
+                  {!isPreview && (
+                    <Form.Control
+                      type="file"
+                      onChange={handleLogoUpload}
+                      ref={fileInputRef}
+                      style={{ display: "none" }}
+                      accept="image/*"
+                    />
+                  )}
+                </div>
+
+                {/* Title */}
+                <EditableQuill
+                  value={title}
+                  onChange={(value) => handleTextChange("title", value)}
+                  placeholder="Sales Proposal"
+                  textColor="#000"
+                  style={{
+                    background: "transparent",
+                    border: "none",
+                    fontSize: "2rem",
+                    color: "#000",
+                  }}
+                />
+              </div>
+
+              {/* Price Section */}
+              <div
+                style={{
+                  ...priceSection,
+                  backgroundColor: dynamicPriceSectionBg,
+                  textAlign,
+                }}
+              >
+                <h3
+                  className="mb-3"
+                  style={{
+                    fontSize: "1.2rem",
+                    fontWeight: "600",
+                    color: dynamicPriceTextColor,
+                  }}
+                >
+                  Price
+                </h3>
+                <div
+                  style={{
+                    backgroundColor: dynamicPriceSectionBg,
+                    borderRadius: "4px",
+                    padding: "0.5rem",
+                    boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                  }}
+                >
+                  <Form.Control
+                    type="text"
+                    value={price}
+                    onChange={(e) => handleTextChange("price", e.target.value)}
+                    className="border-0 bg-transparent text-center fw-bold"
+                    style={{
+                      width: "100%",
+                      fontSize: "1.5rem",
+                      color: dynamicPriceTextColor,
+                      padding: "0.25rem",
+                      outline: "none",
+                      boxShadow: "none",
+                    }}
+                    readOnly={isPreview}
+                  />
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Client/Sender Info */}
           {layoutType !== "default" && (
             <div className="mt-2" style={{ textAlign }}>
-              {/* Prepared for - Client name with error badge */}
+              {/* Prepared for */}
               <div
-                className="mb-1 d-flex"
+                className="mb-1 d-flex align-items-center"
                 style={{
                   justifyContent:
                     textAlign === "left"
@@ -348,45 +476,56 @@ const HeaderBlock = ({
                 }}
               >
                 <span
-                  className="fw-semibold me-1 text-white"
-                  style={{ fontSize: "0.9rem" }}
+                  className="fw-semibold me-1"
+                  style={{
+                    fontSize: "0.65rem",
+                    color: dynamicTextColor,
+                    whiteSpace: "nowrap",
+                  }}
                 >
                   Prepared for
                 </span>
-                <span className="badge bg-white text-danger d-flex align-items-center py-1 px-2">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="12"
-                    height="12"
-                    fill="currentColor"
-                    className="bi bi-exclamation-circle me-1"
-                    viewBox="0 0 16 16"
-                  >
-                    <path d="M7.001 4a.905.905 0 0 1 .999 1l-.35 3.481a.55.55 0 0 1-1.098 0L6.2 5a.905.905 0 0 1 .801-1zm.002 7a1 1 0 1 1-.002-2 1 1 0 0 1 .002 2z" />
-                    <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM8 15A7 7 0 1 0 8 1a7 7 0 0 0 0 14z" />
-                  </svg>
-                  <Form.Control
-                    type="text"
+
+                <div
+                  className={`d-inline-flex align-items-center ${
+                    clientName.trim() === "" ? "rounded-pill" : ""
+                  }`}
+                  style={{
+                    backgroundColor:
+                      clientName.trim() === "" ? "#fff" : "transparent",
+                    padding: clientName.trim() === "" ? "1px 3px" : "0",
+                    fontSize: "0.4rem",
+                    color: "#dc3545",
+                    lineHeight: 1,
+                    flexWrap: "wrap",
+                    minHeight: "14px",
+                  }}
+                >
+                  {clientName.trim() === "" && (
+                    <div style={{ marginRight: "3px", fontSize: "6px" }}>●</div>
+                  )}
+                  <EditableQuill
                     value={clientName}
-                    onChange={(e) =>
-                      handleTextChange("clientName", e.target.value)
-                    }
+                    onChange={(value) => handleTextChange("clientName", value)}
                     placeholder="Client name"
-                    className="bg-transparent border-0 text-danger p-0 m-0"
+                    textColor="#dc3545"
                     style={{
-                      width: "90px",
-                      fontSize: "0.85rem",
-                      outline: "none",
-                      boxShadow: "none",
-                      textAlign: "inherit", // Inherit from parent
+                      background: "transparent",
+                      border: "none",
+                      fontSize: "0.4rem",
+                      padding: 0,
+                      margin: 0,
                     }}
+                    minHeight="12px"
+                    maxHeight="none"
+                    isPreview={isPreview}
                   />
-                </span>
+                </div>
               </div>
 
-              {/* Prepared by - Sender name with blue badge */}
+              {/* By */}
               <div
-                className="d-flex"
+                className="d-flex align-items-center"
                 style={{
                   justifyContent:
                     textAlign === "left"
@@ -397,54 +536,53 @@ const HeaderBlock = ({
                 }}
               >
                 <span
-                  className="fw-semibold me-1 text-white"
-                  style={{ fontSize: "0.9rem" }}
+                  className="fw-semibold me-1"
+                  style={{
+                    fontSize: "0.65rem",
+                    color: dynamicTextColor,
+                    whiteSpace: "nowrap",
+                  }}
                 >
                   By
                 </span>
-                <span className="badge bg-white text-primary py-1 px-2">
-                  <Form.Control
-                    type="text"
+
+                <div
+                  className={`d-inline-flex align-items-center ${
+                    senderName.trim() === "" ? "rounded-pill" : ""
+                  }`}
+                  style={{
+                    backgroundColor:
+                      senderName.trim() === "" ? "#cce5ff" : "transparent",
+                    padding: senderName.trim() === "" ? "1px 3px" : "0",
+                    fontSize: "0.4rem",
+                    color: "#0d6efd",
+                    lineHeight: 1,
+                    flexWrap: "wrap",
+                    minHeight: "14px",
+                  }}
+                >
+                  <EditableQuill
                     value={senderName}
-                    onChange={(e) =>
-                      handleTextChange("senderName", e.target.value)
-                    }
+                    onChange={(value) => handleTextChange("senderName", value)}
                     placeholder="Sender name"
-                    className="bg-transparent border-0 text-primary p-0 m-0"
+                    textColor="#0d6efd"
                     style={{
-                      width: "90px",
-                      fontSize: "0.85rem",
-                      outline: "none",
-                      boxShadow: "none",
-                      textAlign: "inherit", // Inherit from parent
+                      background: "transparent",
+                      border: "none",
+                      fontSize: "0.4rem",
+                      padding: 0,
+                      margin: 0,
                     }}
+                    minHeight="12px"
+                    maxHeight="none"
+                    isPreview={isPreview}
                   />
-                </span>
+                </div>
               </div>
             </div>
           )}
         </div>
       </div>
-      <style>{`
-          .hover-wrapper:hover .control-panel {
-            opacity: 1;
-            pointer-events: auto;
-          }
-          
-          .block-container:hover {
-            transform: translateY(-2px);
-          }
-          
-          .control-panel {
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.2s ease;
-          }
-          
-          .hover-wrapper:hover .control-panel {
-            opacity: 1;
-          }
-        `}</style>
     </div>
   );
 };
