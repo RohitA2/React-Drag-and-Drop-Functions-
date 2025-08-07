@@ -112,7 +112,7 @@ const HeaderBlock = ({
   backgroundColor = "#2d5000",
   textColor = "#CFCFCF",
   textAlign = "left",
-  isPreview = false, // Add isPreview prop
+  isPreview = false, // Add isPreview property
 }) => {
   const [title, setTitle] = useState(initialTitle);
   const [subtitle, setSubtitle] = useState(initialSubtitle);
@@ -127,7 +127,6 @@ const HeaderBlock = ({
   const [zoom, setZoom] = useState(2);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
 
-  // Conditional logic for colors based on background
   const isWhiteBackground = backgroundColor.toLowerCase() === "#ffffff";
   const dynamicTextColor = isWhiteBackground ? "#333" : textColor;
   const dynamicPriceSectionBg = isWhiteBackground ? "#e9ecef" : "#f8f9fa";
@@ -194,7 +193,7 @@ const HeaderBlock = ({
 
   return (
     <div
-      className={`container-fluid my-4 px-3 ${isPreview ? "p-0 my-0" : ""}`}
+      className={`container-fluid  my-4 px-3 ${isPreview ? "p-0 my-0" : ""}`}
       style={wrapperStyle}
     >
       <div
@@ -308,46 +307,19 @@ const HeaderBlock = ({
           )}
 
           {/* Main Content */}
-          <div className="position-relative w-100">
-            {/* Text block overlay on image */}
-            <div
-              className="position-absolute top-50 start-0 translate-middle-y text-start"
-              style={{
-                zIndex: 2,
-                paddingLeft: "2rem",
-                paddingRight: "2rem",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "flex-start",
-                justifyContent: "center",
-              }}
-            >
+          <div className="w-full bg-gray-800 text-white rounded-xl overflow-hidden editable-quill-wrapper">
+            <div className="w-full px-6 py-8 text-center space-y-3">
               <EditableQuill
                 value={subtitle}
-                onChange={(value) => handleTextChange("subtitle", value)}
-                placeholder="Optional Subtitle"
-                textColor="#fff"
-                style={{
-                  background: "transparent",
-                  border: "none",
-                  fontSize: "1.2rem",
-                  marginBottom: "0.3rem",
-                  color: "#fff",
-                }}
+                onChange={setSubtitle}
+                placeholder="Enter subtitle..."
+                className="text-xl"
               />
-
               <EditableQuill
                 value={title}
-                onChange={(value) => handleTextChange("title", value)}
-                placeholder="Sales Proposal"
-                textColor="#fff"
-                style={{
-                  background: "transparent",
-                  border: "none",
-                  fontSize: "2rem",
-                  fontWeight: "bold",
-                  color: "#fff",
-                }}
+                onChange={setTitle}
+                placeholder="Enter title..."
+                className="text-3xl font-bold"
               />
             </div>
           </div>
