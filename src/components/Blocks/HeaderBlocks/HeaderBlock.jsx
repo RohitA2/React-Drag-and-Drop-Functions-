@@ -1,8 +1,15 @@
 import React, { useRef, useState, useCallback, useMemo } from "react";
-import { Button, Form, Modal } from "react-bootstrap";
+import { Button, Form, Modal, Dropdown, DropdownButton } from "react-bootstrap";
 import Cropper from "react-easy-crop";
 import { getCroppedImg } from "../../../../utils/cropImage";
 import EditableQuill from "./EditableQuill";
+import {
+  Eye as EyeIcon,
+  EyeSlash as EyeSlashIcon,
+  Pencil as PencilIcon,
+  Trash as TrashIcon,
+  Plus as PlusIcon,
+} from "react-bootstrap-icons";
 
 const LAYOUTS = {
   "left-panel": {
@@ -126,6 +133,7 @@ const HeaderBlock = ({
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(2);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
+  const [showLogo, setShowLogo] = useState(true);
 
   const isWhiteBackground = backgroundColor.toLowerCase() === "#ffffff";
   const dynamicTextColor = isWhiteBackground ? "#333" : textColor;
@@ -143,6 +151,13 @@ const HeaderBlock = ({
       });
       reader.readAsDataURL(file);
     }
+  };
+
+  const handleLogoReset = () => {
+    setLogo(null);
+    setShowLogo(true);
+    if (isPreview) return;
+    onSettingsChange(id, { logo: null });
   };
 
   const handleCropSave = async () => {
@@ -191,6 +206,21 @@ const HeaderBlock = ({
         maxWidth: "1400px",
       };
 
+  // Custom dropdown toggle to remove default styling
+  const CustomToggle = React.forwardRef(({ children, onClick }, ref) => (
+    <a
+      href=""
+      ref={ref}
+      onClick={(e) => {
+        e.preventDefault();
+        onClick(e);
+      }}
+      className="logo-dropdown-anchor"
+    >
+      {children}
+    </a>
+  ));
+
   return (
     <div
       className={`container-fluid  my-4 px-3 ${isPreview ? "p-0 my-0" : ""}`}
@@ -223,39 +253,64 @@ const HeaderBlock = ({
         >
           {/* Logo and Controls */}
           {layoutType !== "default" && (
-            <div
-              className="d-flex justify-content-between align-items-start"
-              style={{ textAlign }}
-            >
-              <div>
+            <div className="logo-management-container" style={{ textAlign }}>
+              <div className="logo-actions-wrapper">
                 {logo ? (
-                  <img
-                    src={logo}
-                    alt="Logo"
-                    style={{
-                      height: "80px",
-                      maxWidth: "200px",
-                      objectFit: "contain",
-                    }}
-                    onClick={
-                      !isPreview
-                        ? () => fileInputRef.current.click()
-                        : undefined
-                    }
-                  />
+                  <Dropdown>
+                    <Dropdown.Toggle
+                      as={CustomToggle}
+                      id="logo-actions-dropdown"
+                      className="logo-dropdown-toggle"
+                    >
+                      <div className="logo-preview-container">
+                        {showLogo ? (
+                          <img src={logo} alt="Logo" className="logo-preview" />
+                        ) : (
+                          <span className="logo-placeholder">Logo</span>
+                        )}
+                      </div>
+                    </Dropdown.Toggle>
+
+                    <Dropdown.Menu className="logo-dropdown-menu">
+                      <div className="px-1 py-2 d-flex align-items-center justify-content-between">
+                        <span className="me-3 fw-semibold ">Show Logotype</span>
+                        <Form.Check
+                          type="switch"
+                          id="show-logo-switch"
+                          checked={showLogo}
+                          onChange={() => setShowLogo(!showLogo)}
+                          className="ms-2"
+                        />
+                      </div>
+                      {showLogo && (
+                        <>
+                          <Dropdown.Item
+                            onClick={() => fileInputRef.current.click()}
+                            className="logo-dropdown-item"
+                          >
+                            Change Logotype
+                          </Dropdown.Item>
+                          <Dropdown.Item
+                            onClick={handleLogoReset}
+                            className="logo-dropdown-item"
+                          >
+                            Reset
+                          </Dropdown.Item>
+                        </>
+                      )}
+                    </Dropdown.Menu>
+                  </Dropdown>
                 ) : (
                   <Button
-                    variant="light"
+                    variant="outline-secondary"
                     size="sm"
-                    onClick={
-                      !isPreview
-                        ? () => fileInputRef.current.click()
-                        : undefined
-                    }
+                    onClick={() => fileInputRef.current.click()}
+                    className="logo-placeholder-btn"
                   >
                     Logo
                   </Button>
                 )}
+
                 {!isPreview && (
                   <Form.Control
                     type="file"
@@ -555,6 +610,75 @@ const HeaderBlock = ({
           )}
         </div>
       </div>
+
+      <style>{`
+.logo-management-container {
+  margin: 4px 0;
+}
+
+.logo-preview-container {
+  display: inline-block;
+}
+
+.logo-preview {
+  height: 100px;
+  max-width: 120px;
+  object-fit: contain;
+  cursor: pointer;
+}
+
+.logo-placeholder {
+  display: inline-block;
+  padding: 8px 12px;
+  font-size: 14px;
+  color: #333;
+  border-radius: 4px;
+  background: #f5f5f5;
+  cursor: pointer;
+}
+
+.logo-dropdown-toggle {
+  color: #FC0404;
+  background: none;
+  border: none;
+  padding: 0;
+}
+
+.logo-dropdown-toggle:after {
+  display: none;
+}
+
+.logo-dropdown-menu {
+  padding: 4px 0;
+  min-width: 100px;
+  border: 1px solid #e1e1e1;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.logo-dropdown-item {
+  padding: 4px 8px;
+  font-size: 12px;
+  color: #333;
+  cursor: pointer;
+}
+
+.logo-dropdown-item:hover {
+  background-color: #f5f5f5;
+}
+
+.logo-placeholder-btn {
+  background: none;
+  border: none;
+  color: #f9f9f9;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 8px 12px;
+  cursor: pointer;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+`}</style>
     </div>
   );
 };
