@@ -1,6 +1,7 @@
 import React, { useRef, useState, useCallback, useMemo } from "react";
 import { Button, Form, Modal, Dropdown, DropdownButton } from "react-bootstrap";
-import Cropper from "react-easy-crop";
+import Cropper from "react-cropper";
+import "cropperjs/dist/cropper.css";
 import { getCroppedImg } from "../../../../utils/cropImage";
 import EditableQuill from "./EditableQuill";
 
@@ -127,6 +128,7 @@ const HeaderBlock = ({
   const [zoom, setZoom] = useState(2);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
   const [showLogo, setShowLogo] = useState(true);
+  const cropperRef = useRef(null);
 
   const isWhiteBackground = backgroundColor.toLowerCase() === "#ffffff";
   const dynamicTextColor = isWhiteBackground ? "#333" : textColor;
@@ -153,17 +155,65 @@ const HeaderBlock = ({
     onSettingsChange(id, { logo: null });
   };
 
-  const handleCropSave = async () => {
-    const croppedImageUrl = await getCroppedImg(
-      imageSrc,
-      crop,
-      zoom,
-      croppedAreaPixels
-    );
-    setLogo(croppedImageUrl);
-    onSettingsChange(id, { logo: croppedImageUrl });
+  // const handleCropSave = async () => {
+  //   const croppedImageUrl = await getCroppedImg(
+  //     imageSrc,
+  //     crop,
+  //     zoom,
+  //     croppedAreaPixels
+  //   );
+  //   setLogo(croppedImageUrl);
+  //   onSettingsChange(id, { logo: croppedImageUrl });
+  //   setCropModalOpen(false);
+  // };
+
+ // Helper to return blob URL from cropper instance
+const getCroppedImg = (cropper) => {
+  return new Promise((resolve, reject) => {
+    try {
+      const canvas = cropper.getCroppedCanvas({
+        // Optional: set size or background
+        fillColor: "#fff", // helps for PNG transparency or JPG background
+        imageSmoothingQuality: "high"
+      });
+
+      if (!canvas) {
+        reject(new Error("No canvas returned from cropper."));
+        return;
+      }
+
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          reject(new Error("Canvas is empty."));
+          return;
+        }
+        const url = URL.createObjectURL(blob);
+        resolve(url);
+      }, "image/png");
+    } catch (err) {
+      reject(err);
+    }
+  });
+};
+
+// Save cropped image
+const handleCropSave = async () => {
+  try {
+    const cropper = cropperRef.current?.cropper;
+    if (!cropper) {
+      throw new Error("Cropper instance not found.");
+    }
+
+    const croppedImageUrl = await getCroppedImg(cropper);
+    console.log("Cropped Image URL:", croppedImageUrl);
+
+    setLogo(croppedImageUrl); // ✅ Replace your logo with the cropped image
     setCropModalOpen(false);
-  };
+  } catch (err) {
+    console.error(err);
+  }
+};
+
 
   const handleTextChange = (field, value) => {
     if (isPreview) return;
@@ -336,21 +386,20 @@ const HeaderBlock = ({
               size="lg"
             >
               <Modal.Body>
-                <div
-                  style={{ position: "relative", width: "100%", height: 500 }}
-                >
-                  {imageSrc && (
-                    <Cropper
-                      image={imageSrc}
-                      crop={crop}
-                      zoom={zoom}
-                      aspect={undefined}
-                      onCropChange={setCrop}
-                      onZoomChange={setZoom}
-                      onCropComplete={onCropComplete}
-                    />
-                  )}
-                </div>
+                {imageSrc && (
+                  <Cropper
+                    src={imageSrc}
+                    style={{ height: 500, width: "100%" }}
+                    initialAspectRatio={1}
+                    guides={true}
+                    viewMode={1}
+                    background={false}
+                    responsive={true}
+                    autoCropArea={1}
+                    checkOrientation={false}
+                    ref={cropperRef}
+                  />
+                )}
               </Modal.Body>
               <Modal.Footer>
                 <Button

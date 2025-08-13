@@ -1,9 +1,3 @@
-/*
-  Precise styles for EditableQuill with bubble theme
-  - Removed redundant properties
-  - Better organized selectors
-  - More specific targeting
-*/
 
 .editable-quill-wrapper {
   position: relative;
