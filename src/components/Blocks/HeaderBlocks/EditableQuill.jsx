@@ -55,6 +55,7 @@ const EditableQuill = ({
   minHeight = "100px",
   isPreview = false,
   className = "",
+  textAlign = "left",
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const quillRef = useRef(null);
@@ -79,13 +80,13 @@ const EditableQuill = ({
     }, 100);
   };
 
-  const hasContent = value && value !== "<p><br></p>";
+  const hasContent = value && value !== "type something...";
   const showQuill = isEditing || hasContent;
 
   return (
     <div
       ref={wrapperRef}
-      className={`editable-quill-wrapper ${className}`}
+      className={`editable-quill-wrapper ${className} text-${textAlign}`}
       style={{
         ...style,
         minHeight,
@@ -101,6 +102,7 @@ const EditableQuill = ({
             minHeight,
             cursor: isPreview ? "default" : "pointer",
             width: "100%",
+            textAlign: "left",
           }}
           dangerouslySetInnerHTML={{ __html: value || placeholder }}
         />
@@ -119,6 +121,7 @@ const EditableQuill = ({
             width: "100%",
             height: "auto",
             minHeight: minHeight,
+            textAlign: "left",
           }}
           formats={[
             "bold",

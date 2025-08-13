@@ -3,13 +3,6 @@ import { Button, Form, Modal, Dropdown, DropdownButton } from "react-bootstrap";
 import Cropper from "react-easy-crop";
 import { getCroppedImg } from "../../../../utils/cropImage";
 import EditableQuill from "./EditableQuill";
-import {
-  Eye as EyeIcon,
-  EyeSlash as EyeSlashIcon,
-  Pencil as PencilIcon,
-  Trash as TrashIcon,
-  Plus as PlusIcon,
-} from "react-bootstrap-icons";
 
 const LAYOUTS = {
   "left-panel": {
@@ -119,7 +112,7 @@ const HeaderBlock = ({
   backgroundColor = "#2d5000",
   textColor = "#CFCFCF",
   textAlign = "left",
-  isPreview = false, // Add isPreview property
+  isPreview = false,
 }) => {
   const [title, setTitle] = useState(initialTitle);
   const [subtitle, setSubtitle] = useState(initialSubtitle);
@@ -266,7 +259,14 @@ const HeaderBlock = ({
                         {showLogo ? (
                           <img src={logo} alt="Logo" className="logo-preview" />
                         ) : (
-                          <span className="logo-placeholder">Logo</span>
+                          <span
+                            className="logo-placeholder"
+                            style={{
+                              color: "#040404",
+                            }}
+                          >
+                            Logo
+                          </span>
                         )}
                       </div>
                     </Dropdown.Toggle>
@@ -306,6 +306,9 @@ const HeaderBlock = ({
                     size="sm"
                     onClick={() => fileInputRef.current.click()}
                     className="logo-placeholder-btn"
+                    style={{
+                      color: dynamicTextColor,
+                    }}
                   >
                     Logo
                   </Button>
@@ -362,19 +365,27 @@ const HeaderBlock = ({
           )}
 
           {/* Main Content */}
-          <div className="w-full bg-gray-800 text-white rounded-xl overflow-hidden editable-quill-wrapper">
-            <div className="w-full px-6 py-8 text-center space-y-3">
+          <div
+            className="w-full bg-gray-800  rounded-xl overflow-hidden editable-quill-wrapper"
+            style={{ textAlign }}
+          >
+            <div
+              className="w-full px-6 py-8 space-y-3"
+              style={{ color: dynamicTextColor, textAlign: "inherit" }}
+            >
               <EditableQuill
                 value={subtitle}
                 onChange={setSubtitle}
                 placeholder="Enter subtitle..."
                 className="text-xl"
+                style={{ textAlign: "inherit" }}
               />
               <EditableQuill
                 value={title}
                 onChange={setTitle}
                 placeholder="Enter title..."
                 className="text-3xl font-bold"
+                style={{ textAlign: "inherit" }}
               />
             </div>
           </div>
@@ -631,7 +642,6 @@ const HeaderBlock = ({
   display: inline-block;
   padding: 8px 12px;
   font-size: 14px;
-  color: #333;
   border-radius: 4px;
   background: #f5f5f5;
   cursor: pointer;

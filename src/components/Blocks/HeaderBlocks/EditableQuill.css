@@ -97,3 +97,14 @@
 .editable-quill-wrapper .ql-bubble .ql-toolbar .ql-fill {
   fill: #fff;
 }
+
+
+.editable-quill-wrapper.text-left .ql-editor {
+  text-align: left;
+}
+.editable-quill-wrapper.text-center .ql-editor {
+  text-align: center;
+}
+.editable-quill-wrapper.text-right .ql-editor {
+  text-align: right;
+}

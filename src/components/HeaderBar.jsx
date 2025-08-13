@@ -6,106 +6,101 @@ import {
   Link as LinkIcon,
 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 
 const HeaderBar = ({ toggleSidebar, hasElementsOnCanvas, canvasRef }) => {
   const [showSaveOptions, setShowSaveOptions] = useState(false);
   const dropdownRef = useRef(null);
-
-
+  const navigate = useNavigate();
 
   const handleSaveAction = async (action) => {
-  if (action === "save-pdf" && canvasRef?.current) {
-    const canvasElement = canvasRef.current;
+    if (action === "save-pdf" && canvasRef?.current) {
+      const canvasElement = canvasRef.current;
 
-    // Hide non-printable elements
-    const controls = canvasElement.querySelectorAll(".no-print");
-    controls.forEach((el) => (el.style.display = "none"));
+      // Hide non-printable elements
+      const controls = canvasElement.querySelectorAll(".no-print");
+      controls.forEach((el) => (el.style.display = "none"));
 
-    // Replace iframes with placeholders
-    const iframes = canvasElement.querySelectorAll("iframe");
-    const iframeBackups = [];
+      // Replace iframes with placeholders
+      const iframes = canvasElement.querySelectorAll("iframe");
+      const iframeBackups = [];
 
-    for (const iframe of iframes) {
-      const src = iframe.getAttribute("src") || "";
-      let imgSrc = "";
+      for (const iframe of iframes) {
+        const src = iframe.getAttribute("src") || "";
+        let imgSrc = "";
 
-      // YouTube embed detection
-      const youtubeMatch = src.match(/youtube\.com\/embed\/([a-zA-Z0-9_-]+)/);
-      if (youtubeMatch) {
-        const videoId = youtubeMatch[1];
-        imgSrc = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+        // YouTube embed detection
+        const youtubeMatch = src.match(/youtube\.com\/embed\/([a-zA-Z0-9_-]+)/);
+        if (youtubeMatch) {
+          const videoId = youtubeMatch[1];
+          imgSrc = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+        }
+
+        // PDF detection: src looks like blob: or object URL
+        const isPdf =
+          src.includes("blob:") || src.includes("data:application/pdf");
+
+        let placeholder;
+
+        if (imgSrc) {
+          // YouTube: use thumbnail image
+          placeholder = document.createElement("img");
+          placeholder.src = imgSrc;
+        } else if (isPdf) {
+          // PDF: use <iframe>'s current visual content as a scaled down image
+          // Note: we can’t capture the content inside iframe, but we can insert a dummy placeholder image
+          placeholder = document.createElement("div");
+          placeholder.textContent = "PDF Preview (not captured)";
+          placeholder.style.width = `${iframe.clientWidth}px`;
+          placeholder.style.height = `${iframe.clientHeight}px`;
+          placeholder.style.background = "#f0f0f0";
+          placeholder.style.display = "flex";
+          placeholder.style.alignItems = "center";
+          placeholder.style.justifyContent = "center";
+          placeholder.style.fontSize = "14px";
+          placeholder.style.color = "#888";
+        }
+
+        if (placeholder) {
+          placeholder.className = "iframe-placeholder";
+          placeholder.style.width = `${iframe.clientWidth}px`;
+          placeholder.style.height = `${iframe.clientHeight}px`;
+          iframeBackups.push({ iframe, placeholder });
+          iframe.style.display = "none";
+          iframe.parentNode.insertBefore(placeholder, iframe);
+        }
       }
 
-      // PDF detection: src looks like blob: or object URL
-      const isPdf = src.includes("blob:") || src.includes("data:application/pdf");
+      // Generate canvas
+      const canvas = await html2canvas(canvasElement, {
+        scale: 2,
+        useCORS: true,
+        windowWidth: canvasElement.scrollWidth,
+      });
 
-      let placeholder;
+      // Restore DOM
+      controls.forEach((el) => (el.style.display = ""));
+      iframeBackups.forEach(({ iframe, placeholder }) => {
+        iframe.style.display = "";
+        placeholder.remove();
+      });
 
-      if (imgSrc) {
-        // YouTube: use thumbnail image
-        placeholder = document.createElement("img");
-        placeholder.src = imgSrc;
-      } else if (isPdf) {
-        // PDF: use <iframe>'s current visual content as a scaled down image
-        // Note: we can’t capture the content inside iframe, but we can insert a dummy placeholder image
-        placeholder = document.createElement("div");
-        placeholder.textContent = "PDF Preview (not captured)";
-        placeholder.style.width = `${iframe.clientWidth}px`;
-        placeholder.style.height = `${iframe.clientHeight}px`;
-        placeholder.style.background = "#f0f0f0";
-        placeholder.style.display = "flex";
-        placeholder.style.alignItems = "center";
-        placeholder.style.justifyContent = "center";
-        placeholder.style.fontSize = "14px";
-        placeholder.style.color = "#888";
-      }
+      // Convert to PDF
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF("p", "mm", "a4");
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
 
-      if (placeholder) {
-        placeholder.className = "iframe-placeholder";
-        placeholder.style.width = `${iframe.clientWidth}px`;
-        placeholder.style.height = `${iframe.clientHeight}px`;
-        iframeBackups.push({ iframe, placeholder });
-        iframe.style.display = "none";
-        iframe.parentNode.insertBefore(placeholder, iframe);
-      }
-    }
+      const imgProps = {
+        width: pdfWidth,
+        height: (canvas.height * pdfWidth) / canvas.width,
+      };
 
-    // Generate canvas
-    const canvas = await html2canvas(canvasElement, {
-      scale: 2,
-      useCORS: true,
-      windowWidth: canvasElement.scrollWidth,
-    });
+      let heightLeft = imgProps.height;
+      let position = 0;
 
-    // Restore DOM
-    controls.forEach((el) => (el.style.display = ""));
-    iframeBackups.forEach(({ iframe, placeholder }) => {
-      iframe.style.display = "";
-      placeholder.remove();
-    });
-
-    // Convert to PDF
-    const imgData = canvas.toDataURL("image/png");
-    const pdf = new jsPDF("p", "mm", "a4");
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pageHeight = pdf.internal.pageSize.getHeight();
-
-    const imgProps = {
-      width: pdfWidth,
-      height: (canvas.height * pdfWidth) / canvas.width,
-    };
-
-    let heightLeft = imgProps.height;
-    let position = 0;
-
-    pdf.addImage(imgData, "PNG", 0, position, imgProps.width, imgProps.height);
-    heightLeft -= pageHeight;
-
-    while (heightLeft > 0) {
-      position -= pageHeight;
-      pdf.addPage();
       pdf.addImage(
         imgData,
         "PNG",
@@ -115,16 +110,28 @@ const HeaderBar = ({ toggleSidebar, hasElementsOnCanvas, canvasRef }) => {
         imgProps.height
       );
       heightLeft -= pageHeight;
+
+      while (heightLeft > 0) {
+        position -= pageHeight;
+        pdf.addPage();
+        pdf.addImage(
+          imgData,
+          "PNG",
+          0,
+          position,
+          imgProps.width,
+          imgProps.height
+        );
+        heightLeft -= pageHeight;
+      }
+
+      pdf.save("document.pdf");
     }
 
-    pdf.save("document.pdf");
-  }
-
-  if (action === "generate-link") {
-    console.log("Generate link logic here...");
-  }
-};
-
+    if (action === "generate-link") {
+      console.log("Generate link logic here...");
+    }
+  };
 
   const handleSaveClick = () => {
     setShowSaveOptions(!showSaveOptions);
@@ -148,7 +155,10 @@ const HeaderBar = ({ toggleSidebar, hasElementsOnCanvas, canvasRef }) => {
     <div className="d-flex justify-content-between align-items-center px-3 py-2 bg-[#E8EAED] border-bottom w-100 shadow-sm position-relative">
       {/* Left section */}
       <div className="d-flex align-items-center gap-3">
-        <button className="btn btn-sm btn-[#E8EAED] hover:bg-[#F4FBFA]">
+        <button
+          className="btn btn-sm btn-[#E8EAED] hover:bg-[#F4FBFA]"
+          onClick={() => navigate("/")}
+        >
           <X size={16} />
         </button>
         <button

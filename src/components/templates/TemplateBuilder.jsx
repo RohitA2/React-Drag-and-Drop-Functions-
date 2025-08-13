@@ -1,34 +1,35 @@
+// src/pages/TemplateBuilder.js
 import React, { useState, useRef, useCallback } from "react";
-import Sidebar from "./Sidebar";
-import Canvas from "./pages/dashboard/Canvas";
-import HeaderBar from "./HeaderBar";
-import BlockSettingsPanel from "./pages/dashboard/BlockSettingsPanel";
+import Sidebar from "../Sidebar";
+import Canvas from "../pages/dashboard/Canvas";
+import HeaderBar from "../HeaderBar";
+import BlockSettingsPanel from "../pages/dashboard/BlockSettingsPanel";
 
-const AppLayout = () => {
+const TemplateBuilder = () => {
   const [sidebarVisible, setSidebarVisible] = useState(true);
   const [blocks, setBlocks] = useState([]);
   const [activeBlock, setActiveBlock] = useState(null);
   const canvasRef = useRef(null);
 
   const handleAddBlock = useCallback((newBlock) => {
-  const blockId = Date.now().toString();
-  setBlocks((prev) => [
-    ...prev,
-    {
-      ...newBlock,
-      id: blockId,
-      settings: {
-        layoutType: newBlock.settings?.layoutType || "left-panel",
-        backgroundColor: newBlock.settings?.backgroundColor || "#2d5000",
-        textColor: newBlock.settings?.textColor || "#ffffff",
-        backgroundImage: newBlock.settings?.backgroundImage || "images/bird.jpg",
-        textAlign: newBlock.settings?.textAlign || "left",
-        ...newBlock.settings,
+    const blockId = Date.now().toString();
+    setBlocks((prev) => [
+      ...prev,
+      {
+        ...newBlock,
+        id: blockId,
+        settings: {
+          layoutType: newBlock.settings?.layoutType || "left-panel",
+          backgroundColor: newBlock.settings?.backgroundColor || "#2d5000",
+          textColor: newBlock.settings?.textColor || "#ffffff",
+          backgroundImage:
+            newBlock.settings?.backgroundImage || "images/bird.jpg",
+          textAlign: newBlock.settings?.textAlign || "left",
+          ...newBlock.settings,
+        },
       },
-    },
-  ]);
-}, []);
-
+    ]);
+  }, []);
 
   const handleRemoveBlock = useCallback(
     (id) => {
@@ -81,7 +82,7 @@ const AppLayout = () => {
 
   return (
     <div className="d-flex flex-column vh-100">
-      {/* Header - sticky */}
+      {/* Header */}
       <div className="flex-shrink-0" style={{ zIndex: 1020 }}>
         <HeaderBar
           toggleSidebar={toggleSidebar}
@@ -91,7 +92,7 @@ const AppLayout = () => {
         />
       </div>
 
-      {/* Main layout: Sidebar + Canvas */}
+      {/* Sidebar + Canvas */}
       <div className="d-flex flex-grow-1 overflow-hidden">
         {/* Sidebar */}
         <div
@@ -113,12 +114,12 @@ const AppLayout = () => {
             onAddBlock={handleAddBlock}
             onRemoveBlock={handleRemoveBlock}
             onMoveBlock={handleMoveBlock}
-            onEditBlock={handleEditBlock} // Updated to use the new handler
+            onEditBlock={handleEditBlock}
             onSettingsChange={handleBlockSettingsChange}
           />
         </div>
 
-        {/* Settings Panel Sidebar */}
+        {/* Settings Panel */}
         {activeBlock && (
           <BlockSettingsPanel
             activeBlock={activeBlock}
@@ -132,4 +133,4 @@ const AppLayout = () => {
   );
 };
 
-export default AppLayout;
+export default TemplateBuilder;
