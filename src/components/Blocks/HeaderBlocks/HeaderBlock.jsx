@@ -105,8 +105,8 @@ const HeaderBlock = ({
   onSettingsChange = () => {},
   initialTitle = "Sales Proposal",
   initialSubtitle = "Optional",
-  initialClientName = "Client name",
-  initialSenderName = "Sender name",
+  initialClientName = "Prepared by Client name",
+  initialSenderName = "By Sender name",
   initialPrice = "INCL.VAT",
   initialLogo = null,
   backgroundImage = "images/headers/leaf.avif",
@@ -136,22 +136,30 @@ const HeaderBlock = ({
   const dynamicPriceTextColor = isWhiteBackground ? "#000" : "#2d5000";
 
   const handleLogoUpload = (e) => {
-    if (isPreview) return; // Prevent interaction in preview mode
+    if (isPreview) return;
     const file = e.target.files[0];
     if (file) {
       const reader = new FileReader();
-      reader.addEventListener("load", () => {
+      reader.onload = () => {
         setImageSrc(reader.result);
         setCropModalOpen(true);
-      });
+      };
       reader.readAsDataURL(file);
     }
   };
 
   const handleLogoReset = () => {
-    setLogo(null);
-    setShowLogo(true);
     if (isPreview) return;
+
+    setLogo(null);
+    setImageSrc(null);
+    setShowLogo(true);
+    setCropModalOpen(false);
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = null;
+    }
+
     onSettingsChange(id, { logo: null });
   };
 
@@ -167,53 +175,52 @@ const HeaderBlock = ({
   //   setCropModalOpen(false);
   // };
 
- // Helper to return blob URL from cropper instance
-const getCroppedImg = (cropper) => {
-  return new Promise((resolve, reject) => {
-    try {
-      const canvas = cropper.getCroppedCanvas({
-        // Optional: set size or background
-        fillColor: "#fff", // helps for PNG transparency or JPG background
-        imageSmoothingQuality: "high"
-      });
+  // Helper to return blob URL from cropper instance
+  const getCroppedImg = (cropper) => {
+    return new Promise((resolve, reject) => {
+      try {
+        const canvas = cropper.getCroppedCanvas({
+          // Optional: set size or background
+          fillColor: "#fff", // helps for PNG transparency or JPG background
+          imageSmoothingQuality: "high",
+        });
 
-      if (!canvas) {
-        reject(new Error("No canvas returned from cropper."));
-        return;
-      }
-
-      canvas.toBlob((blob) => {
-        if (!blob) {
-          reject(new Error("Canvas is empty."));
+        if (!canvas) {
+          reject(new Error("No canvas returned from cropper."));
           return;
         }
-        const url = URL.createObjectURL(blob);
-        resolve(url);
-      }, "image/png");
+
+        canvas.toBlob((blob) => {
+          if (!blob) {
+            reject(new Error("Canvas is empty."));
+            return;
+          }
+          const url = URL.createObjectURL(blob);
+          resolve(url);
+        }, "image/png");
+      } catch (err) {
+        reject(err);
+      }
+    });
+  };
+
+  // Save cropped image
+  const handleCropSave = async () => {
+    try {
+      const cropper = cropperRef.current?.cropper;
+      if (!cropper) {
+        throw new Error("Cropper instance not found.");
+      }
+
+      const croppedImageUrl = await getCroppedImg(cropper);
+      console.log("Cropped Image URL:", croppedImageUrl);
+
+      setLogo(croppedImageUrl); // ✅ Replace your logo with the cropped image
+      setCropModalOpen(false);
     } catch (err) {
-      reject(err);
+      console.error(err);
     }
-  });
-};
-
-// Save cropped image
-const handleCropSave = async () => {
-  try {
-    const cropper = cropperRef.current?.cropper;
-    if (!cropper) {
-      throw new Error("Cropper instance not found.");
-    }
-
-    const croppedImageUrl = await getCroppedImg(cropper);
-    console.log("Cropped Image URL:", croppedImageUrl);
-
-    setLogo(croppedImageUrl); // ✅ Replace your logo with the cropped image
-    setCropModalOpen(false);
-  } catch (err) {
-    console.error(err);
-  }
-};
-
+  };
 
   const handleTextChange = (field, value) => {
     if (isPreview) return;
@@ -381,9 +388,11 @@ const handleCropSave = async () => {
           {!isPreview && (
             <Modal
               show={cropModalOpen}
-              onHide={() => setCropModalOpen(false)}
+              onHide={() => {}} // Disable default hide behavior
               centered
               size="lg"
+              backdrop="static" // Prevent closing on outside click
+              keyboard={false} // Prevent closing with ESC key
             >
               <Modal.Body>
                 {imageSrc && (
@@ -402,12 +411,7 @@ const handleCropSave = async () => {
                 )}
               </Modal.Body>
               <Modal.Footer>
-                <Button
-                  variant="secondary"
-                  onClick={() => setCropModalOpen(false)}
-                >
-                  Cancel
-                </Button>
+                {/* Remove Cancel Button */}
                 <Button onClick={handleCropSave}>Save</Button>
               </Modal.Footer>
             </Modal>
@@ -549,8 +553,8 @@ const handleCropSave = async () => {
 
           {/* Client/Sender Info */}
           {layoutType !== "default" && (
-            <div className="mt-2" style={{ textAlign }}>
-              {/* Prepared for */}
+            <div className="mt-1" style={{ textAlign }}>
+              {/* Prepared for Client */}
               <div
                 className="mb-1 d-flex align-items-center"
                 style={{
@@ -562,17 +566,6 @@ const handleCropSave = async () => {
                       : "flex-end",
                 }}
               >
-                <span
-                  className="fw-semibold me-1"
-                  style={{
-                    fontSize: "0.65rem",
-                    color: dynamicTextColor,
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  Prepared for
-                </span>
-
                 <div
                   className={`d-inline-flex align-items-center ${
                     clientName.trim() === "" ? "rounded-pill" : ""
@@ -580,37 +573,39 @@ const handleCropSave = async () => {
                   style={{
                     backgroundColor:
                       clientName.trim() === "" ? "#fff" : "transparent",
-                    padding: clientName.trim() === "" ? "1px 3px" : "0",
-                    fontSize: "0.4rem",
-                    color: "#dc3545",
+                    padding: clientName.trim() === "" ? "0.5px 2px" : "0",
+                    fontSize: "0.15rem",
                     lineHeight: 1,
                     flexWrap: "wrap",
-                    minHeight: "14px",
+                    minHeight: "10px",
+                    fontFamily: "Arial",
                   }}
                 >
-                  {clientName.trim() === "" && (
-                    <div style={{ marginRight: "3px", fontSize: "6px" }}>●</div>
-                  )}
                   <EditableQuill
-                    value={clientName}
+                    value={
+                      clientName === "" ||
+                      clientName === "Prepared by Client name"
+                        ? `<span style="color:#fff; font-size:0.15rem;">Prepared for </span><span style="color:#F80B1E; font-size:0.25rem;">Client name</span>`
+                        : clientName
+                    }
                     onChange={(value) => handleTextChange("clientName", value)}
-                    placeholder="Client name"
+                    placeholder=""
                     textColor="#dc3545"
                     style={{
                       background: "transparent",
                       border: "none",
-                      fontSize: "0.4rem",
+                      fontSize: "0.25rem",
                       padding: 0,
                       margin: 0,
                     }}
-                    minHeight="12px"
+                    minHeight="10px"
                     maxHeight="none"
                     isPreview={isPreview}
                   />
                 </div>
               </div>
 
-              {/* By */}
+              {/* By Sender */}
               <div
                 className="d-flex align-items-center"
                 style={{
@@ -622,17 +617,6 @@ const handleCropSave = async () => {
                       : "flex-end",
                 }}
               >
-                <span
-                  className="fw-semibold me-1"
-                  style={{
-                    fontSize: "0.65rem",
-                    color: dynamicTextColor,
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  By
-                </span>
-
                 <div
                   className={`d-inline-flex align-items-center ${
                     senderName.trim() === "" ? "rounded-pill" : ""
@@ -640,27 +624,31 @@ const handleCropSave = async () => {
                   style={{
                     backgroundColor:
                       senderName.trim() === "" ? "#cce5ff" : "transparent",
-                    padding: senderName.trim() === "" ? "1px 3px" : "0",
-                    fontSize: "0.4rem",
-                    color: "#0d6efd",
+                    padding: senderName.trim() === "" ? "0.5px 2px" : "0",
+                    fontSize: "0.15rem",
                     lineHeight: 1,
                     flexWrap: "wrap",
-                    minHeight: "14px",
+                    minHeight: "10px",
+                    fontFamily: "Arial",
                   }}
                 >
                   <EditableQuill
-                    value={senderName}
+                    value={
+                      senderName === "" || senderName === "By Sender name"
+                        ? `<span style="color:#fff; font-size:0.15rem;">By </span><span style="color:#0d6efd; font-size:0.25rem;">Sender name</span>`
+                        : senderName
+                    }
                     onChange={(value) => handleTextChange("senderName", value)}
-                    placeholder="Sender name"
+                    placeholder=""
                     textColor="#0d6efd"
                     style={{
                       background: "transparent",
                       border: "none",
-                      fontSize: "0.4rem",
+                      fontSize: "0.25rem",
                       padding: 0,
                       margin: 0,
                     }}
-                    minHeight="12px"
+                    minHeight="10px"
                     maxHeight="none"
                     isPreview={isPreview}
                   />

@@ -217,6 +217,8 @@ const Canvas = forwardRef(
         onDrop={handleDrop}
         onDragOver={handleDragOver}
       >
+        <div id="floating-quill-toolbar-container" style={{ position: "absolute", top: 0, left: 0, zIndex: 9999 }} />
+
         {blocks.length === 0 ? (
           <div
             className="d-flex flex-column align-items-center justify-content-center"
