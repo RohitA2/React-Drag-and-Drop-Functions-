@@ -1,8 +1,13 @@
-import React, { useRef, useState, useCallback, useMemo } from "react";
-import { Button, Form, Modal, Dropdown, DropdownButton } from "react-bootstrap";
+import React, {
+  useRef,
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+} from "react";
+import { Button, Form, Modal, Dropdown } from "react-bootstrap";
 import Cropper from "react-cropper";
 import "cropperjs/dist/cropper.css";
-import { getCroppedImg } from "../../../../utils/cropImage";
 import EditableQuill from "./EditableQuill";
 
 const LAYOUTS = {
@@ -80,7 +85,7 @@ const LAYOUTS = {
       backgroundPosition: "center",
     },
     priceSection: {
-      backgroundColor: "transparent", // Remove default color
+      backgroundColor: "transparent",
       padding: "1rem",
       borderRadius: "0.5rem",
       textAlign: "center",
@@ -130,16 +135,67 @@ const HeaderBlock = ({
   const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
   const [showLogo, setShowLogo] = useState(true);
   const cropperRef = useRef(null);
+  const [leftWidth, setLeftWidth] = useState(50);
+  const [isDragging, setIsDragging] = useState(false);
+  const [isHovered, setIsHovered] = useState(false); // New state for hover
+  const containerRef = useRef(null);
 
   const isWhiteBackground = backgroundColor.toLowerCase() === "#ffffff";
   const dynamicTextColor = isWhiteBackground ? "#333" : textColor;
   const dynamicPriceSectionBg = isWhiteBackground ? "#e9ecef" : "#f8f9fa";
   const dynamicPriceTextColor = isWhiteBackground ? "#000" : "#2d5000";
 
+  const handleMouseDown = (e) => {
+    if (isPreview || !["left-panel", "right-panel"].includes(layoutType))
+      return;
+    setIsDragging(true);
+    document.body.style.cursor = "col-resize";
+    e.preventDefault();
+  };
+
+  const handleMouseMove = useCallback(
+    (e) => {
+      if (!isDragging || !containerRef.current) return;
+
+      const containerRect = containerRef.current.getBoundingClientRect();
+      const containerWidth = containerRect.width;
+      const mouseX = e.clientX - containerRect.left;
+      const percentage = Math.min(
+        Math.max((mouseX / containerWidth) * 100, 20),
+        80
+      );
+
+      // Update width immediately for smoother UX
+      setLeftWidth(percentage);
+    },
+    [isDragging]
+  );
+
+  const handleMouseUp = useCallback(() => {
+    setIsDragging(false);
+    setIsHovered(false); // Reset hover state when dragging ends
+    document.body.style.cursor = "";
+  }, []);
+
+  useEffect(() => {
+    if (isDragging) {
+      document.addEventListener("mousemove", handleMouseMove);
+      document.addEventListener("mouseup", handleMouseUp);
+    } else {
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+    }
+
+    return () => {
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [isDragging, handleMouseMove, handleMouseUp]);
+
   const getBackgroundStyle = () => {
     if (backgroundFilter) {
       return {
-        backgroundImage: backgroundFilter, // gradient ko backgroundImage ke through set karo
+        backgroundImage: backgroundFilter,
         backgroundSize: "cover",
         backgroundPosition: "center",
         backgroundRepeat: "no-repeat",
@@ -185,13 +241,11 @@ const HeaderBlock = ({
     onSettingsChange(id, { logo: null });
   };
 
-  // Helper to return blob URL from cropper instance
   const getCroppedImg = (cropper) => {
     return new Promise((resolve, reject) => {
       try {
         const canvas = cropper.getCroppedCanvas({
-          // Optional: set size or background
-          fillColor: "#fff", // helps for PNG transparency or JPG background
+          fillColor: "#fff",
           imageSmoothingQuality: "high",
         });
 
@@ -214,7 +268,6 @@ const HeaderBlock = ({
     });
   };
 
-  // Save cropped image
   const handleCropSave = async () => {
     try {
       const cropper = cropperRef.current?.cropper;
@@ -223,10 +276,9 @@ const HeaderBlock = ({
       }
 
       const croppedImageUrl = await getCroppedImg(cropper);
-      console.log("Cropped Image URL:", croppedImageUrl);
-
-      setLogo(croppedImageUrl); // ✅ Replace your logo with the cropped image
+      setLogo(croppedImageUrl);
       setCropModalOpen(false);
+      onSettingsChange(id, { logo: croppedImageUrl });
     } catch (err) {
       console.error(err);
     }
@@ -251,8 +303,8 @@ const HeaderBlock = ({
 
   const {
     container,
-    imageCol,
-    contentCol,
+    imageCol: originalImageCol,
+    contentCol: originalContentCol,
     imageStyle,
     priceSection,
     contentStyle,
@@ -260,13 +312,39 @@ const HeaderBlock = ({
     return LAYOUTS[layoutType] || LAYOUTS.default;
   }, [layoutType]);
 
+  // Adjust columns for resizable layouts
+const getAdjustedColumns = () => {
+  if (isPreview || !["left-panel", "right-panel"].includes(layoutType)) {
+    return { imageCol: originalImageCol, contentCol: originalContentCol };
+  }
+
+  // Calculate the number of columns for the image based on leftWidth percentage
+  const imageColCount = Math.round((leftWidth / 100) * 12);
+  // Ensure the total columns don't exceed 12, adjusting for rounding
+  const contentColCount = 12 - imageColCount;
+
+  // Clamp values to avoid negative or invalid column counts
+  const validImageColCount = Math.max(1, Math.min(imageColCount, 11)); // At least 1, max 11
+  const validContentColCount = Math.max(1, 12 - validImageColCount); // Ensure content has at least 1 column
+
+  const imageCol = `col-md-${validImageColCount} p-0 ${
+    layoutType === "left-panel" ? "order-1" : "order-2"
+  }`;
+  const contentCol = `col-md-${validContentColCount} p-4 ${
+    layoutType === "left-panel" ? "order-2" : "order-1"
+  }`;
+
+  return { imageCol, contentCol };
+};
+
+const { imageCol, contentCol } = getAdjustedColumns();
+
   const wrapperStyle = isPreview
     ? {}
     : {
         maxWidth: "1400px",
       };
 
-  // Custom dropdown toggle to remove default styling
   const CustomToggle = React.forwardRef(({ children, onClick }, ref) => (
     <a
       href=""
@@ -283,28 +361,52 @@ const HeaderBlock = ({
 
   return (
     <div
-      className={`container-fluid  my-4 px-3 ${isPreview ? "p-0 my-0" : ""}`}
+      className={`container-fluid my-4 px-3 ${isPreview ? "p-0 my-0" : ""}`}
       style={wrapperStyle}
     >
       <div
         className={`row rounded-3 overflow-hidden shadow d-flex ${container}`}
+        ref={containerRef}
+        style={{ position: "relative" }}
       >
         {/* Image Section */}
         <div
           className={imageCol}
           style={{
             ...(backgroundFilter
-              ? { background: backgroundFilter } // agar filter set hai toh use karo
+              ? { background: backgroundFilter }
               : backgroundImage
               ? {
                   backgroundImage: `url('${backgroundImage}')`,
                   backgroundSize: "cover",
                   backgroundPosition: "center",
                 }
-              : { backgroundColor: backgroundColor || "#f8f9fa" }), // fallback
+              : { backgroundColor: backgroundColor || "#f8f9fa" }),
             ...imageStyle,
           }}
         />
+
+        {/* Resizable handle for left/right panels */}
+        {!isPreview && ["left-panel", "right-panel"].includes(layoutType) && (
+          <div
+            style={{
+              width: "6px",
+              cursor: "col-resize",
+              backgroundColor: "#ddd",
+              position: "absolute",
+              top: 0,
+              bottom: 0,
+              left: `${leftWidth}%`,
+              transform: "translateX(-50%)",
+              zIndex: 1,
+              opacity: isHovered || isDragging ? 1 : 0, // Visible on hover or drag
+              transition: "opacity 0.2s ease", // Smooth transition for opacity
+            }}
+            onMouseDown={handleMouseDown}
+            onMouseEnter={() => setIsHovered(true)} // Set hover state
+            onMouseLeave={() => !isDragging && setIsHovered(false)} // Reset hover state unless dragging
+          />
+        )}
 
         {/* Content Section */}
         <div
@@ -406,11 +508,11 @@ const HeaderBlock = ({
           {!isPreview && (
             <Modal
               show={cropModalOpen}
-              onHide={() => {}} // Disable default hide behavior
+              onHide={() => setCropModalOpen(false)}
               centered
               size="lg"
-              backdrop="static" // Prevent closing on outside click
-              keyboard={false} // Prevent closing with ESC key
+              backdrop="static"
+              keyboard={false}
             >
               <Modal.Body>
                 {imageSrc && (
@@ -429,13 +531,18 @@ const HeaderBlock = ({
                 )}
               </Modal.Body>
               <Modal.Footer>
-                {/* Remove Cancel Button */}
+                <Button
+                  variant="secondary"
+                  onClick={() => setCropModalOpen(false)}
+                >
+                  Cancel
+                </Button>
                 <Button onClick={handleCropSave}>Save</Button>
               </Modal.Footer>
             </Modal>
           )}
 
-          {/* special for the default layout */}
+          {/* Special for the default layout */}
           {layoutType === "default" && (
             <>
               {/* Overlayed Title/SubTitle Box */}
@@ -545,7 +652,7 @@ const HeaderBlock = ({
 
           {/* Main Content */}
           <div
-            className="w-full bg-gray-800  rounded-xl overflow-hidden editable-quill-wrapper"
+            className="w-full bg-gray-800 rounded-xl overflow-hidden editable-quill-wrapper"
             style={{ textAlign }}
           >
             <div
@@ -555,7 +662,7 @@ const HeaderBlock = ({
               <EditableQuill
                 id={`subtitle-${id}`}
                 value={subtitle}
-                onChange={setSubtitle}
+                onChange={(value) => handleTextChange("subtitle", value)}
                 placeholder="Enter subtitle..."
                 className="text-xl"
                 style={{ textAlign: "inherit" }}
@@ -563,7 +670,7 @@ const HeaderBlock = ({
               <EditableQuill
                 id={`title-${id}`}
                 value={title}
-                onChange={setTitle}
+                onChange={(value) => handleTextChange("title", value)}
                 placeholder="Enter title..."
                 className="text-3xl font-bold"
                 style={{ textAlign: "inherit" }}
@@ -610,7 +717,7 @@ const HeaderBlock = ({
                     value={
                       clientName === "" ||
                       clientName === "Prepared by Client name"
-                        ? `<span style="color:dynamicTextColor; font-size:0.15rem;">Prepared for </span><span style="color:#F80B1E; font-size:0.25rem;">Client name</span>`
+                        ? `<span style="color:${dynamicTextColor}; font-size:0.15rem;">Prepared for </span><span style="color:#F80B1E; font-size:0.25rem;">Client name</span>`
                         : clientName
                     }
                     onChange={(value) => handleTextChange("clientName", value)}
@@ -662,7 +769,7 @@ const HeaderBlock = ({
                     id={`senderName-${id}`}
                     value={
                       senderName === "" || senderName === "By Sender name"
-                        ? `<span style="color:dynamicTextColor; font-size:0.15rem;">By </span><span style="color:#0d6efd; font-size:0.25rem;">Sender name</span>`
+                        ? `<span style="color:${dynamicTextColor}; font-size:0.15rem;">By </span><span style="color:#0d6efd; font-size:0.25rem;">Sender name</span>`
                         : senderName
                     }
                     onChange={(value) => handleTextChange("senderName", value)}
@@ -687,72 +794,72 @@ const HeaderBlock = ({
       </div>
 
       <style>{`
-.logo-management-container {
-  margin: 4px 0;
-}
+        .logo-management-container {
+          margin: 4px 0;
+        }
 
-.logo-preview-container {
-  display: inline-block;
-}
+        .logo-preview-container {
+          display: inline-block;
+        }
 
-.logo-preview {
-  height: 100px;
-  max-width: 120px;
-  object-fit: contain;
-  cursor: pointer;
-}
+        .logo-preview {
+          height: 100px;
+          max-width: 120px;
+          object-fit: contain;
+          cursor: pointer;
+        }
 
-.logo-placeholder {
-  display: inline-block;
-  padding: 8px 12px;
-  font-size: 14px;
-  border-radius: 4px;
-  background: #f5f5f5;
-  cursor: pointer;
-}
+        .logo-placeholder {
+          display: inline-block;
+          padding: 8px 12px;
+          font-size: 14px;
+          border-radius: 4px;
+          background: #f5f5f5;
+          cursor: pointer;
+        }
 
-.logo-dropdown-toggle {
-  color: #FC0404;
-  background: none;
-  border: none;
-  padding: 0;
-}
+        .logo-dropdown-toggle {
+          color: #FC0404;
+          background: none;
+          border: none;
+          padding: 0;
+        }
 
-.logo-dropdown-toggle:after {
-  display: none;
-}
+        .logo-dropdown-toggle:after {
+          display: none;
+        }
 
-.logo-dropdown-menu {
-  padding: 4px 0;
-  min-width: 100px;
-  border: 1px solid #e1e1e1;
-  border-radius: 4px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-}
+        .logo-dropdown-menu {
+          padding: 4px 0;
+          min-width: 100px;
+          border: 1px solid #e1e1e1;
+          border-radius: 4px;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
 
-.logo-dropdown-item {
-  padding: 4px 8px;
-  font-size: 12px;
-  color: #333;
-  cursor: pointer;
-}
+        .logo-dropdown-item {
+          padding: 4px 8px;
+          font-size: 12px;
+          color: #333;
+          cursor: pointer;
+        }
 
-.logo-dropdown-item:hover {
-  background-color: #f5f5f5;
-}
+        .logo-dropdown-item:hover {
+          background-color: #f5f5f5;
+        }
 
-.logo-placeholder-btn {
-  background: none;
-  border: none;
-  color: #f9f9f9;
-  font-size: 14px;
-  font-weight: 500;
-  padding: 8px 12px;
-  cursor: pointer;
-  border-radius: 4px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-}
-`}</style>
+        .logo-placeholder-btn {
+          background: none;
+          border: none;
+          color: #f9f9f9;
+          font-size: 14px;
+          font-weight: 500;
+          padding: 8px 12px;
+          cursor: pointer;
+          border-radius: 4px;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+      `}</style>
     </div>
   );
 };
