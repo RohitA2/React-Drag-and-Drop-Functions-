@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useRef } from "react";
 import {
   Layout,
   LayoutPanelLeft,
@@ -9,9 +9,11 @@ import {
   AlignLeft,
   AlignCenter,
   AlignRight,
-  Image,
   Upload,
 } from "lucide-react";
+import { Modal, Button } from "react-bootstrap";
+import Cropper from "react-cropper";
+import "cropperjs/dist/cropper.css";
 
 const layoutOptions = [
   { id: "left-panel", icon: <LayoutPanelLeft size={18} /> },
@@ -34,8 +36,38 @@ const BlockSettingsPanel = ({
   onClose,
   blockSettings,
   onSettingsChange,
+  isPreview = false,
 }) => {
   if (!activeBlock) return null;
+
+  const [cropModalOpen, setCropModalOpen] = useState(false);
+  const [imageSrc, setImageSrc] = useState(null);
+  const cropperRef = useRef(null);
+
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        setImageSrc(reader.result);
+        setCropModalOpen(true);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleCropSave = () => {
+    if (cropperRef.current) {
+      const cropper = cropperRef.current.cropper;
+      const croppedImage = cropper.getCroppedCanvas().toDataURL();
+      onSettingsChange(activeBlock.id, {
+        backgroundImage: croppedImage,
+        backgroundFilter: null, // image upload hone pe filter hata do
+      });
+      setCropModalOpen(false);
+      setImageSrc(null);
+    }
+  };
 
   const handleLayoutChange = (layoutType) => {
     const updates = { layoutType };
@@ -46,18 +78,14 @@ const BlockSettingsPanel = ({
   };
 
   const handleColorChange = (field, value) => {
-    onSettingsChange(activeBlock.id, { [field]: value });
-  };
+    const updates = { [field]: value };
 
-  const handleImageUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        onSettingsChange(activeBlock.id, { backgroundImage: reader.result });
-      };
-      reader.readAsDataURL(file);
+    // agar filter color select kiya, to image hata do
+    if (field === "backgroundFilter") {
+      updates.backgroundImage = null;
     }
+
+    onSettingsChange(activeBlock.id, updates);
   };
 
   const getActiveLayout = () => {
@@ -73,8 +101,6 @@ const BlockSettingsPanel = ({
       style={{ width: 240, height: "100vh", zIndex: 1040 }}
     >
       <div className="text-end">
-        {" "}
-        {/* Right-aligns the close button */}
         <button
           className="btn-close"
           onClick={onClose}
@@ -123,34 +149,44 @@ const BlockSettingsPanel = ({
         <p className="fw-bold" style={{ fontSize: "0.85rem" }}>
           Background
         </p>
-        {/* Background Image */}
+        {/* Background Preview */}
         <div className="mb-3">
           <div className="d-flex flex-column gap-2">
-            {blockSettings?.backgroundImage ? (
+            {blockSettings?.backgroundImage ||
+            blockSettings?.backgroundFilter ? (
               <div className="position-relative">
                 <div
                   className="rounded border overflow-hidden position-relative"
                   style={{
                     height: 120,
-                    backgroundImage: `url(${blockSettings.backgroundImage})`,
+                    backgroundColor:
+                      blockSettings?.backgroundFilter || "#f8f9fa",
+                    backgroundImage: blockSettings?.backgroundFilter
+                      ? "none"
+                      : blockSettings?.backgroundImage
+                      ? `url(${blockSettings.backgroundImage})`
+                      : "none",
                     backgroundSize: "cover",
                     backgroundPosition: "center",
-                    opacity: blockSettings?.imageOpacity || 1,
                   }}
                 >
-                  <div
-                    className="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
-                    style={{ backgroundColor: "rgba(0,0,0,0.3)" }}
-                  >
-                    <label
-                      htmlFor="background-image-upload"
-                      className="btn btn-light btn-sm d-flex align-items-center gap-1"
-                      style={{ fontSize: "0.7rem" }}
-                    >
-                      <Upload size={14} />
-                      Change Image
-                    </label>
-                  </div>
+                  {/* Agar image hai aur filter nahi hai to "Change Image" overlay dikhao */}
+                  {blockSettings?.backgroundImage &&
+                    !blockSettings?.backgroundFilter && (
+                      <div
+                        className="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
+                        style={{ backgroundColor: "rgba(0,0,0,0.3)" }}
+                      >
+                        <label
+                          htmlFor="background-image-upload"
+                          className="btn btn-light btn-sm d-flex align-items-center gap-1"
+                          style={{ fontSize: "0.7rem" }}
+                        >
+                          <Upload size={14} />
+                          Change Image
+                        </label>
+                      </div>
+                    )}
                 </div>
               </div>
             ) : (
@@ -176,7 +212,40 @@ const BlockSettingsPanel = ({
               onChange={handleImageUpload}
             />
           </div>
+
+          {/* Crop Modal */}
+          {!isPreview && (
+            <Modal
+              show={cropModalOpen}
+              onHide={() => {}}
+              centered
+              size="lg"
+              backdrop="static"
+              keyboard={false}
+            >
+              <Modal.Body>
+                {imageSrc && (
+                  <Cropper
+                    src={imageSrc}
+                    style={{ height: 500, width: "100%" }}
+                    initialAspectRatio={1}
+                    guides={true}
+                    viewMode={1}
+                    background={false}
+                    responsive={true}
+                    autoCropArea={1}
+                    checkOrientation={false}
+                    ref={cropperRef}
+                  />
+                )}
+              </Modal.Body>
+              <Modal.Footer>
+                <Button onClick={handleCropSave}>Save</Button>
+              </Modal.Footer>
+            </Modal>
+          )}
         </div>
+
         {/* Background filter */}
         <div className="d-flex justify-content-between align-items-center border-bottom py-1">
           <label className="form-label mb-0" style={{ fontSize: "0.8rem" }}>
@@ -192,6 +261,7 @@ const BlockSettingsPanel = ({
             style={{ width: 30, height: 30 }}
           />
         </div>
+
         {/* Background Color - Disabled for grid layout */}
         <div
           className={`d-flex justify-content-between align-items-center border-bottom py-1 ${
@@ -212,6 +282,7 @@ const BlockSettingsPanel = ({
             disabled={blockSettings?.layoutType === "grid"}
           />
         </div>
+
         {/* Text Color */}
         <div className="d-flex justify-content-between align-items-center border-bottom py-1">
           <label className="form-label mb-0" style={{ fontSize: "0.8rem" }}>
@@ -225,8 +296,8 @@ const BlockSettingsPanel = ({
             style={{ width: 30, height: 30 }}
           />
         </div>
+
         {/* Text Alignment */}
-        {/* // In your BlockSettingsPanel component, ensure you have: */}
         <div className="d-flex justify-content-between align-items-center border-bottom py-1">
           <label className="form-label mb-0" style={{ fontSize: "0.8rem" }}>
             Text align

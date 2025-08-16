@@ -112,6 +112,7 @@ const HeaderBlock = ({
   backgroundImage = "images/headers/leaf.avif",
   backgroundColor = "#2d5000",
   textColor = "#CFCFCF",
+  backgroundFilter = null,
   textAlign = "left",
   isPreview = false,
 }) => {
@@ -134,6 +135,27 @@ const HeaderBlock = ({
   const dynamicTextColor = isWhiteBackground ? "#333" : textColor;
   const dynamicPriceSectionBg = isWhiteBackground ? "#e9ecef" : "#f8f9fa";
   const dynamicPriceTextColor = isWhiteBackground ? "#000" : "#2d5000";
+
+  const getBackgroundStyle = () => {
+    if (backgroundFilter) {
+      return {
+        backgroundImage: backgroundFilter, // gradient ko backgroundImage ke through set karo
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
+      };
+    } else if (backgroundImage) {
+      return {
+        backgroundImage: `url(${backgroundImage})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
+      };
+    }
+    return {
+      backgroundColor: backgroundColor || "#f8f9fa",
+    };
+  };
 
   const handleLogoUpload = (e) => {
     if (isPreview) return;
@@ -162,18 +184,6 @@ const HeaderBlock = ({
 
     onSettingsChange(id, { logo: null });
   };
-
-  // const handleCropSave = async () => {
-  //   const croppedImageUrl = await getCroppedImg(
-  //     imageSrc,
-  //     crop,
-  //     zoom,
-  //     croppedAreaPixels
-  //   );
-  //   setLogo(croppedImageUrl);
-  //   onSettingsChange(id, { logo: croppedImageUrl });
-  //   setCropModalOpen(false);
-  // };
 
   // Helper to return blob URL from cropper instance
   const getCroppedImg = (cropper) => {
@@ -281,9 +291,17 @@ const HeaderBlock = ({
       >
         {/* Image Section */}
         <div
-          className={`${imageCol}`}
+          className={imageCol}
           style={{
-            backgroundImage: `url('${backgroundImage}')`,
+            ...(backgroundFilter
+              ? { background: backgroundFilter } // agar filter set hai toh use karo
+              : backgroundImage
+              ? {
+                  backgroundImage: `url('${backgroundImage}')`,
+                  backgroundSize: "cover",
+                  backgroundPosition: "center",
+                }
+              : { backgroundColor: backgroundColor || "#f8f9fa" }), // fallback
             ...imageStyle,
           }}
         />
@@ -417,32 +435,6 @@ const HeaderBlock = ({
             </Modal>
           )}
 
-          {/* Main Content */}
-          <div
-            className="w-full bg-gray-800  rounded-xl overflow-hidden editable-quill-wrapper"
-            style={{ textAlign }}
-          >
-            <div
-              className="w-full px-6 py-8 space-y-3"
-              style={{ color: dynamicTextColor, textAlign: "inherit" }}
-            >
-              <EditableQuill
-                value={subtitle}
-                onChange={setSubtitle}
-                placeholder="Enter subtitle..."
-                className="text-xl"
-                style={{ textAlign: "inherit" }}
-              />
-              <EditableQuill
-                value={title}
-                onChange={setTitle}
-                placeholder="Enter title..."
-                className="text-3xl font-bold"
-                style={{ textAlign: "inherit" }}
-              />
-            </div>
-          </div>
-
           {/* special for the default layout */}
           {layoutType === "default" && (
             <>
@@ -551,9 +543,40 @@ const HeaderBlock = ({
             </>
           )}
 
+          {/* Main Content */}
+          <div
+            className="w-full bg-gray-800  rounded-xl overflow-hidden editable-quill-wrapper"
+            style={{ textAlign }}
+          >
+            <div
+              className="w-full px-6 py-8 space-y-3"
+              style={{ color: dynamicTextColor, textAlign: "inherit" }}
+            >
+              <EditableQuill
+                id={`subtitle-${id}`}
+                value={subtitle}
+                onChange={setSubtitle}
+                placeholder="Enter subtitle..."
+                className="text-xl"
+                style={{ textAlign: "inherit" }}
+              />
+              <EditableQuill
+                id={`title-${id}`}
+                value={title}
+                onChange={setTitle}
+                placeholder="Enter title..."
+                className="text-3xl font-bold"
+                style={{ textAlign: "inherit" }}
+              />
+            </div>
+          </div>
+
           {/* Client/Sender Info */}
           {layoutType !== "default" && (
-            <div className="mt-1" style={{ textAlign }}>
+            <div
+              className="mt-1"
+              style={{ color: dynamicTextColor, textAlign }}
+            >
               {/* Prepared for Client */}
               <div
                 className="mb-1 d-flex align-items-center"
@@ -564,6 +587,7 @@ const HeaderBlock = ({
                       : textAlign === "center"
                       ? "center"
                       : "flex-end",
+                  color: dynamicTextColor,
                 }}
               >
                 <div
@@ -582,10 +606,11 @@ const HeaderBlock = ({
                   }}
                 >
                   <EditableQuill
+                    id={`clientName-${id}`}
                     value={
                       clientName === "" ||
                       clientName === "Prepared by Client name"
-                        ? `<span style="color:#fff; font-size:0.15rem;">Prepared for </span><span style="color:#F80B1E; font-size:0.25rem;">Client name</span>`
+                        ? `<span style="color:dynamicTextColor; font-size:0.15rem;">Prepared for </span><span style="color:#F80B1E; font-size:0.25rem;">Client name</span>`
                         : clientName
                     }
                     onChange={(value) => handleTextChange("clientName", value)}
@@ -615,6 +640,7 @@ const HeaderBlock = ({
                       : textAlign === "center"
                       ? "center"
                       : "flex-end",
+                  color: dynamicTextColor,
                 }}
               >
                 <div
@@ -633,9 +659,10 @@ const HeaderBlock = ({
                   }}
                 >
                   <EditableQuill
+                    id={`senderName-${id}`}
                     value={
                       senderName === "" || senderName === "By Sender name"
-                        ? `<span style="color:#fff; font-size:0.15rem;">By </span><span style="color:#0d6efd; font-size:0.25rem;">Sender name</span>`
+                        ? `<span style="color:dynamicTextColor; font-size:0.15rem;">By </span><span style="color:#0d6efd; font-size:0.25rem;">Sender name</span>`
                         : senderName
                     }
                     onChange={(value) => handleTextChange("senderName", value)}

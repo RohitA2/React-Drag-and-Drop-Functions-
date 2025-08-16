@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import ReactQuill from "react-quill";
-import "react-quill/dist/quill.snow.css";
+import "react-quill/dist/quill.bubble.css";
 
 const TextEditor = ({ id, onRemove }) => {
   const [title, setTitle] = useState("");
@@ -73,7 +73,7 @@ const TextEditor = ({ id, onRemove }) => {
           >
             <ReactQuill
               ref={quillRef}
-              theme="snow"
+              theme="bubble"
               value={value}
               onChange={setValue}
               placeholder="Type something..."

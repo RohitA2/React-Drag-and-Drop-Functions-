@@ -1,121 +1,119 @@
 import React, { useState, useRef, useEffect } from "react";
 import ReactQuill from "react-quill";
-import "react-quill/dist/quill.bubble.css";
-import "./EditableQuill.css";
-
-const extendedColors = [
-  "#000000", "#434343", "#666666", "#999999", "#B7B7B7", "#CCCCCC",
-  "#D9D9D9", "#EFEFEF", "#F3F3F3", "#FFFFFF", "#FF0000", "#FF9900",
-  "#FFFF00", "#00FF00", "#00FFFF", "#0000FF", "#9900FF", "#FF00FF",
-  "#FF99CC", "#FFCC00", "#CCFF00", "#66FF99", "#33CCFF", "#3399FF",
-  "#9933FF", "#FF3366",
-];
-
-const quillToolbarOptions = [
-  ["bold", "italic", "underline", "strike"],
-  ["link", "image"],
-  [{ header: [1, 2, 3, false] }],
-  ["blockquote", { list: "ordered" }, { list: "bullet" }],
-  [{ color: extendedColors }, { background: extendedColors }],
-  [{ align: [] }],
-];
+import "react-quill/dist/quill.snow.css";
+import CustomToolbar from "./CustomToolbar";
+import "./Custom.css";
 
 const EditableQuill = ({
+  id = "editor",
   value,
   onChange,
-  placeholder = "Type something...",
-  style = {},
-  minHeight = "100px",
-  isPreview = false,
+  placeholder = "",
   className = "",
-  textAlign = "left",
+  style = {},
+  isPreview = false,
 }) => {
-  const [isEditing, setIsEditing] = useState(false);
+  const [hasContent, setHasContent] = useState(!!value);
+  const [isTyping, setIsTyping] = useState(false);
+  const [hasSelection, setHasSelection] = useState(false);
   const quillRef = useRef(null);
-  const wrapperRef = useRef(null);
-  const editorId = useRef(`quill-${Date.now()}-${Math.floor(Math.random() * 1000)}`);
+  const typingTimeoutRef = useRef(null);
 
   useEffect(() => {
-    if (isEditing && quillRef.current) {
-      quillRef.current.getEditor().focus();
-    }
-  }, [isEditing]);
+    const quillInstance = quillRef.current?.getEditor();
+    if (!quillInstance) return;
 
-  // Move Quill bubble toolbar into floating container
-  useEffect(() => {
-    if (quillRef.current && isEditing) {
-      const editor = quillRef.current.getEditor();
-      const toolbarContainer = document.getElementById("floating-quill-toolbar-container");
-      if (toolbarContainer && editor.theme.tooltip?.root) {
-        // Reset position to static so it sits inside container
-        editor.theme.tooltip.root.style.position = "static";
-        toolbarContainer.appendChild(editor.theme.tooltip.root);
+    const handleTextChange = (delta, oldDelta, source) => {
+      if (source === "user") {
+        setIsTyping(true);
+
+        // Clear previous typing timeout if it exists
+        if (typingTimeoutRef.current) {
+          clearTimeout(typingTimeoutRef.current);
+        }
+
+        // Set timeout to hide toolbar after 2 seconds of no typing
+        typingTimeoutRef.current = setTimeout(() => {
+          setIsTyping(false);
+        }, 4000);
+
+        setHasContent(quillInstance.getText().trim().length > 0);
       }
-    }
-  }, [isEditing]);
+    };
 
-  const handleEditClick = () => {
-    if (!isPreview) setIsEditing(true);
+    const handleSelectionChange = (range) => {
+      setHasSelection(range && range.length > 0);
+    };
+
+    quillInstance.on("text-change", handleTextChange);
+    quillInstance.on("selection-change", handleSelectionChange);
+
+    return () => {
+      quillInstance.off("text-change", handleTextChange);
+      quillInstance.off("selection-change", handleSelectionChange);
+
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const handleChange = (content, delta, source, editor) => {
+    setHasContent(editor.getText().trim().length > 0);
+    onChange(content);
   };
 
-  const handleBlur = () => {
-    setTimeout(() => {
-      if (document.activeElement.closest(".ql-toolbar")) return;
-      setIsEditing(false);
-    }, 100);
+  const modules = {
+    toolbar: {
+      container: `#toolbar-${id}`,
+    },
   };
 
-  const hasContent = value && value !== "type something...";
-  const showQuill = isEditing || hasContent;
+  const formats = [
+    "header",
+    "font",
+    "bold",
+    "italic",
+    "underline",
+    "color",
+    "align",
+    "blockquote",
+    "list",
+    "bullet",
+    "image",
+    "link",
+  ];
 
   return (
     <div
-      ref={wrapperRef}
-      className={`editable-quill-wrapper ${className} text-${textAlign} ${hasContent ? "has-content" : ""}`}
-      style={{
-        ...style,
-        minHeight,
-        width: "100%",
-        position: "relative",
-      }}
+      className={`editable-quill-wrapper ${className} ${
+        hasContent ? "has-content" : ""
+      }`}
+      style={style}
     >
-      {!showQuill && (
+      {!hasContent && (
         <div
           className="editable-quill-placeholder"
-          onClick={handleEditClick}
-          style={{
-            minHeight,
-            cursor: isPreview ? "default" : "pointer",
-            width: "100%",
-            textAlign: "left",
-          }}
           data-placeholder={placeholder}
-          dangerouslySetInnerHTML={{ __html: value || "" }}
         />
       )}
 
-      {showQuill && (
-        <ReactQuill
-          ref={quillRef}
-          theme="bubble"
-          value={value}
-          onChange={onChange}
-          onBlur={handleBlur}
-          modules={{ toolbar: { container: quillToolbarOptions } }}
-          readOnly={isPreview}
-          style={{
-            width: "100%",
-            height: "auto",
-            minHeight,
-            textAlign: "left",
-          }}
-          formats={[
-            "bold", "italic", "underline", "strike",
-            "link", "image", "size", "font", "header",
-            "blockquote", "list", "color", "background", "align",
-          ]}
-        />
-      )}
+      <CustomToolbar
+        id={id}
+        showFirstRow={isTyping}
+        showSecondRow={hasSelection}
+      />
+
+      <ReactQuill
+        ref={quillRef}
+        theme="snow"
+        value={value}
+        onChange={handleChange}
+        modules={modules}
+        formats={formats}
+        placeholder={placeholder}
+        readOnly={isPreview}
+      />
     </div>
   );
 };

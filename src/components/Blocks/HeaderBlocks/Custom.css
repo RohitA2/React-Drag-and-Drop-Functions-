@@ -1,0 +1,92 @@
+/* Remove border, outline, box-shadow, and background from main wrapper, container, and editor */
+.editable-quill-wrapper,
+.ql-container.ql-snow,
+.ql-editor {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+}
+
+/* Remove border from toolbar but keep dark background */
+.custom-quill-toolbar {
+  background: #fc1c04 !important;
+  border: 1px solid #1e1e1e !important;
+  box-shadow: none !important;
+}
+
+/* Remove borders, outlines from buttons and selects inside toolbar */
+.custom-quill-toolbar button,
+.custom-quill-toolbar select {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  background: #fc1c04;
+  color: #fff !important;
+}
+
+/* Remove outlines and shadows on focus */
+.custom-quill-toolbar button:focus,
+.custom-quill-toolbar select:focus,
+.ql-editor:focus {
+  outline: none !important;
+  box-shadow: 1px solid #1e1e1e !important;
+}
+
+/* Remove border from any div inside editable-quill-wrapper */
+.editable-quill-wrapper * {
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+/* Specifically remove border and padding from editor's content */
+.ql-editor p {
+  margin: 0;
+  padding: 0;
+  border: none !important;
+  background: transparent !important;
+}
+
+/* Hide the default editor container border */
+.ql-container.ql-snow {
+  border: none !important;
+}
+
+/* Remove default toolbar border and background except custom bg */
+.ql-toolbar.ql-snow {
+  border: none !important;
+  background: none !important;
+  box-shadow: none !important;
+}
+
+.custom-quill-toolbar {
+  background: #000000 !important;
+  border: none !important;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5) !important;
+  padding: 4px 8px; /* reduce padding */
+  border-radius: 6px;
+  display: inline-flex; /* make toolbar width fit content */
+  flex-wrap: wrap;
+  gap: 8px;
+  width: fit-content; /* makes sure box fits content tightly */
+  max-width: 100%; /* optional to prevent overflow */
+}
+
+.custom-quill-toolbar button,
+.custom-quill-toolbar select {
+  background: transparent !important;
+  color: #fff !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: 4px;
+  transition: background 0.2s ease;
+}
+
+.custom-quill-toolbar button:hover,
+.custom-quill-toolbar select:hover {
+  background: rgba(43, 43, 43, 0.1);
+}

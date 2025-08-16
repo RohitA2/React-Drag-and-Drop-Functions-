@@ -1,103 +1,66 @@
-.editable-quill-wrapper {
-  position: relative;
-  width: 100%;
-  min-height: inherit; /* Inherit from props */
+/* Remove borders, outlines, shadows, and backgrounds on all elements inside wrapper */
+.editable-quill-wrapper * {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  margin: 0 !important;
+  padding: 0 !important;
 }
 
-/* Placeholder state */
-.editable-quill-wrapper:not(.has-content) .editable-quill-placeholder {
-  display: block;
-  cursor: text;
-  padding: 1rem;
-  border-radius: 2px;
-  color: #a9a9a9;
-  border: 1px dashed rgba(0, 0, 0, 0.1);
-  min-height: inherit;
+/* Toolbar background (dark) with no borders or shadows */
+.ql-toolbar.ql-snow {
+  background: #1e1e1e !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 6px 10px !important;
+  margin-bottom: 6px; /* spacing from editor */
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
-.editable-quill-wrapper:not(.has-content) .editable-quill-placeholder:hover {
-  border-color: rgba(0, 0, 0, 0.2);
+/* Remove button/select backgrounds inside toolbar */
+.ql-toolbar.ql-snow button,
+.ql-toolbar.ql-snow select {
+  background: transparent !important;
+  border: none !important;
+  color: #fff !important;
+  padding: 6px 10px !important;
+  cursor: pointer;
 }
 
-.editable-quill-wrapper:not(.has-content) .editable-quill-placeholder:empty::before {
-  content: attr(data-placeholder);
+/* Remove outline on focus */
+.ql-toolbar.ql-snow button:focus,
+.ql-toolbar.ql-snow select:focus,
+.ql-editor:focus {
+  outline: none !important;
+  box-shadow: none !important;
 }
 
-/* Quill editor container */
-.editable-quill-wrapper .ql-container.ql-bubble {
-  border: none;
-  padding: 0;
-  min-height: inherit;
-}
-
-.editable-quill-wrapper .ql-editor {
-  padding: 1rem;
-  min-height: inherit;
-  font-size: 1.0rem;
+/* Editor area styles */
+.ql-editor {
+  background: transparent !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  min-height: inherit !important;
+  font-size: 1rem;
   line-height: 1.5;
+  color: #fff; /* text color to be visible */
+  /* Remove extra spacing on paragraphs */
 }
 
-/* Title variant */
-.editable-quill-wrapper.title-editor .ql-editor {
-  font-size: 3.5rem;
-  font-weight: 700;
-  line-height: 1.2;
-  padding: 0.5rem 1rem;
+.ql-editor p {
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+  background: transparent !important;
 }
 
-/* Subtitle variant */
-.editable-quill-wrapper.subtitle-editor .ql-editor {
-  font-size: 1.8rem;
-  font-weight: 500;
-  line-height: 1.3;
-  padding: 0.5rem 1rem;
-}
-
-/* Bubble toolbar */
-.editable-quill-wrapper .ql-bubble .ql-toolbar {
-  position: absolute;
-  top: -42px;
-  left: 0;
-  display: inline-flex;
-  padding: 6px 8px;
-  background-color: #333;
-  border-radius: 4px;
-  opacity: 0;
-  transition: opacity 0.2s;
-  z-index: 10;
-}
-
-.editable-quill-wrapper:focus-within .ql-bubble .ql-toolbar,
-.editable-quill-wrapper:hover .ql-bubble .ql-toolbar {
-  opacity: 1;
-}
-
-.editable-quill-wrapper .ql-bubble .ql-toolbar .ql-formats {
-  margin: 0 4px 0 0;
-}
-
-.editable-quill-wrapper .ql-bubble .ql-toolbar button {
-  width: 24px;
-  height: 24px;
-  padding: 3px;
-}
-
-.editable-quill-wrapper .ql-bubble .ql-toolbar .ql-stroke {
-  stroke: #fff;
-  stroke-width: 2;
-}
-
-.editable-quill-wrapper .ql-bubble .ql-toolbar .ql-fill {
-  fill: #fff;
-}
-
-
-.editable-quill-wrapper.text-left .ql-editor {
-  text-align: left;
-}
-.editable-quill-wrapper.text-center .ql-editor {
-  text-align: center;
-}
-.editable-quill-wrapper.text-right .ql-editor {
-  text-align: right;
+/* Container */
+.ql-container.ql-snow {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
 }
