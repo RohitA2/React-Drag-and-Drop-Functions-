@@ -217,7 +217,10 @@ const Canvas = forwardRef(
         onDrop={handleDrop}
         onDragOver={handleDragOver}
       >
-        <div id="floating-quill-toolbar-container" style={{ position: "absolute", top: 0, left: 0, zIndex: 9999 }} />
+        <div
+          id="floating-quill-toolbar-container"
+          style={{ position: "absolute", top: 0, left: 0, zIndex: 9999 }}
+        />
 
         {blocks.length === 0 ? (
           <div
@@ -304,38 +307,47 @@ const Canvas = forwardRef(
 
                   {/* Control Panel */}
                   <div className="control-panel position-absolute top-0 end-0 p-1 z-3 d-flex flex-column align-items-end">
-                    <div className="d-flex align-items-start gap-1 mb-1">
+                    <div className="d-flex align-items-start gap-2 mb-1">
                       {/* Edit Button */}
-                      <Button
-                        variant="light"
-                        className="rounded d-flex align-items-center border px-2 py-1 shadow-sm"
-                        onClick={() => onEditBlock(block)}
-                      >
-                        <span className="me-2 fw-semibold text-secondary">
-                          Edit
-                        </span>
-                        <div
-                          className="d-flex flex-wrap"
-                          style={{ width: 16, height: 16, gap: 2 }}
+                      {["text", "header", "header-1", "header-2"].includes(
+                        block.type
+                      ) && (
+                        <Button
+                          variant="light"
+                          className="rounded d-flex align-items-center border px-2 py-1 shadow-sm"
+                          onClick={() => onEditBlock(block)}
                         >
-                          {["red", "orange", "cyan", "blue"].map((color) => (
-                            <span
-                              key={color}
-                              className="rounded-circle"
-                              style={{
-                                width: 6,
-                                height: 6,
-                                backgroundColor: color,
-                              }}
-                            />
-                          ))}
-                        </div>
-                      </Button>
+                          <span className="me-2 fw-semibold text-secondary">
+                            Edit
+                          </span>
+                          <div
+                            className="d-flex flex-wrap"
+                            style={{ width: 16, height: 16, gap: 2 }}
+                          >
+                            {["red", "orange", "cyan", "blue"].map((color) => (
+                              <span
+                                key={color}
+                                className="rounded-circle"
+                                style={{
+                                  width: 6,
+                                  height: 6,
+                                  backgroundColor: color,
+                                }}
+                              />
+                            ))}
+                          </div>
+                        </Button>
+                      )}
 
                       {/* Move Controls */}
-                      <div className="bg-white rounded d-flex flex-column border shadow-sm">
+                      {/* Move Controls */}
+                      <div
+                        className="bg-white rounded d-flex flex-column border shadow-sm"
+                        style={{ width: "28px", padding: "0" }}
+                      >
                         <button
                           className="btn btn-sm btn-white border-0 p-1"
+                          style={{ minWidth: "0", padding: "2px" }}
                           onClick={() => onMoveBlock(index, -1)}
                           disabled={index === 0}
                         >
@@ -343,6 +355,7 @@ const Canvas = forwardRef(
                         </button>
                         <button
                           className="btn btn-sm btn-white border-0 p-1"
+                          style={{ minWidth: "0", padding: "2px" }}
                           onClick={() => onMoveBlock(index, 1)}
                           disabled={index === blocks.length - 1}
                         >

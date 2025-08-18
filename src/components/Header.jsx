@@ -11,7 +11,13 @@ import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import HeaderSidebar from "./HeaderSidebar";
 
-const HeaderBar = ({ toggleSidebar, hasElementsOnCanvas, canvasRef }) => {
+const HeaderBar = ({
+  toggleSidebar,
+  hasElementsOnCanvas,
+  canvasRef,
+  onAddBlock,
+  hasSignatureBlock
+}) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [showSaveOptions, setShowSaveOptions] = useState(false);
   const dropdownRef = useRef(null);
@@ -159,6 +165,23 @@ const HeaderBar = ({ toggleSidebar, hasElementsOnCanvas, canvasRef }) => {
     };
   }, []);
 
+  const handleAddSignatureBlock = () => {
+    if (onAddBlock) {
+      const newBlock = {
+        id: Date.now(),
+        type: "signature",
+        settings: {
+          width: 400,
+          height: 150,
+          backgroundColor: "#fff",
+          textColor: "#000",
+          textAlign: "left",
+        },
+      };
+      onAddBlock(newBlock);
+    }
+  };
+
   return (
     <div className="d-flex justify-content-between align-items-center px-3 py-2 bg-[#E8EAED] border-bottom w-100 shadow-sm position-relative">
       {/* Left section */}
@@ -268,6 +291,9 @@ const HeaderBar = ({ toggleSidebar, hasElementsOnCanvas, canvasRef }) => {
         <HeaderSidebar
           isOpen={isSidebarOpen}
           onClose={() => setIsSidebarOpen(false)}
+          onAddBlock={onAddBlock}
+          hasSignatureBlock={hasSignatureBlock}
+          handleAddSignatureBlock={handleAddSignatureBlock}
         />
       </div>
 

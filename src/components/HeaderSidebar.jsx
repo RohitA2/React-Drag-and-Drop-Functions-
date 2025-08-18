@@ -1,12 +1,37 @@
 import React, { useState } from "react";
-import { X, Search, Save } from "lucide-react";
+import { X, Search, Save, Settings } from "lucide-react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import CreateClientModal from "./Forms/CreateClientModal";
+import SignatureBlock from "./Blocks/SignatureBlock";
+import { components } from "react-select";
 
-const SalesProposalSidebar = ({ isOpen, onClose }) => {
+const HeaderSidebar = ({ isOpen, onClose, onAddBlock, hasSignatureBlock }) => {
   const [name, setName] = React.useState("Sales Proposal");
   const [showModal, setShowModal] = useState(false);
   const [expirationDate, setExpirationDate] = React.useState("09/15/2025");
+
+  // Signature-block button handler
+  const handleAddSignatureBlock = () => {
+    if (onAddBlock) {
+      const newBlock = {
+        id: Date.now(),
+        type: "signature",
+        settings: {
+          width: 400,
+          height: 150,
+          backgroundColor: "#fff",
+          textColor: "#000",
+          textAlign: "left",
+        },
+      };
+      onAddBlock(newBlock);
+    }
+  };
+
+  const handleSave = () => {
+    // Save logic here
+    onClose();
+  };
 
   return (
     <div
@@ -117,29 +142,34 @@ const SalesProposalSidebar = ({ isOpen, onClose }) => {
           </div>
 
           {/* Signature Block */}
-          <div className="border rounded p-3 mb-4 bg-danger bg-opacity-10 text-danger">
-            <div className="form-check d-flex align-items-center gap-2 mb-2">
-              <input
-                className="form-check-input"
-                type="checkbox"
-                id="signatureBlock"
-                checked
-                readOnly
-              />
-              <label
-                className="form-check-label small font-weight-bold"
-                htmlFor="signatureBlock"
+          {!hasSignatureBlock && (
+            <div className="border rounded p-3 mb-4 bg-danger bg-opacity-10 text-danger">
+              <div className="form-check d-flex align-items-center gap-2 mb-2">
+                <input
+                  className="form-check-input"
+                  type="checkbox"
+                  id="signatureBlock"
+                  checked
+                  readOnly
+                />
+                <label
+                  className="form-check-label small font-weight-bold"
+                  htmlFor="signatureBlock"
+                >
+                  Signature-block missing
+                </label>
+              </div>
+              <p className="small mb-2">
+                Add a Signature-block if you'd like for your recipient to sign.
+              </p>
+              <button
+                className="btn btn-primary btn-sm"
+                onClick={handleAddSignatureBlock}
               >
-                Signature-block missing
-              </label>
+                Add Signature-block
+              </button>
             </div>
-            <p className="small mb-2">
-              Add a Signature-block if you'd like for your recipient to sign.
-            </p>
-            <button className="btn btn-primary btn-sm">
-              Add Signature-block
-            </button>
-          </div>
+          )}
 
           {/* Expiration */}
           <div className="mb-4">
@@ -154,7 +184,6 @@ const SalesProposalSidebar = ({ isOpen, onClose }) => {
                 onChange={(e) => setExpirationDate(e.target.value)}
                 className="form-control flex-grow-1"
               />
-              
               {/* Send as field (readonly) */}
               <input
                 type="text"
@@ -175,7 +204,7 @@ const SalesProposalSidebar = ({ isOpen, onClose }) => {
           <button
             className="btn btn-sm btn-light position-relative d-flex align-items-center justify-content-center"
             style={{ width: "32px", height: "32px" }}
-            onClick={"#"}
+            onClick={handleSave}
             onMouseEnter={() => setShowSaveOptions(true)}
           >
             <Save size={16} />
@@ -209,4 +238,4 @@ const SalesProposalSidebar = ({ isOpen, onClose }) => {
   );
 };
 
-export default SalesProposalSidebar;
+export default HeaderSidebar;

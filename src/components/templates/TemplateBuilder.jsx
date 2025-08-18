@@ -2,7 +2,7 @@
 import React, { useState, useRef, useCallback } from "react";
 import Sidebar from "../Sidebar";
 import Canvas from "../pages/dashboard/Canvas";
-import HeaderBar from "../HeaderBar";
+import HeaderBar from "../Header";
 import BlockSettingsPanel from "../pages/dashboard/BlockSettingsPanel";
 
 const TemplateBuilder = () => {
@@ -80,6 +80,8 @@ const TemplateBuilder = () => {
     setActiveBlock({ id: block.id, type: block.type });
   }, []);
 
+
+  const hasSignatureBlock = blocks.some(block => block.type === "signature");
   return (
     <div className="d-flex flex-column vh-100">
       {/* Header */}
@@ -88,6 +90,8 @@ const TemplateBuilder = () => {
           toggleSidebar={toggleSidebar}
           hasElementsOnCanvas={blocks.length > 0}
           canvasRef={canvasRef}
+          onAddBlock={handleAddBlock}
+          hasSignatureBlock={hasSignatureBlock}
           defaultSettings={getActiveBlockSettings()}
         />
       </div>
