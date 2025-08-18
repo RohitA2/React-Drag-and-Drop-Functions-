@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Modal, Button, Nav } from "react-bootstrap";
+import { Modal } from "react-bootstrap";
 import IndividualClientForm from "./IndividualClientForm";
 import CompanyClientForm from "./CompanyClientForm";
 
@@ -7,42 +7,35 @@ export default function CreateClientModal({ show, onHide }) {
   const [selectedType, setSelectedType] = useState("individual");
 
   return (
-    <Modal show={show} onHide={onHide} size="lg" centered>
-      <Modal.Header closeButton>
-        <Modal.Title>Create Client</Modal.Title>
-      </Modal.Header>
-      <Modal.Body>
-        {/* Toggle between Individual & Company */}
-        <Nav variant="tabs" className="mb-3">
-          <Nav.Item>
-            <Nav.Link
-              active={selectedType === "individual"}
+    <Modal show={show} onHide={onHide} centered>
+      <Modal.Body className="p-4">
+        {/* Header */}
+        <div className="d-flex justify-content-between align-items-center mb-3">
+          <h5 className="fw-bold mb-0">Recipient</h5>
+          <div className="btn-group p-0">
+            <button
+              className={`btn btn-sm ${
+                selectedType === "individual" ? "btn-primary" : "btn-light"
+              }`}
               onClick={() => setSelectedType("individual")}
             >
               Individual
-            </Nav.Link>
-          </Nav.Item>
-          <Nav.Item>
-            <Nav.Link
-              active={selectedType === "company"}
+            </button>
+            <button
+              className={`btn btn-sm ${
+                selectedType === "company" ? "btn-primary" : "btn-light"
+              }`}
               onClick={() => setSelectedType("company")}
             >
               Company
-            </Nav.Link>
-          </Nav.Item>
-        </Nav>
+            </button>
+          </div>
+        </div>
 
-        {/* Render the selected form */}
+        {/* Render form */}
         {selectedType === "individual" && <IndividualClientForm />}
         {selectedType === "company" && <CompanyClientForm />}
       </Modal.Body>
-
-      <Modal.Footer>
-        <Button variant="secondary" onClick={onHide}>
-          Cancel
-        </Button>
-        <Button variant="primary">Submit</Button>
-      </Modal.Footer>
     </Modal>
   );
 }

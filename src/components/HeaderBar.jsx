@@ -9,11 +9,19 @@ import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
+import HeaderSidebar from "./HeaderSidebar";
 
 const HeaderBar = ({ toggleSidebar, hasElementsOnCanvas, canvasRef }) => {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [showSaveOptions, setShowSaveOptions] = useState(false);
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
+
+
+   const handleReviewSend = () => {
+    setIsSidebarOpen(true);
+  };
+
 
   const handleSaveAction = async (action) => {
     if (action === "save-pdf" && canvasRef?.current) {
@@ -236,9 +244,14 @@ const HeaderBar = ({ toggleSidebar, hasElementsOnCanvas, canvasRef }) => {
           </div>
         </div>
 
-        <button className="btn bg-[#438EA0] text-white btn-sm hover:bg-[#32707F]">
+        <button className="btn bg-[#438EA0] text-white btn-sm hover:bg-[#32707F]"   onClick={handleReviewSend}>
           Review & Send
         </button>
+
+         <HeaderSidebar
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
+      />
       </div>
 
       <style>{`
