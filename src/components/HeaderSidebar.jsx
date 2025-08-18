@@ -143,20 +143,19 @@ const SalesProposalSidebar = ({ isOpen, onClose }) => {
 
           {/* Expiration */}
           <div className="mb-4">
-            <p className="small font-weight-bold text-muted mb-1">
+            <label className="small font-weight-bold text-muted mb-1">
               Expiration:
-            </p>
+            </label>
             <div className="d-flex gap-2 align-items-center">
+              {/* Date picker input */}
               <input
-                type="text"
+                type="date"
                 value={expirationDate}
                 onChange={(e) => setExpirationDate(e.target.value)}
                 className="form-control flex-grow-1"
               />
-              <button className="btn btn-outline-danger p-2">
-                <X size={16} />
-              </button>
-
+              
+              {/* Send as field (readonly) */}
               <input
                 type="text"
                 placeholder="Send as"
@@ -198,7 +197,7 @@ const SalesProposalSidebar = ({ isOpen, onClose }) => {
             className="form-check-label small text-muted"
             htmlFor="saveTemplate"
           >
-            Save as template
+            Save document as a template
           </label>
         </div>
       </div>

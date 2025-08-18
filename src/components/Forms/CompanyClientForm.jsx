@@ -1,9 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
-import Select, { components } from "react-select";
-import Flag from "react-world-flags";
-// import { ChevronRight, ChevronDown, ArrowRight } from "react-bootstrap-icons";
 import { Check, Copy, Edit3, ArrowRight } from "lucide-react";
-import { Form, Button, Modal, Dropdown } from "react-bootstrap";
+import { Form, Dropdown } from "react-bootstrap";
 import CustomPhoneInput from "./PhoneInput";
 
 const options = [
@@ -172,7 +169,6 @@ export default function IndividualClientForm() {
                   {selectedSign.sub}
                 </span>
               </div>
-              <span className="text-secondary">▼</span>
             </Dropdown.Toggle>
 
             {/* Dropdown Options */}

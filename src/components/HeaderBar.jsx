@@ -17,11 +17,10 @@ const HeaderBar = ({ toggleSidebar, hasElementsOnCanvas, canvasRef }) => {
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
 
-
-   const handleReviewSend = () => {
+  const handleReviewSend = () => {
+    // if (!hasElementsOnCanvas) return;
     setIsSidebarOpen(true);
   };
-
 
   const handleSaveAction = async (action) => {
     if (action === "save-pdf" && canvasRef?.current) {
@@ -142,6 +141,7 @@ const HeaderBar = ({ toggleSidebar, hasElementsOnCanvas, canvasRef }) => {
   };
 
   const handleSaveClick = () => {
+    // if (!hasElementsOnCanvas) return;
     setShowSaveOptions(!showSaveOptions);
   };
 
@@ -197,12 +197,21 @@ const HeaderBar = ({ toggleSidebar, hasElementsOnCanvas, canvasRef }) => {
         {/* Save Button with Dropdown */}
         <div className="position-relative" ref={dropdownRef}>
           <button
-            className="btn btn-sm btn-[#E8EAED] hover:bg-[#F4FBFA] position-relative"
-            style={{ width: "32px", height: "32px" }}
+            className="btn btn-sm position-relative"
+            style={{
+              width: "32px",
+              height: "32px",
+              backgroundColor: hasElementsOnCanvas ? "#E8EAED" : "#d1d5db", // gray when disabled
+              cursor: hasElementsOnCanvas ? "pointer" : "not-allowed",
+            }}
             onClick={handleSaveClick}
-            onMouseEnter={() => setShowSaveOptions(true)}
+            onMouseEnter={() => hasElementsOnCanvas && setShowSaveOptions(true)}
+            // disabled={!hasElementsOnCanvas}
           >
-            <Save size={16} />
+            <Save
+              size={16}
+              className={hasElementsOnCanvas ? "text-black" : "text-gray-400"}
+            />
           </button>
 
           {showSaveOptions && (
@@ -244,14 +253,22 @@ const HeaderBar = ({ toggleSidebar, hasElementsOnCanvas, canvasRef }) => {
           </div>
         </div>
 
-        <button className="btn bg-[#438EA0] text-white btn-sm hover:bg-[#32707F]"   onClick={handleReviewSend}>
+        <button
+          className="btn btn-sm text-white"
+          style={{
+            backgroundColor: hasElementsOnCanvas ? "#438EA0" : "#a0c4c9", // lighter blue when disabled
+            cursor: hasElementsOnCanvas ? "pointer" : "not-allowed",
+          }}
+          onClick={handleReviewSend}
+          // disabled={!hasElementsOnCanvas}
+        >
           Review & Send
         </button>
 
-         <HeaderSidebar
-        isOpen={isSidebarOpen}
-        onClose={() => setIsSidebarOpen(false)}
-      />
+        <HeaderSidebar
+          isOpen={isSidebarOpen}
+          onClose={() => setIsSidebarOpen(false)}
+        />
       </div>
 
       <style>{`
