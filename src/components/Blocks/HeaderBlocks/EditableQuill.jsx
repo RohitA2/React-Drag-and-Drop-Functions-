@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 import CustomToolbar from "./CustomToolbar";
@@ -12,12 +12,15 @@ const EditableQuill = ({
   className = "",
   style = {},
   isPreview = false,
+  onTypingChange,
+  onSelectionChange,
 }) => {
   const [hasContent, setHasContent] = useState(!!value);
-  const [isTyping, setIsTyping] = useState(false);
-  const [hasSelection, setHasSelection] = useState(false);
   const quillRef = useRef(null);
   const typingTimeoutRef = useRef(null);
+  const [isTyping, setIsTyping] = useState(false);
+  const [isSelection, setIsSelection] = useState(false);
+  const [selectionRect, setSelectionRect] = useState(null);
 
   useEffect(() => {
     const quillInstance = quillRef.current?.getEditor();
@@ -25,24 +28,39 @@ const EditableQuill = ({
 
     const handleTextChange = (delta, oldDelta, source) => {
       if (source === "user") {
+        setHasContent(quillInstance.getText().trim().length > 0);
         setIsTyping(true);
 
-        // Clear previous typing timeout if it exists
-        if (typingTimeoutRef.current) {
-          clearTimeout(typingTimeoutRef.current);
-        }
-
-        // Set timeout to hide toolbar after 2 seconds of no typing
+        // Debounce typing end
+        if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
         typingTimeoutRef.current = setTimeout(() => {
           setIsTyping(false);
-        }, 4000);
-
-        setHasContent(quillInstance.getText().trim().length > 0);
+        }, 5000);
       }
     };
 
     const handleSelectionChange = (range) => {
-      setHasSelection(range && range.length > 0);
+      const hasSelection = !!(range && range.length && range.length > 0);
+      // Compute selection position in viewport
+      let selectionRect = null;
+      try {
+        const selection = quillInstance.getSelection();
+        if (selection) {
+          const bounds = quillInstance.getBounds(selection);
+          const editorRoot = quillInstance.root;
+          if (editorRoot && editorRoot.getBoundingClientRect) {
+            const editorRect = editorRoot.getBoundingClientRect();
+            selectionRect = {
+              top: editorRect.top + bounds.top,
+              left: editorRect.left + bounds.left,
+              width: bounds.width || 0,
+              height: bounds.height || 0,
+            };
+          }
+        }
+      } catch (_) {}
+      setIsSelection(hasSelection);
+      setSelectionRect(selectionRect);
     };
 
     quillInstance.on("text-change", handleTextChange);
@@ -51,12 +69,9 @@ const EditableQuill = ({
     return () => {
       quillInstance.off("text-change", handleTextChange);
       quillInstance.off("selection-change", handleSelectionChange);
-
-      if (typingTimeoutRef.current) {
-        clearTimeout(typingTimeoutRef.current);
-      }
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
     };
-  }, []);
+  }, [onTypingChange, onSelectionChange]);
 
   const handleChange = (content, delta, source, editor) => {
     setHasContent(editor.getText().trim().length > 0);
@@ -101,7 +116,16 @@ const EditableQuill = ({
       <CustomToolbar
         id={id}
         showFirstRow={isTyping}
-        showSecondRow={hasSelection}
+        showSecondRow={isSelection}
+        firstRowStyle={{
+          left: "50%",
+          transform: "translateX(-50%)",
+          bottom: 12,
+        }}
+        secondRowStyle={selectionRect ? {
+          top: Math.max(8, selectionRect.top - 44),
+          left: selectionRect.left + Math.max(0, selectionRect.width / 2) - 150,
+        } : { display: "none" }}
       />
 
       <ReactQuill

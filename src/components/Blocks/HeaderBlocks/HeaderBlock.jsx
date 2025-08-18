@@ -9,6 +9,7 @@ import { Button, Form, Modal, Dropdown } from "react-bootstrap";
 import Cropper from "react-cropper";
 import "cropperjs/dist/cropper.css";
 import EditableQuill from "./EditableQuill";
+import CustomToolbar from "./CustomToolbar";
 
 const LAYOUTS = {
   "left-panel": {
@@ -318,21 +319,9 @@ const getAdjustedColumns = () => {
     return { imageCol: originalImageCol, contentCol: originalContentCol };
   }
 
-  // Calculate the number of columns for the image based on leftWidth percentage
-  const imageColCount = Math.round((leftWidth / 100) * 12);
-  // Ensure the total columns don't exceed 12, adjusting for rounding
-  const contentColCount = 12 - imageColCount;
-
-  // Clamp values to avoid negative or invalid column counts
-  const validImageColCount = Math.max(1, Math.min(imageColCount, 11)); // At least 1, max 11
-  const validContentColCount = Math.max(1, 12 - validImageColCount); // Ensure content has at least 1 column
-
-  const imageCol = `col-md-${validImageColCount} p-0 ${
-    layoutType === "left-panel" ? "order-1" : "order-2"
-  }`;
-  const contentCol = `col-md-${validContentColCount} p-4 ${
-    layoutType === "left-panel" ? "order-2" : "order-1"
-  }`;
+  // Use flexbox for resizable layouts instead of Bootstrap grid
+  const imageCol = `flex-shrink-0 ${layoutType === "left-panel" ? "order-1" : "order-2"}`;
+  const contentCol = `flex-grow-1 ${layoutType === "left-panel" ? "order-2" : "order-1"}`;
 
   return { imageCol, contentCol };
 };
@@ -367,7 +356,15 @@ const { imageCol, contentCol } = getAdjustedColumns();
       <div
         className={`row rounded-3 overflow-hidden shadow d-flex ${container}`}
         ref={containerRef}
-        style={{ position: "relative" }}
+        style={{ 
+          position: "relative",
+          // Use flexbox for resizable layouts
+          ...(isPreview || !["left-panel", "right-panel"].includes(layoutType) ? {} : {
+            display: "flex",
+            flexDirection: "row",
+            alignItems: "stretch",
+          }),
+        }}
       >
         {/* Image Section */}
         <div
@@ -383,6 +380,12 @@ const { imageCol, contentCol } = getAdjustedColumns();
                 }
               : { backgroundColor: backgroundColor || "#f8f9fa" }),
             ...imageStyle,
+            // Add dynamic width for resizable layouts
+            ...(isPreview || !["left-panel", "right-panel"].includes(layoutType) ? {} : {
+              width: `${leftWidth}%`,
+              minWidth: "200px",
+              maxWidth: "80%",
+            }),
           }}
         />
 
@@ -419,6 +422,11 @@ const { imageCol, contentCol } = getAdjustedColumns();
             ...(layoutType === "grid"
               ? { ...contentStyle, color: dynamicTextColor }
               : { backgroundColor, color: dynamicTextColor }),
+            // Add dynamic width for resizable layouts
+            ...(isPreview || !["left-panel", "right-panel"].includes(layoutType) ? {} : {
+              width: `${100 - leftWidth}%`,
+              minWidth: "200px",
+            }),
           }}
         >
           {/* Logo and Controls */}
@@ -598,7 +606,7 @@ const { imageCol, contentCol } = getAdjustedColumns();
                   style={{
                     background: "transparent",
                     border: "none",
-                    fontSize: "2rem",
+                    fontSize: "3.5rem",
                     color: "#000",
                   }}
                 />
@@ -665,7 +673,7 @@ const { imageCol, contentCol } = getAdjustedColumns();
                 onChange={(value) => handleTextChange("subtitle", value)}
                 placeholder="Enter subtitle..."
                 className="text-xl"
-                style={{ textAlign: "inherit" }}
+                style={{ textAlign: "inherit", fontSize: "2rem" }}
               />
               <EditableQuill
                 id={`title-${id}`}
@@ -673,7 +681,7 @@ const { imageCol, contentCol } = getAdjustedColumns();
                 onChange={(value) => handleTextChange("title", value)}
                 placeholder="Enter title..."
                 className="text-3xl font-bold"
-                style={{ textAlign: "inherit" }}
+                style={{ textAlign: "inherit", fontSize: "3rem", fontWeight: 700 }}
               />
             </div>
           </div>
