@@ -3,15 +3,8 @@ import Select, { components } from "react-select";
 import Flag from "react-world-flags";
 // import { ChevronRight, ChevronDown, ArrowRight } from "react-bootstrap-icons";
 import { Check, Copy, Edit3, ArrowRight } from "lucide-react";
-import { Form, Button, Modal, Dropdown } from "react-bootstrap";
-
-// 🌍 Country options
-const countryOptions = [
-  { value: "+1", label: "United States", code: "US" },
-  { value: "+91", label: "India", code: "IN" },
-  { value: "+44", label: "United Kingdom", code: "GB" },
-  { value: "+61", label: "Australia", code: "AU" },
-];
+import { Form, Dropdown } from "react-bootstrap";
+import CustomPhoneInput from "./PhoneInput";
 
 const options = [
   { label: "Needs to sign", sub: "Signee", icon: <Edit3 size={16} /> },
@@ -27,89 +20,13 @@ const options2 = [
   { label: "In Person", sub: "Signature on print document" },
 ];
 
-// 📌 PhoneInput Component
-const PhoneInput = () => {
-  const [selectedCountry, setSelectedCountry] = useState(countryOptions[0]);
-
-  // Custom Option (flag + label + code)
-  const Option = (props) => (
-    <components.Option {...props}>
-      <Flag code={props.data.code} style={{ width: 20, marginRight: 8 }} />
-      {props.data.label} ({props.data.value})
-    </components.Option>
-  );
-
-  // Custom SingleValue (flag + dial code)
-  const SingleValue = (props) => (
-    <components.SingleValue {...props}>
-      <Flag code={props.data.code} style={{ width: 20, marginRight: 8 }} />
-      {props.data.value}
-    </components.SingleValue>
-  );
-
-  return (
-    <div className="d-flex border rounded overflow-hidden">
-      <Select
-        options={countryOptions}
-        value={selectedCountry}
-        onChange={setSelectedCountry}
-        components={{ Option, SingleValue }}
-        isSearchable
-        className="border-0"
-        classNamePrefix="react-select"
-        styles={{
-          container: (base) => ({
-            ...base,
-            width: "180px",
-          }),
-          control: (base) => ({
-            ...base,
-            border: "none",
-            boxShadow: "none",
-            minHeight: "38px",
-          }),
-          valueContainer: (base) => ({
-            ...base,
-            padding: "0 8px",
-          }),
-          indicatorsSeparator: () => ({ display: "none" }),
-        }}
-      />
-      <Form.Control placeholder="Cellphone" className="border-0 flex-grow-1" />
-    </div>
-  );
-};
-
 // 📌 Main Form Component
 export default function IndividualClientForm() {
   const [showAdditional, setShowAdditional] = useState(false);
   const [addressType, setAddressType] = useState("work");
   const [selected, setSelected] = useState(options[0]);
   const [selectedSign, setSelectedSign] = useState(options2[0]);
-  // const [showConfirmModal, setShowConfirmModal] = useState(false);
-  // const formRef = useRef(null);
-
-  // Track form changes
-  // Detect clicks outside the form (ALWAYS show modal)
-  // useEffect(() => {
-  //   const handleClickOutside = (event) => {
-  //     if (formRef.current && !formRef.current.contains(event.target)) {
-  //       setShowConfirmModal(true);
-  //     }
-  //   };
-
-  //   document.addEventListener("mousedown", handleClickOutside);
-  //   return () => {
-  //     document.removeEventListener("mousedown", handleClickOutside);
-  //   };
-  // }, []);
-
-  // const handleClose = (confirmed) => {
-  //   if (confirmed && onClose) {
-  //     onClose();   // parent se aaya hua close call karega
-  //   }
-  //   setShowConfirmModal(false);
-  // };
+  const [phone, setPhone] = useState("");
 
   return (
     <div>
@@ -124,7 +41,7 @@ export default function IndividualClientForm() {
         <Form.Control type="email" placeholder="Email" />
 
         {/* Phone with country selector */}
-        <PhoneInput />
+        <CustomPhoneInput value={phone} onChange={setPhone} />
 
         {/* Role dropdown (placeholder) */}
         <div className="border rounded p-2 d-flex justify-content-between align-items-center">
@@ -280,28 +197,6 @@ export default function IndividualClientForm() {
           Save recipient
         </button>
       </Form>
-      {/* Confirmation Modal */}
-      {/* <Modal
-        show={showConfirmModal}
-        onHide={() => setShowConfirmModal(false)}
-        centered
-      >
-        <Modal.Body className="p-4">
-          <h5 className="mb-3">Unsaved changes</h5>
-          <p>Are you sure you want to cancel?</p>
-          <div className="d-flex justify-content-end gap-2 mt-4">
-            <Button
-              variant="outline-secondary"
-              onClick={() => handleClose(false)}
-            >
-              No
-            </Button>
-            <Button variant="primary" onClick={() => handleClose(true)}>
-              Yes
-            </Button>
-          </div>
-        </Modal.Body>
-      </Modal> */}
     </div>
   );
 }

@@ -17,7 +17,7 @@ const SalesProposalSidebar = ({ isOpen, onClose }) => {
         width: "500px",
         height: "100vh",
         transform: isOpen ? "translateX(0)" : "translateX(100%)",
-        marginLeft: "-220px",
+        marginLeft: "-130px",
         padding: "25px",
       }}
     >

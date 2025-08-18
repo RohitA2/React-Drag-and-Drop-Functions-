@@ -4,15 +4,7 @@ import Flag from "react-world-flags";
 // import { ChevronRight, ChevronDown, ArrowRight } from "react-bootstrap-icons";
 import { Check, Copy, Edit3, ArrowRight } from "lucide-react";
 import { Form, Button, Modal, Dropdown } from "react-bootstrap";
-import PhoneInput from "./PhoneInput";
-
-
-const countryOptions = [
-  { value: "+1", label: "United States", code: "US" },
-  { value: "+91", label: "India", code: "IN" },
-  { value: "+44", label: "United Kingdom", code: "GB" },
-  { value: "+61", label: "Australia", code: "AU" },
-];
+import CustomPhoneInput from "./PhoneInput";
 
 const options = [
   { label: "Needs to sign", sub: "Signee", icon: <Edit3 size={16} /> },
@@ -28,70 +20,13 @@ const options2 = [
   { label: "In Person", sub: "Signature on print document" },
 ];
 
-// 📌 PhoneInput Component
-// const PhoneInput = () => {
-//   const [selectedCountry, setSelectedCountry] = useState(countryOptions[0]);
-
-//   // Custom Option (flag + label + code)
-//   const Option = (props) => (
-//     <components.Option {...props}>
-//       <Flag code={props.data.code} style={{ width: 20, marginRight: 8 }} />
-//       {props.data.label} ({props.data.value})
-//     </components.Option>
-//   );
-
-//   // Custom SingleValue (flag + dial code)
-//   const SingleValue = (props) => (
-//     <components.SingleValue {...props}>
-//       <Flag code={props.data.code} style={{ width: 20, marginRight: 8 }} />
-//       {props.data.value}
-//     </components.SingleValue>
-//   );
-
-//   return (
-//     <div className="d-flex border rounded overflow-hidden">
-//       <Select
-//         options={countryOptions}
-//         value={selectedCountry}
-//         onChange={setSelectedCountry}
-//         components={{ Option, SingleValue }}
-//         isSearchable
-//         className="border-0"
-//         classNamePrefix="react-select"
-//         styles={{
-//           container: (base) => ({
-//             ...base,
-//             width: "180px",
-//           }),
-//           control: (base) => ({
-//             ...base,
-//             border: "none",
-//             boxShadow: "none",
-//             minHeight: "38px",
-//           }),
-//           valueContainer: (base) => ({
-//             ...base,
-//             padding: "0 8px",
-//           }),
-//           indicatorsSeparator: () => ({ display: "none" }),
-//         }}
-//       />
-//       <Form.Control placeholder="Cellphone" className="border-0 flex-grow-1" />
-//     </div>
-//   );
-// };
-
 // 📌 Main Form Component
 export default function IndividualClientForm() {
   const [showAdditional, setShowAdditional] = useState(false);
   const [addressType, setAddressType] = useState("work");
   const [selected, setSelected] = useState(options[0]);
   const [selectedSign, setSelectedSign] = useState(options2[0]);
-
-  // ✅ Controlled phone input states
-  const [selectedCountry, setSelectedCountry] = useState(countryOptions[0]);
   const [phone, setPhone] = useState("");
-
 
   return (
     <div>
@@ -109,13 +44,7 @@ export default function IndividualClientForm() {
         {/* Address */}
         <Form.Control type="text" placeholder="Address" />
 
-            {/* ✅ PhoneInput with props */}
-        <PhoneInput
-          country={selectedCountry}
-          onCountryChange={setSelectedCountry}
-          phone={phone}
-          onPhoneChange={setPhone}
-        />
+        <CustomPhoneInput value={phone} onChange={setPhone} />
 
         {/* Role dropdown (placeholder) */}
         <div className="border rounded p-2 d-flex justify-content-between align-items-center">

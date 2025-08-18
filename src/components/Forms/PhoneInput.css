@@ -1,0 +1,35 @@
+/* Flag styling (don’t touch background-size!) */
+.react-tel-input .country-list .flag {
+  position: relative;
+  margin-right: 8px;
+  width: 20px;
+  height: 15px;
+  background-repeat: no-repeat;
+  background-position: center center;
+  display: inline-block;
+}
+
+/* Dropdown country row */
+.react-tel-input .country-list .country {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+/* Hover effect */
+.react-tel-input .country-list .country:hover {
+  background-color: #f5f5f5;
+}
+
+/* Search box inside dropdown */
+.react-tel-input .country-list .search-box {
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  margin: 8px;
+  padding: 6px 10px;
+  font-size: 14px;
+  outline: none;
+}
