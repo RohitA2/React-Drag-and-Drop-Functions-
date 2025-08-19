@@ -153,3 +153,45 @@
 .color-swatch.gradient {
   background: conic-gradient(red, yellow, lime, aqua, blue, magenta, red);
 }
+
+.heading-dropdown-wrapper {
+    position: relative;
+    display: inline-block;
+  }
+
+  .heading-dropdown-trigger {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 4px 6px;
+    color: white;
+  }
+
+  .heading-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background: #1e1e1e; /* Ensure this background color is applied */
+    border-radius: 6px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25);
+    z-index: 10000; /* Increased z-index */
+    min-width: 140px;
+    padding: 4px 0;
+    display: block; /* Ensure visibility */
+  }
+
+  .heading-dropdown div {
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    cursor: pointer;
+    color: #fff;
+    font-size: 14px;
+  }
+
+  .heading-dropdown div:hover {
+    background: #333;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.25);
+  }

@@ -12,8 +12,6 @@ const EditableQuill = ({
   className = "",
   style = {},
   isPreview = false,
-  onTypingChange,
-  onSelectionChange,
 }) => {
   const [hasContent, setHasContent] = useState(!!value);
   const quillRef = useRef(null);
@@ -30,8 +28,6 @@ const EditableQuill = ({
       if (source === "user") {
         setHasContent(quillInstance.getText().trim().length > 0);
         setIsTyping(true);
-
-        // Debounce typing end
         if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
         typingTimeoutRef.current = setTimeout(() => {
           setIsTyping(false);
@@ -41,8 +37,7 @@ const EditableQuill = ({
 
     const handleSelectionChange = (range) => {
       const hasSelection = !!(range && range.length && range.length > 0);
-      // Compute selection position in viewport
-      let selectionRect = null;
+      let rect = null;
       try {
         const selection = quillInstance.getSelection();
         if (selection) {
@@ -50,7 +45,7 @@ const EditableQuill = ({
           const editorRoot = quillInstance.root;
           if (editorRoot && editorRoot.getBoundingClientRect) {
             const editorRect = editorRoot.getBoundingClientRect();
-            selectionRect = {
+            rect = {
               top: editorRect.top + bounds.top,
               left: editorRect.left + bounds.left,
               width: bounds.width || 0,
@@ -60,7 +55,7 @@ const EditableQuill = ({
         }
       } catch (_) {}
       setIsSelection(hasSelection);
-      setSelectionRect(selectionRect);
+      setSelectionRect(rect);
     };
 
     quillInstance.on("text-change", handleTextChange);
@@ -71,7 +66,7 @@ const EditableQuill = ({
       quillInstance.off("selection-change", handleSelectionChange);
       if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
     };
-  }, [onTypingChange, onSelectionChange]);
+  }, []);
 
   const handleChange = (content, delta, source, editor) => {
     setHasContent(editor.getText().trim().length > 0);
@@ -79,13 +74,12 @@ const EditableQuill = ({
   };
 
   const modules = {
-    toolbar: {
-      container: `#toolbar-${id}`,
-    },
+    toolbar: { container: `#toolbar-${id}` },
   };
 
   const formats = [
     "header",
+    "size",
     "font",
     "bold",
     "italic",
@@ -117,15 +111,23 @@ const EditableQuill = ({
         id={id}
         showFirstRow={isTyping}
         showSecondRow={isSelection}
+        quill={quillRef.current?.getEditor()}
         firstRowStyle={{
           left: "50%",
           transform: "translateX(-50%)",
           bottom: 12,
         }}
-        secondRowStyle={selectionRect ? {
-          top: Math.max(8, selectionRect.top - 44),
-          left: selectionRect.left + Math.max(0, selectionRect.width / 2) - 150,
-        } : { display: "none" }}
+        secondRowStyle={
+          selectionRect
+            ? {
+                top: Math.max(8, selectionRect.top - 44),
+                left:
+                  selectionRect.left +
+                  Math.max(0, selectionRect.width / 2) -
+                  150,
+              }
+            : { display: "none" }
+        }
       />
 
       <ReactQuill

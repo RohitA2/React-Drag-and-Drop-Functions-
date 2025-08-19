@@ -14,7 +14,6 @@ import {
 } from "react-icons/fa";
 import "./Custom.css";
 
-// Default overlay (toolbar always floats on top of editor)
 const defaultOverlayStyle = {
   position: "fixed",
   inset: 0,
@@ -22,7 +21,6 @@ const defaultOverlayStyle = {
   pointerEvents: "none",
 };
 
-// Color palette options
 const COLORS = [
   "#000000",
   "#2c3e50",
@@ -43,16 +41,45 @@ const CustomToolbar = ({
   positionStyle,
   firstRowStyle,
   secondRowStyle,
-  quill, // Pass in your Quill instance
+  quill,
 }) => {
   const [showColors, setShowColors] = useState(false);
+  const [showHeading, setShowHeading] = useState(false);
 
-  // Apply color to selected text
   const applyColor = (color) => {
-    if (quill) {
-      quill.format("color", color);
-    }
+    if (quill) quill.format("color", color);
     setShowColors(false);
+  };
+
+  const applyHeading = (type) => {
+    if (!quill) return;
+
+    switch (type) {
+      case "title":
+        quill.format("header", 1);
+        quill.format("size", "huge");
+        break;
+      case "1":
+        quill.format("header", 1);
+        break;
+      case "2":
+        quill.format("header", 2);
+        break;
+      case "3":
+        quill.format("header", 3);
+        break;
+      case "blockquote":
+        quill.format("blockquote", true);
+        break;
+      case "text":
+        quill.format("header", false);
+        quill.format("size", false);
+        quill.format("blockquote", false);
+        break;
+      default:
+        break;
+    }
+    setShowHeading(false);
   };
 
   return (
@@ -61,7 +88,7 @@ const CustomToolbar = ({
       className="custom-quill-toolbar-wrapper"
       style={{ ...defaultOverlayStyle, ...(positionStyle || {}) }}
     >
-      {/* Contextual Toolbar (inline formatting) */}
+      {/* Contextual Toolbar */}
       <div
         className="custom-quill-toolbar contextual-toolbar"
         style={{
@@ -71,30 +98,54 @@ const CustomToolbar = ({
           ...(secondRowStyle || {}),
         }}
       >
-        {/* Font Size */}
-        <button className="ql-size" title="Font Size">
-          <span style={{ fontSize: "14px" }}>A</span>
-          <span style={{ fontSize: "18px" }}>A</span>
-        </button>
-
+        {/* Font/Heading Dropdown */}
+        <div className="heading-dropdown-wrapper">
+          <button
+            className="heading-dropdown-trigger"
+            onClick={() => setShowHeading(!showHeading)}
+            title="Font Style"
+          >
+            <span style={{ fontSize: "16px", fontWeight: "bold" }}>AA</span>
+          </button>
+          {showHeading && (
+            <div className="heading-dropdown custom-quill-toolbar ql-snow " style={{ display: "block" }}>
+              <div onClick={() => applyHeading("title")}>Title</div>
+              <div onClick={() => applyHeading("1")}>Heading 1</div>
+              <div onClick={() => applyHeading("2")}>Heading 2</div>
+              <div onClick={() => applyHeading("3")}>Heading 3</div>
+              <div onClick={() => applyHeading("text")}>Text</div>
+              <div onClick={() => applyHeading("blockquote")}>Quote</div>
+            </div>
+          )}
+        </div>
         <span className="toolbar-divider" />
 
         {/* Inline formatting */}
-        <button className="ql-bold" title="Bold"><FaBold /></button>
-        <button className="ql-italic" title="Italic"><FaItalic /></button>
-        <button className="ql-underline" title="Underline"><FaUnderline /></button>
-        <button className="ql-link" title="Insert Link"><FaLink /></button>
+        <button className="ql-bold" title="Bold">
+          <FaBold />
+        </button>
+        <button className="ql-italic" title="Italic">
+          <FaItalic />
+        </button>
+        <button className="ql-underline" title="Underline">
+          <FaUnderline />
+        </button>
+        <button className="ql-link" title="Insert Link">
+          <FaLink />
+        </button>
 
         <span className="toolbar-divider" />
 
         {/* Highlight */}
         <button className="ql-background" title="Highlight">
-          <span style={{
-            background: "yellow",
-            padding: "2px 4px",
-            borderRadius: "2px",
-            fontSize: "12px",
-          }}>
+          <span
+            style={{
+              background: "yellow",
+              padding: "2px 4px",
+              borderRadius: "2px",
+              fontSize: "12px",
+            }}
+          >
             H
           </span>
         </button>
@@ -106,9 +157,12 @@ const CustomToolbar = ({
             title="Text Color"
             onClick={() => setShowColors(!showColors)}
           >
-            <span style={{ color: "red", fontSize: "16px", fontWeight: "bold" }}>●</span>
+            <span
+              style={{ color: "red", fontSize: "16px", fontWeight: "bold" }}
+            >
+              ●
+            </span>
           </button>
-
           {showColors && (
             <div className="color-palette">
               {COLORS.map((c) => (
@@ -119,7 +173,6 @@ const CustomToolbar = ({
                   onClick={() => applyColor(c)}
                 />
               ))}
-              {/* Custom Color Picker */}
               <button
                 className="color-swatch gradient"
                 title="More Colors"
@@ -140,12 +193,18 @@ const CustomToolbar = ({
         <span className="toolbar-divider" />
 
         {/* Alignment */}
-        <button className="ql-align" value="" title="Align Left"><FaAlignLeft /></button>
-        <button className="ql-align" value="center" title="Align Center"><FaAlignCenter /></button>
-        <button className="ql-align" value="right" title="Align Right"><FaAlignRight /></button>
+        <button className="ql-align" value="" title="Align Left">
+          <FaAlignLeft />
+        </button>
+        <button className="ql-align" value="center" title="Align Center">
+          <FaAlignCenter />
+        </button>
+        <button className="ql-align" value="right" title="Align Right">
+          <FaAlignRight />
+        </button>
       </div>
 
-      {/* Global Toolbar (document-level tools) */}
+      {/* Global Toolbar */}
       <div
         className="custom-quill-toolbar global-toolbar"
         style={{
@@ -159,22 +218,36 @@ const CustomToolbar = ({
           ...(firstRowStyle || {}),
         }}
       >
-        <button className="ql-header" value="1" title="Heading 1">H1</button>
-        <button className="ql-header" value="2" title="Heading 2">H2</button>
-        <button className="ql-header" value="3" title="Heading 3">H3</button>
+        <button className="ql-header" value="1" title="Heading 1">
+          H1
+        </button>
+        <button className="ql-header" value="2" title="Heading 2">
+          H2
+        </button>
+        <button className="ql-header" value="3" title="Heading 3">
+          H3
+        </button>
 
         <span className="toolbar-divider" />
 
-        <button className="ql-blockquote" title="Blockquote"><FaQuoteRight /></button>
+        <button className="ql-blockquote" title="Blockquote">
+          <FaQuoteRight />
+        </button>
 
         <span className="toolbar-divider" />
 
-        <button className="ql-list" value="ordered" title="Numbered List"><FaListOl /></button>
-        <button className="ql-list" value="bullet" title="Bullet List"><FaListUl /></button>
+        <button className="ql-list" value="ordered" title="Numbered List">
+          <FaListOl />
+        </button>
+        <button className="ql-list" value="bullet" title="Bullet List">
+          <FaListUl />
+        </button>
 
         <span className="toolbar-divider" />
 
-        <button className="ql-image" title="Insert Image"><FaImage /></button>
+        <button className="ql-image" title="Insert Image">
+          <FaImage />
+        </button>
       </div>
     </div>
   );
