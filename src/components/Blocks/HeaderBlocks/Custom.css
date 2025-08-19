@@ -1,4 +1,6 @@
-/* Remove border, outline, box-shadow, and background from main wrapper, container, and editor */
+/* ===========================
+   Base Editor Cleanup
+   =========================== */
 .editable-quill-wrapper,
 .ql-container.ql-snow,
 .ql-editor {
@@ -8,71 +10,44 @@
   background: transparent !important;
 }
 
-/* Remove border from toolbar but keep dark background */
-.custom-quill-toolbar {
-  background: #fc1c04 !important;
-  border: 1px solid #1e1e1e !important;
-  box-shadow: none !important;
-}
-
-/* Remove borders, outlines from buttons and selects inside toolbar */
-.custom-quill-toolbar button,
-.custom-quill-toolbar select {
-  border: none !important;
-  outline: none !important;
-  box-shadow: none !important;
-  background: #fc1c04;
-  color: #fff !important;
-}
-
-/* Remove outlines and shadows on focus */
-.custom-quill-toolbar button:focus,
-.custom-quill-toolbar select:focus,
-.ql-editor:focus {
-  outline: none !important;
-  box-shadow: 1px solid #1e1e1e !important;
-}
-
-/* Remove border from any div inside editable-quill-wrapper */
 .editable-quill-wrapper * {
   border: none !important;
   background: transparent !important;
   box-shadow: none !important;
 }
 
-/* Specifically remove border and padding from editor's content */
 .ql-editor p {
   margin: 0;
   padding: 0;
-  border: none !important;
-  background: transparent !important;
 }
 
-/* Hide the default editor container border */
-.ql-container.ql-snow {
-  border: none !important;
-}
-
-/* Remove default toolbar border and background except custom bg */
+/* Remove Quill defaults */
+.ql-container.ql-snow,
 .ql-toolbar.ql-snow {
   border: none !important;
   background: none !important;
   box-shadow: none !important;
 }
 
+/* ===========================
+   Toolbar Container
+   =========================== */
 .custom-quill-toolbar {
-  background: #000000 !important;
+  background: #000 !important;
   border: none !important;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5) !important;
-  padding: 4px 8px; /* reduce padding */
+  padding: 4px 8px;
   border-radius: 6px;
-  display: inline-flex; /* make toolbar width fit content */
+  display: inline-flex;
   flex-wrap: wrap;
   gap: 8px;
-  width: fit-content; /* makes sure box fits content tightly */
-  max-width: 100%; /* optional to prevent overflow */
+  width: fit-content;
+  max-width: 100%;
 }
 
+/* ===========================
+   Toolbar Buttons
+   =========================== */
 .custom-quill-toolbar button,
 .custom-quill-toolbar select {
   background: transparent !important;
@@ -88,54 +63,93 @@
 
 .custom-quill-toolbar button:hover,
 .custom-quill-toolbar select:hover {
-  background: rgba(43, 43, 43, 0.1);
+  background: rgba(255, 255, 255, 0.1);
 }
 
-/* Fix header button active states */
-.custom-quill-toolbar .ql-header {
-  background: transparent !important;
-  color: #fff !important;
-}
-
-.custom-quill-toolbar .ql-header.ql-active,
-.custom-quill-toolbar .ql-header:hover {
-  background: rgba(255, 255, 255, 0.1) !important;
-  color: #fff !important;
-}
-
-/* Ensure all header buttons look the same */
-.custom-quill-toolbar .ql-header[value="1"],
-.custom-quill-toolbar .ql-header[value="2"],
-.custom-quill-toolbar .ql-header[value="3"] {
-  background: transparent !important;
-  color: #fff !important;
-}
-
-/* Force override any Quill active states */
-.custom-quill-toolbar .ql-header.ql-active,
-.custom-quill-toolbar .ql-header.ql-selected,
-.custom-quill-toolbar .ql-header[aria-pressed="true"] {
-  background: transparent !important;
-  color: #fff !important;
-  border: none !important;
-  box-shadow: none !important;
-}
-
-/* Override any Quill default styling */
-.custom-quill-toolbar .ql-header {
-  background-color: transparent !important;
-  background-image: none !important;
-  color: #fff !important;
-  border: none !important;
-  outline: none !important;
-  box-shadow: none !important;
-}
-
-/* Force all header buttons to look identical */
+/* ===========================
+   Header Buttons (H1, H2, H3)
+   =========================== */
 .custom-quill-toolbar button.ql-header {
+  min-width: 40px;
+  text-align: center;
+  font-size: 14px;
+  line-height: 1.2;
+}
+
+.custom-quill-toolbar .ql-header.ql-active,
+.custom-quill-toolbar .ql-header:hover,
+.custom-quill-toolbar .ql-header[aria-pressed="true"] {
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* ===========================
+   Contextual Toolbar
+   =========================== */
+.contextual-toolbar button {
+  min-width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
   background: transparent !important;
   color: #fff !important;
-  border: none !important;
-  outline: none !important;
-  box-shadow: none !important;
+  border-radius: 4px;
+  transition: background 0.2s ease;
+}
+
+.contextual-toolbar button:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.contextual-toolbar .ql-size {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  font-weight: bold;
+}
+
+/* Divider */
+.toolbar-divider {
+  width: 1px;
+  background: rgba(255, 255, 255, 0.3);
+  margin: 0 6px;
+}
+
+/* ===========================
+   Color Picker
+   =========================== */
+.color-dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.color-palette {
+  position: absolute;
+  top: -50px;
+  left: 0;
+  background: #fff;
+  border-radius: 8px;
+  padding: 6px 8px;
+  display: flex;
+  gap: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+  z-index: 3000;
+}
+
+.color-swatch {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1px solid #ccc;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.color-swatch:hover {
+  transform: scale(1.15);
+}
+
+.color-swatch.gradient {
+  background: conic-gradient(red, yellow, lime, aqua, blue, magenta, red);
 }

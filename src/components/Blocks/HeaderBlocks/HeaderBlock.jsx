@@ -599,6 +599,7 @@ const { imageCol, contentCol } = getAdjustedColumns();
 
                 {/* Title */}
                 <EditableQuill
+                  id={`default-title-${id}`}
                   value={title}
                   onChange={(value) => handleTextChange("title", value)}
                   placeholder="Sales Proposal"
