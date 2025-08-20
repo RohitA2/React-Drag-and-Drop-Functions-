@@ -87,7 +87,7 @@ const Sidebar = () => {
   };
 
   return (
-    <div className="sidebar  d-flex flex-column p-2 bg-white border-end h-100 mb-6 border rounded overflow-hidden shadow-sm mt-1">
+    <div className="sidebar  d-flex flex-column p-2 bg-white border-end   border rounded overflow-hidden shadow-sm mt-1">
       {/* Tabs */}
       <div className="d-flex align-items-center border-bottom mb-2">
         {blockSections.map((section) => (
@@ -194,15 +194,22 @@ const Sidebar = () => {
 
       <style>
         {`
-        .sidebar {
-          width: 230px;
-          min-width: 200px;
-          max-width: 230px;
-          font-size: 0.85rem;
-          border-right: 2px solid #dee2e6;
-          background-color: #fff;
-          overflow-y: hidden;
-        }
+       .sidebar {
+  position: absolute;   /* 🔥 position add */
+  top: 52px;            /* 🔥 top se gap */
+  bottom: 9px;         /* 🔥 bottom se gap */
+  left: 0;
+  width: 230px;
+  min-width: 200px;
+  max-width: 230px;
+  font-size: 0.85rem;
+  border-right: 2px solid #dee2e6;
+  background-color: #fff;
+  overflow-y: auto;      /* 🔥 scroll allow karna zaruri */
+  border-radius: 6px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+}
+
   
         .tab-btn {
           background: transparent;

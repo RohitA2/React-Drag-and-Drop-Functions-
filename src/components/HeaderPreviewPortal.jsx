@@ -19,21 +19,20 @@ const HeaderPreviewPortal = ({ position, onSelect, onClose }) => {
 
   return ReactDOM.createPortal(
     <div
-      className="bg-white rounded-lg shadow-lg p-2 absolute flex flex-col"
+      className="bg-white rounded-md shadow-lg p-1 absolute flex flex-col"
       style={{
-        top: "60px", // 🔥 top me gap
-        bottom: 0, // 🔥 bottom me gap
+        top: "58px", // 🔥 top me gap
+        bottom: "10px", // 🔥 bottom me gap
         left: position.left,
         zIndex: 9999,
         width: "250px",
-        // height: "100vh", // 🔥 full viewport height
-        maxHeight: "calc(100vh - 100px)",
+        borderRadius: "5px",
       }}
       onMouseEnter={() => clearTimeout(window.__hoverTimeout)}
       onMouseLeave={onClose}
     >
       <div
-        className="overflow-y-auto thin-scrollbar pr-1 flex-grow"
+        className="overflow-y-auto thin-scrollbar pr-0 flex-grow"
         style={{
           maxHeight: "100vh",
           scrollBehavior: "smooth", // For smooth scrolling
@@ -49,6 +48,7 @@ const HeaderPreviewPortal = ({ position, onSelect, onClose }) => {
                 onClose();
               }}
               style={{
+                marginTop: "-15px",
                 padding: "4px",
                 height: "180px",
               }}
