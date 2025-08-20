@@ -13,6 +13,7 @@ import {
   FaLink,
 } from "react-icons/fa";
 import { DropletHalf } from "react-bootstrap-icons";
+import { createPortal } from "react-dom";
 import "react-quill/dist/quill.snow.css";
 import "./Custom.css";
 
@@ -88,7 +89,12 @@ const CustomToolbar = ({
     setShowHeading(false);
   };
 
-  return (
+  const portalTarget =
+    typeof document !== "undefined" &&
+    (document.getElementById("floating-quill-toolbar-container") ||
+      document.body);
+
+  const toolbar = (
     <div
       id={`toolbar-${id}`}
       className="custom-quill-toolbar-wrapper"
@@ -99,7 +105,6 @@ const CustomToolbar = ({
         className="custom-quill-toolbar contextual-toolbar"
         style={{
           display: showSecondRow ? "flex" : "none",
-          position: "absolute",
           pointerEvents: "auto",
           ...(secondRowStyle || {}),
         }}
@@ -264,6 +269,8 @@ const CustomToolbar = ({
       </div>
     </div>
   );
+
+  return portalTarget ? createPortal(toolbar, portalTarget) : toolbar;
 };
 
 export default CustomToolbar;

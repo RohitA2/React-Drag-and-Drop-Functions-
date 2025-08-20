@@ -258,9 +258,9 @@
   display: flex;
 }
 
-/* Contextual Toolbar – block relative */
+/* Contextual Toolbar – fixed to viewport to avoid jumps */
 .custom-quill-toolbar.contextual-toolbar {
-  position: absolute !important;
+  position: fixed !important;
   z-index: 2000;
 }
 

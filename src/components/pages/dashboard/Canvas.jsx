@@ -298,7 +298,6 @@ const Canvas = forwardRef(
                 style={{
                   width: "100%",
                   marginBottom: "2rem",
-                  transition: "transform 0.2s ease",
                 }}
               >
                 <div className="position-relative hover-wrapper">
@@ -382,10 +381,6 @@ const Canvas = forwardRef(
           .hover-wrapper:hover .control-panel {
             opacity: 1;
             pointer-events: auto;
-          }
-          
-          .block-container:hover {
-            transform: translateY(-2px);
           }
           
           .control-panel {

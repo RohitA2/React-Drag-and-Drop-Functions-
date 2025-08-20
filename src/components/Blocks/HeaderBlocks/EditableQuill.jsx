@@ -121,11 +121,10 @@ const EditableQuill = ({
         secondRowStyle={
           selectionRect
             ? {
-                top: Math.max(8, selectionRect.top - 44),
+                top: Math.max(8, selectionRect.top - 10),
                 left:
-                  selectionRect.left +
-                  Math.max(0, selectionRect.width / 2) -
-                  150,
+                  selectionRect.left + Math.max(0, (selectionRect.width || 0) / 2),
+                transform: "translate(-50%, -100%)",
               }
             : { display: "none" }
         }
