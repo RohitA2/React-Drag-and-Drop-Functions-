@@ -12,6 +12,7 @@ import {
   FaImage,
   FaLink,
 } from "react-icons/fa";
+import { DropletHalf } from "react-bootstrap-icons";
 import "react-quill/dist/quill.snow.css";
 import "./Custom.css";
 
@@ -23,9 +24,20 @@ const defaultOverlayStyle = {
 };
 
 const COLORS = [
-  "#000000", "#444444", "#666666", "#999999", "#cccccc", "#ffffff",
-  "#ff0000", "#ff9900", "#ffff00", "#00ff00", "#00ffff", "#0000ff",
-  "#9900ff", "#ff00ff"
+  "#000000",
+  "#444444",
+  "#666666",
+  "#999999",
+  "#cccccc",
+  "#ffffff",
+  "#ff0000",
+  "#ff9900",
+  "#ffff00",
+  "#00ff00",
+  "#00ffff",
+  "#0000ff",
+  "#9900ff",
+  "#ff00ff",
 ];
 
 const CustomToolbar = ({
@@ -152,17 +164,14 @@ const CustomToolbar = ({
         </button>
 
         {/* Color Picker */}
-        {/* Color Picker */}
         <div className="custom-color-dropdown">
           <button
             className="custom-color-trigger"
             title="Text Color"
             onClick={() => setShowColors(!showColors)}
           >
-            <span
-              style={{ color: "red", fontSize: "16px", fontWeight: "bold" }}
-            >
-              ●
+            <span style={{ fontSize: "16px", fontWeight: "bold" }}>
+              <DropletHalf />
             </span>
           </button>
           {showColors && (
@@ -211,13 +220,14 @@ const CustomToolbar = ({
         className="custom-quill-toolbar global-toolbar"
         style={{
           display: showFirstRow ? "flex" : "none",
-          position: "absolute",
+          position: "fixed",
           pointerEvents: "auto",
           bottom: "20px",
           left: "50%",
           transform: "translateX(-50%)",
           width: "auto",
           marginLeft: "-200px",
+          zIndex: 3000,
           ...(firstRowStyle || {}),
         }}
       >

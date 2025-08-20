@@ -246,3 +246,21 @@
   font-size: 14px;
   text-shadow: 0 0 2px black;
 }
+
+
+/* Global Toolbar – always screen bottom */
+.custom-quill-toolbar.global-toolbar {
+  position: fixed !important;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999 !important;
+  display: flex;
+}
+
+/* Contextual Toolbar – block relative */
+.custom-quill-toolbar.contextual-toolbar {
+  position: absolute !important;
+  z-index: 2000;
+}
+
