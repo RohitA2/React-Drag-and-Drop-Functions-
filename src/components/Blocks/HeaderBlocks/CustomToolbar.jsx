@@ -12,6 +12,7 @@ import {
   FaImage,
   FaLink,
 } from "react-icons/fa";
+import "react-quill/dist/quill.snow.css";
 import "./Custom.css";
 
 const defaultOverlayStyle = {
@@ -22,16 +23,9 @@ const defaultOverlayStyle = {
 };
 
 const COLORS = [
-  "#000000",
-  "#2c3e50",
-  "#2980b9",
-  "#3498db",
-  "#8e44ad",
-  "#e74c3c",
-  "#e67e22",
-  "#f39c12",
-  "#27ae60",
-  "#2ecc71",
+  "#000000", "#444444", "#666666", "#999999", "#cccccc", "#ffffff",
+  "#ff0000", "#ff9900", "#ffff00", "#00ff00", "#00ffff", "#0000ff",
+  "#9900ff", "#ff00ff"
 ];
 
 const CustomToolbar = ({
@@ -108,7 +102,10 @@ const CustomToolbar = ({
             <span style={{ fontSize: "16px", fontWeight: "bold" }}>AA</span>
           </button>
           {showHeading && (
-            <div className="heading-dropdown custom-quill-toolbar ql-snow " style={{ display: "block" }}>
+            <div
+              className="heading-dropdown custom-quill-toolbar ql-snow "
+              style={{ display: "block" }}
+            >
               <div onClick={() => applyHeading("title")}>Title</div>
               <div onClick={() => applyHeading("1")}>Heading 1</div>
               <div onClick={() => applyHeading("2")}>Heading 2</div>
@@ -137,7 +134,11 @@ const CustomToolbar = ({
         <span className="toolbar-divider" />
 
         {/* Highlight */}
-        <button className="ql-background" title="Highlight">
+        <button
+          className="ql-background"
+          title="Highlight"
+          onClick={() => applyColor("yellow")}
+        >
           <span
             style={{
               background: "yellow",
@@ -150,10 +151,11 @@ const CustomToolbar = ({
           </span>
         </button>
 
-        {/* 🎨 Color Picker */}
-        <div className="color-dropdown">
+        {/* Color Picker */}
+        {/* Color Picker */}
+        <div className="custom-color-dropdown">
           <button
-            className="ql-color"
+            className="custom-color-trigger"
             title="Text Color"
             onClick={() => setShowColors(!showColors)}
           >
@@ -164,17 +166,17 @@ const CustomToolbar = ({
             </span>
           </button>
           {showColors && (
-            <div className="color-palette">
+            <div className="custom-color-palette">
               {COLORS.map((c) => (
                 <button
                   key={c}
-                  className="color-swatch"
+                  className="custom-color-swatch"
                   style={{ background: c }}
                   onClick={() => applyColor(c)}
                 />
               ))}
               <button
-                className="color-swatch gradient"
+                className="custom-color-swatch gradient"
                 title="More Colors"
                 onClick={() => {
                   const input = document.createElement("input");
@@ -215,6 +217,7 @@ const CustomToolbar = ({
           left: "50%",
           transform: "translateX(-50%)",
           width: "auto",
+          marginLeft: "-200px",
           ...(firstRowStyle || {}),
         }}
       >

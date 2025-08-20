@@ -1,66 +1,75 @@
-/* Remove borders, outlines, shadows, and backgrounds on all elements inside wrapper */
-.editable-quill-wrapper * {
-  border: none !important;
-  outline: none !important;
-  box-shadow: none !important;
-  background: transparent !important;
-  margin: 0 !important;
-  padding: 0 !important;
+/* ===========================
+   EditableQuill Component Styles
+   =========================== */
+
+.editable-quill-wrapper {
+  position: relative;
+  width: 100%;
 }
 
-/* Toolbar background (dark) with no borders or shadows */
-.ql-toolbar.ql-snow {
-  background: #1e1e1e !important;
-  border: none !important;
-  box-shadow: none !important;
-  padding: 6px 10px !important;
-  margin-bottom: 6px; /* spacing from editor */
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+.editable-quill-wrapper.has-content .editable-quill-placeholder {
+  display: none;
 }
 
-/* Remove button/select backgrounds inside toolbar */
-.ql-toolbar.ql-snow button,
-.ql-toolbar.ql-snow select {
-  background: transparent !important;
-  border: none !important;
-  color: #fff !important;
-  padding: 6px 10px !important;
-  cursor: pointer;
+.editable-quill-placeholder {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  color: #999;
+  font-style: italic;
+  z-index: 1;
 }
 
-/* Remove outline on focus */
-.ql-toolbar.ql-snow button:focus,
-.ql-toolbar.ql-snow select:focus,
-.ql-editor:focus {
-  outline: none !important;
-  box-shadow: none !important;
+.editable-quill-placeholder::before {
+  content: attr(data-placeholder);
+  position: absolute;
+  top: 0;
+  left: 0;
 }
 
-/* Editor area styles */
-.ql-editor {
-  background: transparent !important;
-  padding: 0 !important;
-  margin: 0 !important;
-  min-height: inherit !important;
-  font-size: 1rem;
-  line-height: 1.5;
-  color: #fff; /* text color to be visible */
-  /* Remove extra spacing on paragraphs */
+/* ===========================
+   Quill Editor Cleanup
+   =========================== */
+
+.editable-quill-wrapper .ql-container.ql-snow,
+.editable-quill-wrapper .ql-editor {
+  border: none;
+  outline: none;
+  box-shadow: none;
+  background: transparent;
 }
 
-.ql-editor p {
-  margin: 0 !important;
-  padding: 0 !important;
-  border: none !important;
-  background: transparent !important;
+.editable-quill-wrapper .ql-editor p {
+  margin: 0;
+  padding: 0;
 }
 
-/* Container */
-.ql-container.ql-snow {
-  background: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
-  padding: 0 !important;
+.editable-quill-wrapper .ql-container.ql-snow {
+  border: none;
+  background: none;
+  box-shadow: none;
+}
+
+/* ===========================
+   Quill Toolbar Cleanup
+   =========================== */
+
+.editable-quill-wrapper .ql-toolbar.ql-snow {
+  display: none; /* Hide default Quill toolbar */
+}
+
+/* ===========================
+   Toolbar Positioning
+   =========================== */
+
+.toolbar-positioned {
+  position: absolute;
+  z-index: 3000;
+}
+
+.toolbar-hidden {
+  display: none;
 }

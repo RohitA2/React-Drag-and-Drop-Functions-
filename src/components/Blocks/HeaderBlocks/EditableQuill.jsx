@@ -31,7 +31,7 @@ const EditableQuill = ({
         if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
         typingTimeoutRef.current = setTimeout(() => {
           setIsTyping(false);
-        }, 5000);
+        }, 10000);
       }
     };
 
@@ -91,6 +91,7 @@ const EditableQuill = ({
     "bullet",
     "image",
     "link",
+    "background",
   ];
 
   return (

@@ -12,8 +12,8 @@
 
 .editable-quill-wrapper * {
   border: none !important;
-  background: transparent !important;
-  box-shadow: none !important;
+  /* background: transparent !important; */
+  /* box-shadow: none !important; */
 }
 
 .ql-editor p {
@@ -29,6 +29,12 @@
   box-shadow: none !important;
 }
 
+.custom-quill-toolbar select.ql-color,
+.custom-quill-toolbar select.ql-background {
+  display: inline-block;
+  cursor: pointer;
+}
+
 /* ===========================
    Toolbar Container
    =========================== */
@@ -40,7 +46,7 @@
   border-radius: 6px;
   display: inline-flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 2px;
   width: fit-content;
   max-width: 100%;
 }
@@ -116,82 +122,118 @@
   margin: 0 6px;
 }
 
-/* ===========================
-   Color Picker
-   =========================== */
-.color-dropdown {
+.heading-dropdown-wrapper {
   position: relative;
   display: inline-block;
 }
 
-.color-palette {
-  position: absolute;
-  top: -50px;
-  left: 0;
-  background: #fff;
-  border-radius: 8px;
-  padding: 6px 8px;
-  display: flex;
-  gap: 8px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.25);
-  z-index: 3000;
+.heading-dropdown-trigger {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px 6px;
+  color: white;
 }
 
-.color-swatch {
+.heading-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background: #1e1e1e; /* Ensure this background color is applied */
+  border-radius: 6px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25);
+  z-index: 10000; /* Increased z-index */
+  min-width: 140px;
+  padding: 4px 0;
+  display: block; /* Ensure visibility */
+}
+
+.heading-dropdown div {
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+  color: #fff;
+  font-size: 14px;
+}
+
+.heading-dropdown div:hover {
+  background: #333;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.25);
+}
+
+
+/* ===========================
+   Custom Color Dropdown
+   =========================== */
+.custom-color-dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.custom-color-trigger {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px 6px;
+  color: white;
+}
+
+.custom-color-palette {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background-color: #fff; /* solid background so colors visible */
+  border-radius: 6px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25);
+  z-index: 10000;
+  padding: 8px;
+  display: grid;
+  grid-template-columns: repeat(6, 24px); /* 6 colors per row */
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.custom-color-swatch {
   width: 24px;
   height: 24px;
-  border-radius: 50%;
-  border: 1px solid #ccc;
+  border: 1px solid #ddd;
+  border-radius: 3px;
   cursor: pointer;
-  transition: transform 0.15s ease;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
-.color-swatch:hover {
+.custom-color-swatch:hover {
   transform: scale(1.15);
+  box-shadow: 0 0 4px rgba(0,0,0,0.3);
 }
 
-.color-swatch.gradient {
-  background: conic-gradient(red, yellow, lime, aqua, blue, magenta, red);
+.custom-color-swatch.gradient {
+  background: linear-gradient(
+    45deg,
+    #ff0000,
+    #ff9900,
+    #ffff00,
+    #00ff00,
+    #0000ff,
+    #9900ff,
+    #ff00ff
+  );
+  position: relative;
 }
 
-.heading-dropdown-wrapper {
-    position: relative;
-    display: inline-block;
-  }
+.custom-color-swatch.gradient::after {
+  content: "+";
+  color: white;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-weight: bold;
+  font-size: 14px;
+  text-shadow: 0 0 2px black;
+}
 
-  .heading-dropdown-trigger {
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    padding: 4px 6px;
-    color: white;
-  }
 
-  .heading-dropdown {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    background: #1e1e1e; /* Ensure this background color is applied */
-    border-radius: 6px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25);
-    z-index: 10000; /* Increased z-index */
-    min-width: 140px;
-    padding: 4px 0;
-    display: block; /* Ensure visibility */
-  }
-
-  .heading-dropdown div {
-    border-radius: 4px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 12px;
-    cursor: pointer;
-    color: #fff;
-    font-size: 14px;
-  }
-
-  .heading-dropdown div:hover {
-    background: #333;
-    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.25);
-  }
