@@ -21,11 +21,13 @@ const HeaderPreviewPortal = ({ position, onSelect, onClose }) => {
     <div
       className="bg-white rounded-lg shadow-lg p-2 absolute flex flex-col"
       style={{
-        top: position.top,
+        top: "60px", // 🔥 top me gap
+        bottom: 0, // 🔥 bottom me gap
         left: position.left,
         zIndex: 9999,
-        width: "300px",
-        maxHeight: `min(620px, calc(100vh - ${position.top}px - 20px))`,
+        width: "250px",
+        // height: "100vh", // 🔥 full viewport height
+        maxHeight: "calc(100vh - 100px)",
       }}
       onMouseEnter={() => clearTimeout(window.__hoverTimeout)}
       onMouseLeave={onClose}
@@ -33,23 +35,35 @@ const HeaderPreviewPortal = ({ position, onSelect, onClose }) => {
       <div
         className="overflow-y-auto thin-scrollbar pr-1 flex-grow"
         style={{
-          maxHeight: "600px",
+          maxHeight: "100vh",
           scrollBehavior: "smooth", // For smooth scrolling
         }}
       >
         <div className="space-y-2">
-          {" "}
-          {/* Changed from mb-2 to space-y-2 for consistent spacing */}
           {previewBlocks.map(({ id, component: Component }) => (
             <div
               key={id}
-              className="rounded-lg overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
+              className="rounded-lg overflow-hidden hover:shadow-md transition-shadow cursor-pointer bg-gray-50"
               onClick={() => {
                 onSelect(id);
                 onClose();
               }}
+              style={{
+                padding: "4px",
+                height: "180px",
+              }}
             >
-              <Component isPreview />
+              {/* Scale down preview */}
+              <div
+                style={{
+                  transform: "scale(0.3)", // shrink to 50%
+                  transformOrigin: "top left", // anchor scaling
+                  width: "500%", // adjust width
+                  height: "200%", // adjust height
+                }}
+              >
+                <Component isPreview />
+              </div>
             </div>
           ))}
         </div>
