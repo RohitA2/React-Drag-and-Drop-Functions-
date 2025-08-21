@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { Bell } from "react-bootstrap-icons";
 
 export default function Dashboard() {
+  const navigate = useNavigate();
   return (
     <div style={{ backgroundColor: "#f9f9f9", minHeight: "100vh" }}>
       {/* Top Navbar */}
@@ -68,6 +69,7 @@ export default function Dashboard() {
             variant="dark"
             className="me-3 px-4 py-2 rounded-pill fw-bold"
             style={{ backgroundColor: "black", border: "none" }}
+            onClick={() => navigate("/template-builder")}
           >
             Create
           </Button>
