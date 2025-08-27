@@ -14,31 +14,40 @@ import {
 import { Modal, Button } from "react-bootstrap";
 import Cropper from "react-cropper";
 import "cropperjs/dist/cropper.css";
+import axios from "axios";
+
+const API_URL = import.meta.env.VITE_API_URL;
+
 
 const layoutOptions = [
-  { id: "left-panel", icon: <LayoutPanelLeft size={18} /> },
-  { id: "right-panel", icon: <LayoutDashboard size={18} /> },
-  { id: "top-panel", icon: <LayoutPanelTop size={18} /> },
-  { id: "bottom-panel", icon: <LayoutTemplate size={18} /> },
+  { id: "left-panel", icon: <LayoutPanelLeft size={18} />, label: "Left" },
+  { id: "right-panel", icon: <LayoutDashboard size={18} />, label: "Right" },
+  { id: "top-panel", icon: <LayoutPanelTop size={18} />, label: "Top" },
+  { id: "bottom-panel", icon: <LayoutTemplate size={18} />, label: "Bottom" },
   {
     id: "grid",
     icon: <LayoutGrid size={18} />,
+    label: "Grid",
     description: "Content overlays image background",
   },
   {
     id: "default",
     icon: <Layout size={18} />,
+    label: "Default",
   },
 ];
 
 const BlockSettingsPanel = ({
   activeBlock,
   onClose,
-  blockSettings,
+  block, // Now get the full block object
   onSettingsChange,
   isPreview = false,
 }) => {
-  if (!activeBlock) return null;
+  if (!activeBlock || !block) return null;
+
+  // Use block.settings instead of separate blockSettings
+  const blockSettings = block?.settings || {};
 
   const [cropModalOpen, setCropModalOpen] = useState(false);
   const [imageSrc, setImageSrc] = useState(null);
@@ -46,28 +55,62 @@ const BlockSettingsPanel = ({
 
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        setImageSrc(reader.result);
-        setCropModalOpen(true);
-      };
-      reader.readAsDataURL(file);
-    }
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setImageSrc(reader.result); // for cropper preview
+      setCropModalOpen(true);
+    };
+    reader.readAsDataURL(file);
   };
 
-  const handleCropSave = () => {
-    if (cropperRef.current) {
-      const cropper = cropperRef.current.cropper;
-      const croppedImage = cropper.getCroppedCanvas().toDataURL();
-      onSettingsChange(activeBlock.id, {
-        backgroundImage: croppedImage,
-        backgroundFilter: null, // image upload hone pe filter hata do
-      });
+
+const handleCropSave = async () => {
+  const cropper = cropperRef.current?.cropper;
+  if (cropper) {
+    cropper.getCroppedCanvas().toBlob(async (blob) => {
+      if (!blob) return;
+
+      const formData = new FormData();
+      formData.append("file", blob, "cropped.png");
+
+      try {
+        // ✅ Upload cropped image
+        const res = await axios.post(`${API_URL}/upload/img`, formData);
+        const data = res.data;
+
+        if (data.success) {
+          // ✅ Update parent state
+          onSettingsChange(activeBlock.id, {
+            backgroundImage: data.url,
+            backgroundFilter: null,
+          });
+
+          // ✅ Save to backend
+          try {
+            await axios.put(`${API_URL}/api/headerBlock/${activeBlock.id}`, {
+              ...blockSettings,
+              backgroundImage: data.url,
+              backgroundFilter: null,
+              id: activeBlock.id,
+              userId: activeBlock.userId || blockSettings.userId,
+            });
+
+            console.log("Header block updated with new background.");
+          } catch (err) {
+            console.error("Error saving to backend:", err.message);
+          }
+        }
+      } catch (err) {
+        console.error("Error uploading background:", err.message);
+      }
+
       setCropModalOpen(false);
-      setImageSrc(null);
-    }
-  };
+    }, "image/png");
+  }
+};
+
 
   const handleLayoutChange = (layoutType) => {
     const updates = { layoutType };
@@ -117,17 +160,24 @@ const BlockSettingsPanel = ({
           {layoutOptions.map((layout) => (
             <div key={layout.id} className="col-4">
               <button
-                className={`btn w-100 d-flex flex-column align-items-center justify-content-center border rounded p-1 ${
+                className={`btn w-100 d-flex flex-column align-items-center justify-content-center border rounded p-0 ${
+                  // p-0 = less padding
                   blockSettings?.layoutType === layout.id
                     ? "bg-primary text-white"
                     : "bg-light"
                 }`}
-                style={{ height: 45, cursor: "pointer", fontSize: "0.7rem" }}
+                style={{
+                  height: 36, // reduce height
+                  cursor: "pointer",
+                  fontSize: "0.6rem", // smaller text
+                  gap: "2px", // smaller spacing between icon and label
+                  minWidth: 40, // smaller width if needed
+                }}
                 onClick={() => handleLayoutChange(layout.id)}
                 title={layout.description}
               >
                 {layout.icon}
-                <small className="mt-1">{layout.label}</small>
+                {/* <small>{layout.label}</small> */}
               </button>
             </div>
           ))}
@@ -217,7 +267,7 @@ const BlockSettingsPanel = ({
           {!isPreview && (
             <Modal
               show={cropModalOpen}
-              onHide={() => {}}
+              onHide={() => setCropModalOpen(false)}
               centered
               size="lg"
               backdrop="static"
@@ -240,6 +290,12 @@ const BlockSettingsPanel = ({
                 )}
               </Modal.Body>
               <Modal.Footer>
+                <Button
+                  variant="secondary"
+                  onClick={() => setCropModalOpen(false)}
+                >
+                  Cancel
+                </Button>
                 <Button onClick={handleCropSave}>Save</Button>
               </Modal.Footer>
             </Modal>
@@ -299,13 +355,21 @@ const BlockSettingsPanel = ({
 
         {/* Text Alignment */}
         <div className="d-flex justify-content-between align-items-center border-bottom py-1">
-          <label className="form-label mb-0" style={{ fontSize: "0.8rem" }}>
+          <label
+            className="form-label mb-0"
+            style={{ fontSize: "0.75rem", marginRight: "0.5rem" }}
+          >
             Text align
           </label>
-          <div className="btn-group" role="group" aria-label="Text align">
+
+          <div
+            className="btn-group btn-group-sm"
+            role="group"
+            aria-label="Text align"
+          >
             {["left", "center", "right"].map((align) => {
               const icons = {
-                left: <AlignLeft size={14} />,
+                left: <AlignLeft size={14} />, // smaller icons
                 center: <AlignCenter size={14} />,
                 right: <AlignRight size={14} />,
               };
@@ -313,7 +377,7 @@ const BlockSettingsPanel = ({
                 <button
                   key={align}
                   type="button"
-                  className={`btn btn-sm ${
+                  className={`btn ${
                     blockSettings?.textAlign === align
                       ? "btn-primary"
                       : "btn-outline-secondary"
@@ -321,7 +385,10 @@ const BlockSettingsPanel = ({
                   onClick={() =>
                     onSettingsChange(activeBlock.id, { textAlign: align })
                   }
-                  style={{ padding: "0.15rem 0.3rem" }}
+                  style={{
+                    padding: "0.15rem 0.35rem", // compact padding
+                    minWidth: "26px", // keeps buttons from shrinking too much
+                  }}
                 >
                   {icons[align]}
                 </button>

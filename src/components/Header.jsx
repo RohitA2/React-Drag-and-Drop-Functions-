@@ -16,7 +16,8 @@ const HeaderBar = ({
   hasElementsOnCanvas,
   canvasRef,
   onAddBlock,
-  hasSignatureBlock
+  hasSignatureBlock,
+  blocks
 }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [showSaveOptions, setShowSaveOptions] = useState(false);
@@ -294,6 +295,8 @@ const HeaderBar = ({
           onAddBlock={onAddBlock}
           hasSignatureBlock={hasSignatureBlock}
           handleAddSignatureBlock={handleAddSignatureBlock}
+          canvasRef={canvasRef}
+          blocks={blocks}
         />
       </div>
 

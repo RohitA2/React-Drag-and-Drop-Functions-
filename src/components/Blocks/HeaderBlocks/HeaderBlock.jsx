@@ -10,6 +10,9 @@ import Cropper from "react-cropper";
 import "cropperjs/dist/cropper.css";
 import EditableQuill from "./EditableQuill";
 import CustomToolbar from "./CustomToolbar";
+import { useSelector, useDispatch } from "react-redux";
+import { selectedUserId } from "../../../store/authSlice";
+import { setHeaderId } from "../../../store/headerSlice";
 
 const LAYOUTS = {
   "left-panel": {
@@ -105,9 +108,12 @@ const LAYOUTS = {
   },
 };
 
+
+const API_URL =import.meta.env.VITE_API_URL
+
 const HeaderBlock = ({
   id,
-  layoutType = "left-panel",
+  layoutType = "left-panel", // This should come from parent
   onSettingsChange = () => {},
   initialTitle = "Sales Proposal",
   initialSubtitle = "Optional",
@@ -115,19 +121,30 @@ const HeaderBlock = ({
   initialSenderName = "By Sender name",
   initialPrice = "INCL.VAT",
   initialLogo = null,
-  backgroundImage = "images/headers/leaf.avif",
-  backgroundColor = "#2d5000",
-  textColor = "#CFCFCF",
-  backgroundFilter = null,
-  textAlign = "left",
+  backgroundImage=`${API_URL}/uploads/1756115657883.png`,
+  backgroundColor="#2D5000",
+  textColor, // This should come from parent
+  backgroundFilter, // This should come from parent
+  textAlign, // This should come from parent
   isPreview = false,
 }) => {
-  const [title, setTitle] = useState(initialTitle);
-  const [subtitle, setSubtitle] = useState(initialSubtitle);
-  const [clientName, setClientName] = useState(initialClientName);
-  const [senderName, setSenderName] = useState(initialSenderName);
-  const [price, setPrice] = useState(initialPrice);
-  const [logo, setLogo] = useState(initialLogo);
+  const userId = useSelector(selectedUserId);
+  const [isCreated, setIsCreated] = useState(false);
+  const [headerBlock, setHeaderBlock] = useState({
+    layoutType, // Use the layoutType prop
+    title: initialTitle,
+    subtitle: initialSubtitle,
+    clientName: initialClientName,
+    senderName: initialSenderName,
+    price: initialPrice,
+    logo: initialLogo,
+    backgroundImage: backgroundImage,
+    backgroundColor: backgroundColor,
+    textColor,
+    backgroundFilter,
+    textAlign,
+    leftWidth: 50,
+  });
   const [cropModalOpen, setCropModalOpen] = useState(false);
   const [imageSrc, setImageSrc] = useState(null);
   const fileInputRef = useRef();
@@ -136,18 +153,130 @@ const HeaderBlock = ({
   const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
   const [showLogo, setShowLogo] = useState(true);
   const cropperRef = useRef(null);
-  const [leftWidth, setLeftWidth] = useState(50);
   const [isDragging, setIsDragging] = useState(false);
-  const [isHovered, setIsHovered] = useState(false); // New state for hover
+  const [isHovered, setIsHovered] = useState(false);
+  const [headerId, setHeaderId] = useState(id || null);
+  const dispatch = useDispatch();
   const containerRef = useRef(null);
 
-  const isWhiteBackground = backgroundColor.toLowerCase() === "#ffffff";
-  const dynamicTextColor = isWhiteBackground ? "#333" : textColor;
+  // Add useEffect to update state when props change
+  useEffect(() => {
+    setHeaderBlock((prev) => ({
+      ...prev,
+      layoutType, // Update layoutType from props
+      backgroundImage,
+      backgroundColor,
+      textColor,
+      backgroundFilter,
+      textAlign,
+    }));
+  }, [
+    layoutType, // Include layoutType in dependencies
+    backgroundImage,
+    backgroundColor,
+    textColor,
+    backgroundFilter,
+    textAlign,
+  ]);
+
+  const updateHeaderBlock = useCallback(
+    (partial) => {
+      setHeaderBlock((prev) => {
+        const next = { ...prev, ...partial };
+        onSettingsChange(next);
+        return next;
+      });
+    },
+    [onSettingsChange]
+  );
+
+  // In HeaderBlock.jsx - update the API call
+useEffect(() => {
+  const saveHeaderBlock = async () => {
+    if (isPreview) return;
+
+    try {
+      let exists = false;
+
+      // 🔍 Step 1: Check if header block exists
+      const checkRes = await fetch(`${API_URL}/api/headerBlock/${id}`);
+      if (checkRes.ok) {
+        exists = true;
+      }
+
+      // Step 2: Decide method and URL
+      const url = exists
+        ? `${API_URL}/api/headerBlock/${id}` // update
+        : `${API_URL}/api/CreateHeaderBlock`; // create
+
+      const method = exists ? "PUT" : "POST";
+
+      // Step 3: Send request
+      const response = await fetch(url, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          id,
+          layoutType: headerBlock.layoutType,
+          title: headerBlock.title,
+          subtitle: headerBlock.subtitle,
+          clientName: headerBlock.clientName,
+          senderName: headerBlock.senderName,
+          price: headerBlock.price,
+          logoUrl: headerBlock.logo,
+          backgroundImage: headerBlock.backgroundImage,
+          backgroundColor: headerBlock.backgroundColor,
+          textColor: headerBlock.textColor,
+          backgroundFilter: headerBlock.backgroundFilter,
+          textAlign: headerBlock.textAlign,
+          leftWidth: headerBlock.leftWidth,
+          userId: userId,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Failed to save header block:", errorData);
+      } else {
+        const result = await response.json();
+        console.log("Header block saved successfully:", result);
+
+        // ✅ If newly created, store ID and mark as created
+        if (!exists && result?.data?.id) {
+          setIsCreated(true);
+          localStorage.setItem("headerId", result.data.id);
+          console.log("HeaderId saved in localStorage:", result.data.id);
+        }
+      }
+    } catch (error) {
+      console.error("Error saving header block:", error);
+    }
+  };
+
+  // ⏳ Debounce save call by 1 second
+  const timeout = setTimeout(() => {
+    if (headerBlock.title && headerBlock.title !== "Sales Proposal") {
+      saveHeaderBlock();
+    }
+  }, 1000);
+
+  return () => clearTimeout(timeout);
+}, [headerBlock, id, userId, isPreview]);
+
+
+  const isWhiteBackground =
+    (headerBlock.backgroundColor || "").toLowerCase() === "#ffffff";
+  const dynamicTextColor = isWhiteBackground ? "#333" : headerBlock.textColor;
   const dynamicPriceSectionBg = isWhiteBackground ? "#e9ecef" : "#f8f9fa";
   const dynamicPriceTextColor = isWhiteBackground ? "#000" : "#2d5000";
 
   const handleMouseDown = (e) => {
-    if (isPreview || !["left-panel", "right-panel"].includes(layoutType))
+    if (
+      isPreview ||
+      !["left-panel", "right-panel"].includes(headerBlock.layoutType)
+    )
       return;
     setIsDragging(true);
     document.body.style.cursor = "col-resize";
@@ -167,14 +296,14 @@ const HeaderBlock = ({
       );
 
       // Update width immediately for smoother UX
-      setLeftWidth(percentage);
+      updateHeaderBlock({ leftWidth: percentage });
     },
-    [isDragging]
+    [isDragging, updateHeaderBlock]
   );
 
   const handleMouseUp = useCallback(() => {
     setIsDragging(false);
-    setIsHovered(false); // Reset hover state when dragging ends
+    setIsHovered(false);
     document.body.style.cursor = "";
   }, []);
 
@@ -193,27 +322,6 @@ const HeaderBlock = ({
     };
   }, [isDragging, handleMouseMove, handleMouseUp]);
 
-  const getBackgroundStyle = () => {
-    if (backgroundFilter) {
-      return {
-        backgroundImage: backgroundFilter,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        backgroundRepeat: "no-repeat",
-      };
-    } else if (backgroundImage) {
-      return {
-        backgroundImage: `url(${backgroundImage})`,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        backgroundRepeat: "no-repeat",
-      };
-    }
-    return {
-      backgroundColor: backgroundColor || "#f8f9fa",
-    };
-  };
-
   const handleLogoUpload = (e) => {
     if (isPreview) return;
     const file = e.target.files[0];
@@ -230,7 +338,7 @@ const HeaderBlock = ({
   const handleLogoReset = () => {
     if (isPreview) return;
 
-    setLogo(null);
+    updateHeaderBlock({ logo: null });
     setImageSrc(null);
     setShowLogo(true);
     setCropModalOpen(false);
@@ -238,64 +346,74 @@ const HeaderBlock = ({
     if (fileInputRef.current) {
       fileInputRef.current.value = null;
     }
-
-    onSettingsChange(id, { logo: null });
-  };
-
-  const getCroppedImg = (cropper) => {
-    return new Promise((resolve, reject) => {
-      try {
-        const canvas = cropper.getCroppedCanvas({
-          fillColor: "#fff",
-          imageSmoothingQuality: "high",
-        });
-
-        if (!canvas) {
-          reject(new Error("No canvas returned from cropper."));
-          return;
-        }
-
-        canvas.toBlob((blob) => {
-          if (!blob) {
-            reject(new Error("Canvas is empty."));
-            return;
-          }
-          const url = URL.createObjectURL(blob);
-          resolve(url);
-        }, "image/png");
-      } catch (err) {
-        reject(err);
-      }
-    });
   };
 
   const handleCropSave = async () => {
     try {
       const cropper = cropperRef.current?.cropper;
-      if (!cropper) {
-        throw new Error("Cropper instance not found.");
+      if (!cropper) throw new Error("Cropper instance not found.");
+
+      const canvas = cropper.getCroppedCanvas({ fillColor: "#fff" });
+      const blob = await new Promise((resolve) =>
+        canvas.toBlob(resolve, "image/png")
+      );
+
+      const formData = new FormData();
+      formData.append("file", blob, "logo.png");
+
+      const uploadRes = await fetch(`${API_URL}/upload/img`, {
+        method: "POST",
+        body: formData,
+      });
+
+      const uploadData = await uploadRes.json();
+
+      if (!uploadData.success) {
+        console.error("Upload failed:", uploadData.message);
+        return;
       }
 
-      const croppedImageUrl = await getCroppedImg(cropper);
-      setLogo(croppedImageUrl);
-      setCropModalOpen(false);
-      onSettingsChange(id, { logo: croppedImageUrl });
+      const updatedLogoUrl = uploadData.url;
+      const updatedBlock = { ...headerBlock, logo: updatedLogoUrl };
+
+      const url = isCreated
+        ? `${API_URL}/api/headerBlock/${headerId}`
+        : `${API_URL}/api/CreateHeaderBlock`;
+
+      const method = isCreated ? "PUT" : "POST";
+
+      const saveRes = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...updatedBlock, userId }),
+      });
+
+      const saveData = await saveRes.json();
+      console.log("i am from saved data", saveData);
+
+      if (!saveRes.ok) {
+        console.error("Failed to save header block with new logo:", saveData);
+      } else {
+        console.log("Header block saved with updated logo:", saveData);
+
+        updateHeaderBlock({ logo: updatedLogoUrl });
+        setCropModalOpen(false);
+
+        // Update local ID if newly created
+        if (!isCreated && saveData?.data?.id) {
+          setIsCreated(true);
+          setHeaderId(saveData.data.id);
+          localStorage.setItem("headerId", saveData.data.id);
+        }
+      }
     } catch (err) {
-      console.error(err);
+      console.error("Error uploading and saving logo:", err);
     }
   };
 
   const handleTextChange = (field, value) => {
     if (isPreview) return;
-    const setters = {
-      title: setTitle,
-      subtitle: setSubtitle,
-      clientName: setClientName,
-      senderName: setSenderName,
-      price: setPrice,
-    };
-    setters[field](value);
-    onSettingsChange(id, { [field]: value });
+    updateHeaderBlock({ [field]: value });
   };
 
   const onCropComplete = useCallback((croppedArea, croppedAreaPixels) => {
@@ -310,23 +428,30 @@ const HeaderBlock = ({
     priceSection,
     contentStyle,
   } = useMemo(() => {
-    return LAYOUTS[layoutType] || LAYOUTS.default;
-  }, [layoutType]);
+    return LAYOUTS[headerBlock.layoutType] || LAYOUTS.default;
+  }, [headerBlock.layoutType]);
 
   // Adjust columns for resizable layouts
-const getAdjustedColumns = () => {
-  if (isPreview || !["left-panel", "right-panel"].includes(layoutType)) {
-    return { imageCol: originalImageCol, contentCol: originalContentCol };
-  }
+  const getAdjustedColumns = () => {
+    if (
+      isPreview ||
+      !["left-panel", "right-panel"].includes(headerBlock.layoutType)
+    ) {
+      return { imageCol: originalImageCol, contentCol: originalContentCol };
+    }
 
-  // Use flexbox for resizable layouts instead of Bootstrap grid
-  const imageCol = `flex-shrink-0 ${layoutType === "left-panel" ? "order-1" : "order-2"}`;
-  const contentCol = `flex-grow-1 ${layoutType === "left-panel" ? "order-2" : "order-1"}`;
+    // Use flexbox for resizable layouts instead of Bootstrap grid
+    const imageCol = `flex-shrink-0 ${
+      headerBlock.layoutType === "left-panel" ? "order-1" : "order-2"
+    }`;
+    const contentCol = `flex-grow-1 ${
+      headerBlock.layoutType === "left-panel" ? "order-2" : "order-1"
+    }`;
 
-  return { imageCol, contentCol };
-};
+    return { imageCol, contentCol };
+  };
 
-const { imageCol, contentCol } = getAdjustedColumns();
+  const { imageCol, contentCol } = getAdjustedColumns();
 
   const wrapperStyle = isPreview
     ? {}
@@ -356,84 +481,97 @@ const { imageCol, contentCol } = getAdjustedColumns();
       <div
         className={`row rounded-3 overflow-hidden shadow d-flex ${container}`}
         ref={containerRef}
-        style={{ 
+        style={{
           position: "relative",
           // Use flexbox for resizable layouts
-          ...(isPreview || !["left-panel", "right-panel"].includes(layoutType) ? {} : {
-            display: "flex",
-            flexDirection: "row",
-            alignItems: "stretch",
-          }),
+          ...(isPreview ||
+          !["left-panel", "right-panel"].includes(headerBlock.layoutType)
+            ? {}
+            : {
+                display: "flex",
+                flexDirection: "row",
+                alignItems: "stretch",
+              }),
         }}
       >
         {/* Image Section */}
         <div
           className={imageCol}
           style={{
-            ...(backgroundFilter
-              ? { background: backgroundFilter }
-              : backgroundImage
+            ...(headerBlock.backgroundFilter
+              ? { background: headerBlock.backgroundFilter }
+              : headerBlock.backgroundImage
               ? {
-                  backgroundImage: `url('${backgroundImage}')`,
+                  backgroundImage: `url('${headerBlock.backgroundImage}')`,
                   backgroundSize: "cover",
                   backgroundPosition: "center",
                 }
-              : { backgroundColor: backgroundColor || "#f8f9fa" }),
+              : { backgroundColor: headerBlock.backgroundColor || "#f8f9fa" }),
             ...imageStyle,
             // Add dynamic width for resizable layouts
-            ...(isPreview || !["left-panel", "right-panel"].includes(layoutType) ? {} : {
-              width: `${leftWidth}%`,
-              minWidth: "200px",
-              maxWidth: "80%",
-            }),
+            ...(isPreview ||
+            !["left-panel", "right-panel"].includes(headerBlock.layoutType)
+              ? {}
+              : {
+                  width: `${headerBlock.leftWidth}%`,
+                  minWidth: "200px",
+                  maxWidth: "80%",
+                }),
           }}
         />
 
         {/* Resizable handle for left/right panels */}
-        {!isPreview && ["left-panel", "right-panel"].includes(layoutType) && (
-          <div
-            style={{
-              width: "6px",
-              cursor: "col-resize",
-              backgroundColor: "#ddd",
-              position: "absolute",
-              top: 0,
-              bottom: 0,
-              left: `${leftWidth}%`,
-              transform: "translateX(-50%)",
-              zIndex: 1,
-              opacity: isHovered || isDragging ? 1 : 0, // Visible on hover or drag
-              transition: "opacity 0.2s ease", // Smooth transition for opacity
-            }}
-            onMouseDown={handleMouseDown}
-            onMouseEnter={() => setIsHovered(true)} // Set hover state
-            onMouseLeave={() => !isDragging && setIsHovered(false)} // Reset hover state unless dragging
-          />
-        )}
+        {!isPreview &&
+          ["left-panel", "right-panel"].includes(headerBlock.layoutType) && (
+            <div
+              style={{
+                width: "6px",
+                cursor: "col-resize",
+                backgroundColor: "#ddd",
+                position: "absolute",
+                top: 0,
+                bottom: 0,
+                left: `${headerBlock.leftWidth}%`,
+                transform: "translateX(-50%)",
+                zIndex: 1,
+                opacity: isHovered || isDragging ? 1 : 0,
+                transition: "opacity 0.2s ease",
+              }}
+              onMouseDown={handleMouseDown}
+              onMouseEnter={() => setIsHovered(true)}
+              onMouseLeave={() => !isDragging && setIsHovered(false)}
+            />
+          )}
 
         {/* Content Section */}
         <div
           className={`${contentCol} ${
-            layoutType === "grid"
+            headerBlock.layoutType === "grid"
               ? ""
               : "d-flex flex-column justify-content-between"
           }`}
           style={{
-            ...(layoutType === "grid"
+            ...(headerBlock.layoutType === "grid"
               ? { ...contentStyle, color: dynamicTextColor }
-              : { backgroundColor, color: dynamicTextColor }),
+              : {
+                  backgroundColor: headerBlock.backgroundColor,
+                  color: dynamicTextColor,
+                }),
             // Add dynamic width for resizable layouts
-            ...(isPreview || !["left-panel", "right-panel"].includes(layoutType) ? {} : {
-              width: `${100 - leftWidth}%`,
-              minWidth: "200px",
-            }),
+            ...(isPreview ||
+            !["left-panel", "right-panel"].includes(headerBlock.layoutType)
+              ? {}
+              : {
+                  width: `${100 - headerBlock.leftWidth}%`,
+                  minWidth: "200px",
+                }),
           }}
         >
           {/* Logo and Controls */}
-          {layoutType !== "default" && (
-            <div className="logo-management-container" style={{ textAlign }}>
+          {headerBlock.layoutType !== "default" && (
+            <div className="logo-management-container" style={{ textAlign: headerBlock.textAlign }}>
               <div className="logo-actions-wrapper">
-                {logo ? (
+                {headerBlock.logo ? (
                   <Dropdown>
                     <Dropdown.Toggle
                       as={CustomToggle}
@@ -442,7 +580,11 @@ const { imageCol, contentCol } = getAdjustedColumns();
                     >
                       <div className="logo-preview-container">
                         {showLogo ? (
-                          <img src={logo} alt="Logo" className="logo-preview" />
+                          <img
+                            src={headerBlock.logo}
+                            alt="Logo"
+                            className="logo-preview"
+                          />
                         ) : (
                           <span
                             className="logo-placeholder"
@@ -551,15 +693,15 @@ const { imageCol, contentCol } = getAdjustedColumns();
           )}
 
           {/* Special for the default layout */}
-          {layoutType === "default" && (
+          {headerBlock.layoutType === "default" && (
             <>
               {/* Overlayed Title/SubTitle Box */}
-              <div style={{ ...LAYOUTS.default.titleBox, textAlign }}>
+              <div style={{ ...LAYOUTS.default.titleBox, textAlign: headerBlock.textAlign }}>
                 {/* Logo inside title box */}
                 <div className="d-flex justify-content-start align-items-start mb-2">
-                  {logo ? (
+                  {headerBlock.logo ? (
                     <img
-                      src={logo}
+                      src={headerBlock.logo}
                       alt="Logo"
                       style={{
                         height: "80px",
@@ -600,7 +742,7 @@ const { imageCol, contentCol } = getAdjustedColumns();
                 {/* Title */}
                 <EditableQuill
                   id={`default-title-${id}`}
-                  value={title}
+                  value={headerBlock.title}
                   onChange={(value) => handleTextChange("title", value)}
                   placeholder="Sales Proposal"
                   textColor="#000"
@@ -618,7 +760,7 @@ const { imageCol, contentCol } = getAdjustedColumns();
                 style={{
                   ...priceSection,
                   backgroundColor: dynamicPriceSectionBg,
-                  textAlign,
+                  textAlign: headerBlock.textAlign,
                 }}
               >
                 <h3
@@ -641,7 +783,7 @@ const { imageCol, contentCol } = getAdjustedColumns();
                 >
                   <Form.Control
                     type="text"
-                    value={price}
+                    value={headerBlock.price}
                     onChange={(e) => handleTextChange("price", e.target.value)}
                     className="border-0 bg-transparent text-center fw-bold"
                     style={{
@@ -662,7 +804,7 @@ const { imageCol, contentCol } = getAdjustedColumns();
           {/* Main Content */}
           <div
             className="w-full bg-gray-800 rounded-xl overflow-hidden editable-quill-wrapper"
-            style={{ textAlign }}
+            style={{ textAlign: headerBlock.textAlign }}
           >
             <div
               className="w-full px-6 py-8 space-y-3"
@@ -670,7 +812,7 @@ const { imageCol, contentCol } = getAdjustedColumns();
             >
               <EditableQuill
                 id={`subtitle-${id}`}
-                value={subtitle}
+                value={headerBlock.subtitle}
                 onChange={(value) => handleTextChange("subtitle", value)}
                 placeholder="Enter subtitle..."
                 className="text-xl"
@@ -678,29 +820,33 @@ const { imageCol, contentCol } = getAdjustedColumns();
               />
               <EditableQuill
                 id={`title-${id}`}
-                value={title}
+                value={headerBlock.title}
                 onChange={(value) => handleTextChange("title", value)}
                 placeholder="Enter title..."
                 className="text-3xl font-bold"
-                style={{ textAlign: "inherit", fontSize: "3rem", fontWeight: 700 }}
+                style={{
+                  textAlign: "inherit",
+                  fontSize: "3rem",
+                  fontWeight: 700,
+                }}
               />
             </div>
           </div>
 
           {/* Client/Sender Info */}
-          {layoutType !== "default" && (
+          {headerBlock.layoutType !== "default" && (
             <div
               className="mt-1"
-              style={{ color: dynamicTextColor, textAlign }}
+              style={{ color: dynamicTextColor, textAlign: headerBlock.textAlign }}
             >
               {/* Prepared for Client */}
               <div
                 className="mb-1 d-flex align-items-center"
                 style={{
                   justifyContent:
-                    textAlign === "left"
+                    headerBlock.textAlign === "left"
                       ? "flex-start"
-                      : textAlign === "center"
+                      : headerBlock.textAlign === "center"
                       ? "center"
                       : "flex-end",
                   color: dynamicTextColor,
@@ -708,12 +854,19 @@ const { imageCol, contentCol } = getAdjustedColumns();
               >
                 <div
                   className={`d-inline-flex align-items-center ${
-                    clientName.trim() === "" ? "rounded-pill" : ""
+                    (headerBlock.clientName || "").trim() === ""
+                      ? "rounded-pill"
+                      : ""
                   }`}
                   style={{
                     backgroundColor:
-                      clientName.trim() === "" ? "#fff" : "transparent",
-                    padding: clientName.trim() === "" ? "0.5px 2px" : "0",
+                      (headerBlock.clientName || "").trim() === ""
+                        ? "#fff"
+                        : "transparent",
+                    padding:
+                      (headerBlock.clientName || "").trim() === ""
+                        ? "0.5px 2px"
+                        : "0",
                     fontSize: "0.15rem",
                     lineHeight: 1,
                     flexWrap: "wrap",
@@ -724,10 +877,10 @@ const { imageCol, contentCol } = getAdjustedColumns();
                   <EditableQuill
                     id={`clientName-${id}`}
                     value={
-                      clientName === "" ||
-                      clientName === "Prepared by Client name"
-                        ? `<span style="color:${dynamicTextColor}; font-size:0.15rem;">Prepared for </span><span style="color:#F80B1E; font-size:0.25rem;">Client name</span>`
-                        : clientName
+                      headerBlock.clientName === "" ||
+                      headerBlock.clientName === "Prepared by Client name"
+                        ? `<span style="color:${dynamicTextColor}; font-size:0.15rem;">Prepared for </span><span style=\"color:#F80B1E; font-size:0.25rem;\">Client name</span>`
+                        : headerBlock.clientName
                     }
                     onChange={(value) => handleTextChange("clientName", value)}
                     placeholder=""
@@ -751,9 +904,9 @@ const { imageCol, contentCol } = getAdjustedColumns();
                 className="d-flex align-items-center"
                 style={{
                   justifyContent:
-                    textAlign === "left"
+                    headerBlock.textAlign === "left"
                       ? "flex-start"
-                      : textAlign === "center"
+                      : headerBlock.textAlign === "center"
                       ? "center"
                       : "flex-end",
                   color: dynamicTextColor,
@@ -761,12 +914,19 @@ const { imageCol, contentCol } = getAdjustedColumns();
               >
                 <div
                   className={`d-inline-flex align-items-center ${
-                    senderName.trim() === "" ? "rounded-pill" : ""
+                    (headerBlock.senderName || "").trim() === ""
+                      ? "rounded-pill"
+                      : ""
                   }`}
                   style={{
                     backgroundColor:
-                      senderName.trim() === "" ? "#cce5ff" : "transparent",
-                    padding: senderName.trim() === "" ? "0.5px 2px" : "0",
+                      (headerBlock.senderName || "").trim() === ""
+                        ? "#cce5ff"
+                        : "transparent",
+                    padding:
+                      (headerBlock.senderName || "").trim() === ""
+                        ? "0.5px 2px"
+                        : "0",
                     fontSize: "0.15rem",
                     lineHeight: 1,
                     flexWrap: "wrap",
@@ -777,9 +937,10 @@ const { imageCol, contentCol } = getAdjustedColumns();
                   <EditableQuill
                     id={`senderName-${id}`}
                     value={
-                      senderName === "" || senderName === "By Sender name"
-                        ? `<span style="color:${dynamicTextColor}; font-size:0.15rem;">By </span><span style="color:#0d6efd; font-size:0.25rem;">Sender name</span>`
-                        : senderName
+                      headerBlock.senderName === "" ||
+                      headerBlock.senderName === "By Sender name"
+                        ? `<span style=\"color:${dynamicTextColor}; font-size:0.15rem;\">By </span><span style=\"color:#0d6efd; font-size:0.25rem;\">Sender name</span>`
+                        : headerBlock.senderName
                     }
                     onChange={(value) => handleTextChange("senderName", value)}
                     placeholder=""
@@ -866,7 +1027,7 @@ const { imageCol, contentCol } = getAdjustedColumns();
           padding: 8px 12px;
           cursor: pointer;
           border-radius: 4px;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+          boxShadow: 0 2px 8px rgba(0,0,0,0.1);
         }
       `}</style>
     </div>

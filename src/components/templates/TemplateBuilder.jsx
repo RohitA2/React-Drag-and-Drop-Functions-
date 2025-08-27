@@ -5,6 +5,9 @@ import Canvas from "../pages/dashboard/Canvas";
 import HeaderBar from "../Header";
 import BlockSettingsPanel from "../pages/dashboard/BlockSettingsPanel";
 
+const API_URL = import.meta.env.VITE_API_URL;
+
+
 const TemplateBuilder = () => {
   const [sidebarVisible, setSidebarVisible] = useState(true);
   const [blocks, setBlocks] = useState([]);
@@ -23,7 +26,7 @@ const TemplateBuilder = () => {
           backgroundColor: newBlock.settings?.backgroundColor || "#2d5000",
           textColor: newBlock.settings?.textColor || "#ffffff",
           backgroundImage:
-            newBlock.settings?.backgroundImage || "images/bird.jpg",
+            newBlock.settings?.backgroundImage || `${API_URL}/uploads/1756115657883.png`,
           textAlign: newBlock.settings?.textAlign || "left",
           ...newBlock.settings,
         },
@@ -80,8 +83,7 @@ const TemplateBuilder = () => {
     setActiveBlock({ id: block.id, type: block.type });
   }, []);
 
-
-  const hasSignatureBlock = blocks.some(block => block.type === "signature");
+  const hasSignatureBlock = blocks.some((block) => block.type === "signature");
   return (
     <div className="d-flex flex-column vh-100">
       {/* Header */}
@@ -92,6 +94,7 @@ const TemplateBuilder = () => {
           canvasRef={canvasRef}
           onAddBlock={handleAddBlock}
           hasSignatureBlock={hasSignatureBlock}
+          blocks={blocks}
           defaultSettings={getActiveBlockSettings()}
         />
       </div>
@@ -128,7 +131,7 @@ const TemplateBuilder = () => {
           <BlockSettingsPanel
             activeBlock={activeBlock}
             onClose={() => setActiveBlock(null)}
-            blockSettings={getActiveBlockSettings()}
+            block={blocks.find((b) => b.id === activeBlock.id)} // Pass full block data
             onSettingsChange={handleBlockSettingsChange}
           />
         )}

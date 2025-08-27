@@ -22,6 +22,9 @@ import HeaderBlock4 from "../../Blocks/HeaderBlocks/HeaderBlock4";
 import HeaderBlock5 from "../../Blocks/HeaderBlocks/HeaderBlock5";
 import TermsBlock from "../../Blocks/TermsBlock";
 
+
+const API_URL= import.meta.env.VITE_API_URL
+
 const Canvas = forwardRef(
   (
     {
@@ -57,7 +60,7 @@ const Canvas = forwardRef(
           layoutType: "left-panel",
           backgroundColor: "#2d5000",
           textColor: "#ffffff",
-          backgroundImage: "images/headers/leaf.avif",
+          backgroundImage: `${API_URL}/uploads/1756115657883.png`,
           title: "Sales Proposal",
           subtitle: "Optional",
           clientName: "Client name",
@@ -161,7 +164,31 @@ const Canvas = forwardRef(
         // Header blocks
         case "header":
         case "header-1":
-          return <HeaderBlock {...commonProps} />;
+          return (
+            <HeaderBlock
+              id={block.id}
+              onSettingsChange={(newSettings) =>
+                onSettingsChange(block.id, newSettings)
+              }
+              layoutType={block.settings?.layoutType || "left-panel"}
+              backgroundImage={
+                block.settings?.backgroundImage || "images/headers/leaf.avif"
+              }
+              backgroundColor={block.settings?.backgroundColor || "#2d5000"}
+              textColor={block.settings?.textColor || "#CFCFCF"}
+              backgroundFilter={block.settings?.backgroundFilter}
+              textAlign={block.settings?.textAlign || "left"}
+              initialTitle={block.settings?.title || "Sales Proposal"}
+              initialSubtitle={block.settings?.subtitle || "Optional"}
+              initialClientName={
+                block.settings?.clientName || "Prepared by Client name"
+              }
+              initialSenderName={block.settings?.senderName || "By Sender name"}
+              initialPrice={block.settings?.price || "INCL.VAT"}
+              initialLogo={block.settings?.logo}
+              isPreview={false}
+            />
+          );
         case "header-2":
           return <HeaderBlock2 {...commonProps} />;
         case "header-3":
@@ -337,8 +364,6 @@ const Canvas = forwardRef(
                           </div>
                         </Button>
                       )}
-
-                      {/* Move Controls */}
                       {/* Move Controls */}
                       <div
                         className="bg-white rounded d-flex flex-column border shadow-sm"

@@ -1,15 +1,18 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState } from "react";
 import { Check, Copy, Edit3, ArrowRight } from "lucide-react";
 import { Form, Dropdown } from "react-bootstrap";
 import CustomPhoneInput from "./PhoneInput";
+import { useSelector, useDispatch } from "react-redux";
+import { createRecipient } from "../../store/recipientSlice"; // ✅ adjust import path
+import { selectedUserId } from "../../store/authSlice";
 
-const options = [
+const roleOptions = [
   { label: "Needs to sign", sub: "Signee", icon: <Edit3 size={16} /> },
   { label: "Receives a copy", sub: "Recipient", icon: <Copy size={16} /> },
   { label: "Needs to approve", sub: "Approver", icon: <Check size={16} /> },
 ];
 
-const options2 = [
+const signOptions = [
   {
     label: "Signature",
     sub: "Level of proof: IP address, timestamp and device",
@@ -17,37 +20,92 @@ const options2 = [
   { label: "In Person", sub: "Signature on print document" },
 ];
 
-// 📌 Main Form Component
-export default function IndividualClientForm() {
+export default function CompanyClientForm({ onCreated }) {
   const [showAdditional, setShowAdditional] = useState(false);
   const [addressType, setAddressType] = useState("work");
-  const [selected, setSelected] = useState(options[0]);
-  const [selectedSign, setSelectedSign] = useState(options2[0]);
+  const [selectedRole, setSelectedRole] = useState(roleOptions[0]);
+  const [selectedSign, setSelectedSign] = useState(signOptions[0]);
   const [phone, setPhone] = useState("");
+
+  const dispatch = useDispatch();
+  const { loading, success, error } = useSelector((state) => state.recipients);
+
+  const [formData, setFormData] = useState({
+    type: "company",
+    companyName: "",
+    name: "",
+    email: "",
+    phone: "",
+    address: "",
+    zip: "",
+    city: "",
+    role: roleOptions[0].label,
+    signMethod: signOptions[0].label,
+    user_id: useSelector(selectedUserId),
+  });
+
+  // ✅ Update formData dynamically
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handlePhoneChange = (value) => {
+    setPhone(value);
+    setFormData({ ...formData, phone: value });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    // Dispatch and wait for result
+    const resultAction = await dispatch(createRecipient(formData));
+
+    // If creation successful, call onCreated
+    if (createRecipient.fulfilled.match(resultAction)) {
+      const newRecipient = resultAction.payload; // this should be the created recipient from API
+      if (onCreated) onCreated(newRecipient);
+    }
+  };
 
   return (
     <div>
-      <Form
-        className="d-flex flex-column gap-3"
-        onSubmit={(e) => e.preventDefault()}
-      >
-        <Form.Control placeholder="Company Name" />
+      <Form className="d-flex flex-column gap-3" onSubmit={handleSubmit}>
+        {/* Company Name */}
+        <Form.Control
+          name="companyName"
+          placeholder="Company Name"
+          value={formData.companyName}
+          onChange={handleChange}
+        />
+
         {/* Name */}
-        <Form.Control placeholder="Name" />
+        <Form.Control
+          name="name"
+          placeholder="Name"
+          value={formData.name}
+          onChange={handleChange}
+        />
 
         {/* Email */}
-        <Form.Control type="email" placeholder="Email" />
+        <Form.Control
+          type="email"
+          name="email"
+          placeholder="Email"
+          value={formData.email}
+          onChange={handleChange}
+        />
 
         {/* Address */}
-        <Form.Control type="text" placeholder="Address" />
+        <Form.Control
+          type="text"
+          name="address"
+          placeholder="Address"
+          value={formData.address}
+          onChange={handleChange}
+        />
 
-        <CustomPhoneInput value={phone} onChange={setPhone} />
-
-        {/* Role dropdown (placeholder) */}
-        <div className="border rounded p-2 d-flex justify-content-between align-items-center">
-          <span className="text-muted">Needs to sign</span>
-          <small className="text-secondary">Sign </small>
-        </div>
+        {/* Phone */}
+        <CustomPhoneInput value={phone} onChange={handlePhoneChange} />
 
         {/* Toggle additional fields */}
         {!showAdditional && (
@@ -66,15 +124,28 @@ export default function IndividualClientForm() {
             <Form.Control
               placeholder="Company Registration Number"
               className="mt-2"
+              name="registrationNumber"
+              value={formData.registrationNumber || ""}
+              onChange={handleChange}
             />
             <div className="d-flex gap-2 mt-2">
-              <Form.Control placeholder="Zip" />
-              <Form.Control placeholder="City" />
+              <Form.Control
+                placeholder="Zip"
+                name="zip"
+                value={formData.zip}
+                onChange={handleChange}
+              />
+              <Form.Control
+                placeholder="City"
+                name="city"
+                value={formData.city}
+                onChange={handleChange}
+              />
             </div>
           </>
         )}
 
-        {/* redio options */}
+        {/* Radio options for address type */}
         <div className="d-flex gap-3">
           <Form.Check
             type="radio"
@@ -99,10 +170,25 @@ export default function IndividualClientForm() {
             <Form.Label className="fw-semibold small text-muted mt-2">
               Work address (Where work is going to be performed)
             </Form.Label>
-            <Form.Control placeholder="Street" />
+            <Form.Control
+              placeholder="Street"
+              name="workStreet"
+              value={formData.workStreet || ""}
+              onChange={handleChange}
+            />
             <div className="d-flex gap-2 mt-2">
-              <Form.Control placeholder="Zip" />
-              <Form.Control placeholder="City" />
+              <Form.Control
+                placeholder="Zip"
+                name="workZip"
+                value={formData.workZip || ""}
+                onChange={handleChange}
+              />
+              <Form.Control
+                placeholder="City"
+                name="workCity"
+                value={formData.workCity || ""}
+                onChange={handleChange}
+              />
             </div>
           </>
         )}
@@ -112,27 +198,28 @@ export default function IndividualClientForm() {
           {/* Document Role Dropdown */}
           <Dropdown className="flex-grow-1">
             <div className="small fw-semibold mb-1">Document role</div>
-
-            {/* Selected Display */}
             <Dropdown.Toggle
               variant="light"
               className="w-100 border rounded d-flex justify-content-between align-items-center small"
             >
               <div className="d-flex align-items-center gap-2 text-start">
-                <span className="text-secondary">{selected.icon}</span>
+                <span className="text-secondary">{selectedRole.icon}</span>
                 <div className="d-flex flex-column">
-                  <span className="small fw-semibold">{selected.label}</span>
-                  <span className="text-muted small">{selected.sub}</span>
+                  <span className="small fw-semibold">
+                    {selectedRole.label}
+                  </span>
+                  <span className="text-muted small">{selectedRole.sub}</span>
                 </div>
               </div>
             </Dropdown.Toggle>
-
-            {/* Dropdown Menu */}
             <Dropdown.Menu className="w-100">
-              {options.map((opt, idx) => (
+              {roleOptions.map((opt, idx) => (
                 <Dropdown.Item
                   key={idx}
-                  onClick={() => setSelected(opt)}
+                  onClick={() => {
+                    setSelectedRole(opt);
+                    setFormData({ ...formData, role: opt.label });
+                  }}
                   className="d-flex align-items-start gap-2"
                 >
                   {opt.icon}
@@ -145,50 +232,30 @@ export default function IndividualClientForm() {
             </Dropdown.Menu>
           </Dropdown>
 
-          {/* Sign Method (Static Example) */}
+          {/* Sign Method Dropdown */}
           <Dropdown className="flex-grow-1">
             <div className="small fw-semibold mb-1">Sign method</div>
-
-            {/* Selected Value */}
             <Dropdown.Toggle
               variant="light"
               className="w-100 border rounded d-flex justify-content-between align-items-center small"
             >
               <div className="d-flex flex-column text-start">
                 <span className="small fw-semibold">{selectedSign.label}</span>
-                <span
-                  className={`text-muted ${
-                    selectedSign.label === "Signature" ? "text-truncate" : ""
-                  }`}
-                  style={{
-                    fontSize:
-                      selectedSign.label === "Signature" ? "10px" : "12px",
-                    maxWidth: "200px",
-                  }}
-                >
-                  {selectedSign.sub}
-                </span>
+                <span className="text-muted small">{selectedSign.sub}</span>
               </div>
             </Dropdown.Toggle>
-
-            {/* Dropdown Options */}
             <Dropdown.Menu className="w-100">
-              {options2.map((opt, idx) => (
+              {signOptions.map((opt, idx) => (
                 <Dropdown.Item
                   key={idx}
-                  onClick={() => setSelectedSign(opt)}
+                  onClick={() => {
+                    setSelectedSign(opt);
+                    setFormData({ ...formData, signMethod: opt.label });
+                  }}
                   className="d-flex flex-column align-items-start"
                 >
                   <span className="small fw-semibold">{opt.label}</span>
-                  <span
-                    className="text-muted"
-                    style={{
-                      fontSize: opt.label === "Signature" ? "10px" : "12px",
-                      maxWidth: "220px",
-                    }}
-                  >
-                    {opt.sub}
-                  </span>
+                  <span className="text-muted small">{opt.sub}</span>
                 </Dropdown.Item>
               ))}
             </Dropdown.Menu>
@@ -196,9 +263,16 @@ export default function IndividualClientForm() {
         </div>
 
         {/* Save Button */}
-        <button type="submit" className="btn btn-primary w-100 fw-semibold">
-          Save recipient
+        <button
+          type="submit"
+          className="btn btn-primary w-100 fw-semibold"
+          disabled={loading}
+        >
+          {loading ? "Saving..." : "Save recipient"}
         </button>
+
+        {success && <p className="text-success small mt-2">Recipient saved!</p>}
+        {error && <p className="text-danger small mt-2">{error}</p>}
       </Form>
     </div>
   );

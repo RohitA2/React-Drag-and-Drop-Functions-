@@ -4,7 +4,7 @@ import IndividualClientForm from "./IndividualClientForm";
 import CompanyClientForm from "./CompanyClientForm";
 import ConfirmationModal from "./ConfirmationModal";
 
-export default function CreateClientModal({ show, onHide }) {
+export default function CreateClientModal({ show, onHide, onCreated }) {
   const [selectedType, setSelectedType] = useState("individual");
   const [showConfirmModal, setShowConfirmModal] = useState(false);
 
@@ -18,6 +18,12 @@ export default function CreateClientModal({ show, onHide }) {
       onHide(); // actually close parent modal
     }
     setShowConfirmModal(false);
+  };
+
+  // Called after a recipient is successfully created
+  const handleRecipientCreated = (newRecipient) => {
+    if (onCreated) onCreated(newRecipient); // notify parent
+    onHide(); // close modal
   };
 
   return (
@@ -48,8 +54,12 @@ export default function CreateClientModal({ show, onHide }) {
           </div>
 
           {/* Render form */}
-          {selectedType === "individual" && <IndividualClientForm />}
-          {selectedType === "company" && <CompanyClientForm />}
+          {selectedType === "individual" && (
+            <IndividualClientForm onCreated={handleRecipientCreated} />
+          )}
+          {selectedType === "company" && (
+            <CompanyClientForm onCreated={handleRecipientCreated} />
+          )}
         </Modal.Body>
       </Modal>
 

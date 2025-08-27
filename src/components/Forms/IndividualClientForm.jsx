@@ -1,18 +1,18 @@
-import React, { useState, useEffect, useRef } from "react";
-import Select, { components } from "react-select";
-import Flag from "react-world-flags";
-// import { ChevronRight, ChevronDown, ArrowRight } from "react-bootstrap-icons";
+import React, { useState } from "react";
 import { Check, Copy, Edit3, ArrowRight } from "lucide-react";
 import { Form, Dropdown } from "react-bootstrap";
 import CustomPhoneInput from "./PhoneInput";
+import { useSelector, useDispatch } from "react-redux";
+import { createRecipient } from "../../store/recipientSlice";
+import { selectedUserId } from "../../store/authSlice";
 
-const options = [
+const roleOptions = [
   { label: "Needs to sign", sub: "Signee", icon: <Edit3 size={16} /> },
   { label: "Receives a copy", sub: "Recipient", icon: <Copy size={16} /> },
   { label: "Needs to approve", sub: "Approver", icon: <Check size={16} /> },
 ];
 
-const options2 = [
+const signOptions = [
   {
     label: "Signature",
     sub: "Level of proof: IP address, timestamp and device",
@@ -21,33 +21,79 @@ const options2 = [
 ];
 
 // 📌 Main Form Component
-export default function IndividualClientForm() {
+export default function IndividualClientForm({ onCreated } ) {
   const [showAdditional, setShowAdditional] = useState(false);
   const [addressType, setAddressType] = useState("work");
-  const [selected, setSelected] = useState(options[0]);
-  const [selectedSign, setSelectedSign] = useState(options2[0]);
-  const [phone, setPhone] = useState("");
+
+  const dispatch = useDispatch();
+  const userId = useSelector(selectedUserId);
+  const { loading, success, error } = useSelector((state) => state.recipients);
+
+  const [formData, setFormData] = useState({
+    type: "individual",
+    name: "",
+    email: "",
+    phone: "",
+    address: "",
+    zip: "",
+    city: "",
+    role: roleOptions[0].label,
+    signMethod: signOptions[0].label,
+    user_id: userId,
+  });
+
+  // Handle input change
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  // Handle submit
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  
+  // Dispatch and wait for result
+  const resultAction = await dispatch(createRecipient(formData));
+  
+  // If creation successful, call onCreated
+  if (createRecipient.fulfilled.match(resultAction)) {
+    const newRecipient = resultAction.payload; // this should be the created recipient from API
+    if (onCreated) onCreated(newRecipient);
+  }
+};
 
   return (
     <div>
-      <Form
-        className="d-flex flex-column gap-3"
-        onSubmit={(e) => e.preventDefault()}
-      >
+      <Form className="d-flex flex-column gap-3" onSubmit={handleSubmit}>
         {/* Name */}
-        <Form.Control placeholder="Name" />
+        <Form.Control
+          name="name"
+          placeholder="Name"
+          value={formData.name}
+          onChange={handleChange}
+        />
 
         {/* Email */}
-        <Form.Control type="email" placeholder="Email" />
+        <Form.Control
+          type="email"
+          name="email"
+          placeholder="Email"
+          value={formData.email}
+          onChange={handleChange}
+        />
 
-        {/* Phone with country selector */}
-        <CustomPhoneInput value={phone} onChange={setPhone} />
+        {/* Phone */}
+        <CustomPhoneInput
+          value={formData.phone}
+          onChange={(val) => setFormData({ ...formData, phone: val })}
+        />
 
-        {/* Role dropdown (placeholder) */}
-        <div className="border rounded p-2 d-flex justify-content-between align-items-center">
-          <span className="text-muted">Needs to sign</span>
-          <small className="text-secondary">Sign </small>
-        </div>
+        {/* Address */}
+        <Form.Control
+          name="address"
+          placeholder="Address"
+          value={formData.address}
+          onChange={handleChange}
+        />
 
         {/* Toggle additional fields */}
         {!showAdditional && (
@@ -63,15 +109,24 @@ export default function IndividualClientForm() {
 
         {showAdditional && (
           <>
-            <Form.Control placeholder="Address" className="mt-2" />
             <div className="d-flex gap-2 mt-2">
-              <Form.Control placeholder="Zip Code" />
-              <Form.Control placeholder="City" />
+              <Form.Control
+                name="zip"
+                placeholder="Zip Code"
+                value={formData.zip}
+                onChange={handleChange}
+              />
+              <Form.Control
+                name="city"
+                placeholder="City"
+                value={formData.city}
+                onChange={handleChange}
+              />
             </div>
           </>
         )}
 
-        {/* redio options */}
+        {/* Radio options */}
         <div className="d-flex gap-3">
           <Form.Check
             type="radio"
@@ -109,27 +164,28 @@ export default function IndividualClientForm() {
           {/* Document Role Dropdown */}
           <Dropdown className="flex-grow-1">
             <div className="small fw-semibold mb-1">Document role</div>
-
-            {/* Selected Display */}
             <Dropdown.Toggle
               variant="light"
               className="w-100 border rounded d-flex justify-content-between align-items-center small"
             >
               <div className="d-flex align-items-center gap-2 text-start">
-                <span className="text-secondary">{selected.icon}</span>
+                <span className="text-secondary">
+                  {roleOptions.find((r) => r.label === formData.role)?.icon}
+                </span>
                 <div className="d-flex flex-column">
-                  <span className="small fw-semibold">{selected.label}</span>
-                  <span className="text-muted small">{selected.sub}</span>
+                  <span className="small fw-semibold">{formData.role}</span>
+                  <span className="text-muted small">
+                    {roleOptions.find((r) => r.label === formData.role)?.sub}
+                  </span>
                 </div>
               </div>
             </Dropdown.Toggle>
 
-            {/* Dropdown Menu */}
             <Dropdown.Menu className="w-100">
-              {options.map((opt, idx) => (
+              {roleOptions.map((opt, idx) => (
                 <Dropdown.Item
                   key={idx}
-                  onClick={() => setSelected(opt)}
+                  onClick={() => setFormData({ ...formData, role: opt.label })}
                   className="d-flex align-items-start gap-2"
                 >
                   {opt.icon}
@@ -142,38 +198,40 @@ export default function IndividualClientForm() {
             </Dropdown.Menu>
           </Dropdown>
 
-          {/* Sign Method (Static Example) */}
+          {/* Sign Method Dropdown */}
           <Dropdown className="flex-grow-1">
             <div className="small fw-semibold mb-1">Sign method</div>
-
-            {/* Selected Value */}
             <Dropdown.Toggle
               variant="light"
               className="w-100 border rounded d-flex justify-content-between align-items-center small"
             >
               <div className="d-flex flex-column text-start">
-                <span className="small fw-semibold">{selectedSign.label}</span>
+                <span className="small fw-semibold">{formData.signMethod}</span>
                 <span
                   className={`text-muted ${
-                    selectedSign.label === "Signature" ? "text-truncate" : ""
+                    formData.signMethod === "Signature" ? "text-truncate" : ""
                   }`}
                   style={{
                     fontSize:
-                      selectedSign.label === "Signature" ? "10px" : "12px",
+                      formData.signMethod === "Signature" ? "10px" : "12px",
                     maxWidth: "200px",
                   }}
                 >
-                  {selectedSign.sub}
+                  {
+                    signOptions.find((s) => s.label === formData.signMethod)
+                      ?.sub
+                  }
                 </span>
               </div>
             </Dropdown.Toggle>
 
-            {/* Dropdown Options */}
             <Dropdown.Menu className="w-100">
-              {options2.map((opt, idx) => (
+              {signOptions.map((opt, idx) => (
                 <Dropdown.Item
                   key={idx}
-                  onClick={() => setSelectedSign(opt)}
+                  onClick={() =>
+                    setFormData({ ...formData, signMethod: opt.label })
+                  }
                   className="d-flex flex-column align-items-start"
                 >
                   <span className="small fw-semibold">{opt.label}</span>
@@ -193,8 +251,12 @@ export default function IndividualClientForm() {
         </div>
 
         {/* Save Button */}
-        <button type="submit" className="btn btn-primary w-100 fw-semibold">
-          Save recipient
+        <button
+          type="submit"
+          className="btn btn-primary w-100 fw-semibold"
+          disabled={loading}
+        >
+          {loading ? "Saving..." : "Save recipient"}
         </button>
       </Form>
     </div>
