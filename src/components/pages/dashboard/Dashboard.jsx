@@ -1,53 +1,86 @@
-import React, { use, useEffect } from "react";
+import React, { useEffect } from "react";
 import { Outlet, Link } from "react-router-dom";
 import { Navbar, Nav, Button, NavDropdown, Dropdown } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import { Bell } from "react-bootstrap-icons";
 import { useSelector, useDispatch } from "react-redux";
-import { logout } from "../../../store/authSlice"; // Import logout action
+import { logout } from "../../../store/authSlice";
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  // ✅ Get both user and token from Redux
   const { user, token } = useSelector((state) => state.auth);
 
-  // ✅ Redirect to login if no user or token
   useEffect(() => {
     if (!user || !token) {
       navigate("/login");
     }
   }, [user, token, navigate]);
 
-  // Handle logout
   const handleLogout = () => {
     dispatch(logout());
     navigate("/login");
   };
 
   return (
-    <div style={{ backgroundColor: "#f9f9f9", minHeight: "100vh" }}>
+    <div style={{ backgroundColor: "#fafafa", minHeight: "100vh" }}>
       {/* Top Navbar */}
-      <Navbar bg="white" expand="lg" className="shadow-sm px-4">
-        <Navbar.Brand as={Link} to="/dashboard">
-          <img src="/images/bird.jpg" alt="Logo" height="30" />
+      <Navbar
+        bg="white"
+        expand="lg"
+        className="shadow-sm px-4 py-3"
+        style={{
+          fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+        }}
+      >
+        <Navbar.Brand
+          as={Link}
+          to="/"
+          className="d-flex align-items-center"
+          style={{ fontWeight: "700", fontSize: "1.25rem", color: "#333" }}
+        >
+          <img
+            src="/images/bird.jpg"
+            alt="Logo"
+            height="32"
+            className="me-2 rounded"
+          />
+          MyApp
         </Navbar.Brand>
 
         <div className="d-flex justify-content-center flex-grow-1">
           {/* Middle nav */}
-          <Nav variant="pills" className="rounded-pill border p-1">
+          <Nav
+            variant="pills"
+            className="rounded-pill border p-1 nav-hover-dropdown"
+          >
             <Nav.Item>
-              <Nav.Link as={Link} to="/dashboard" className="px-3 rounded-pill fw-medium">
+              <Nav.Link
+                as={Link}
+                to="/dashboard"
+                className="px-4 rounded-pill fw-semibold text-dark"
+                activeclassname="active"
+              >
                 Overview
               </Nav.Link>
             </Nav.Item>
             <Nav.Item>
-              <Nav.Link as={Link} to="/clients" className="px-3 rounded-pill text-dark">
+              <Nav.Link
+                as={Link}
+                to="/clients"
+                className="px-4 rounded-pill text-dark fw-semibold"
+                activeclassname="active"
+              >
                 Clients
               </Nav.Link>
             </Nav.Item>
-            <NavDropdown title="Library" id="library-dropdown">
+
+            <NavDropdown
+              title="Library"
+              id="library-dropdown"
+              className="nav-dropdown"
+            >
               <NavDropdown.Item as={Link} to="/templates">
                 Templates
               </NavDropdown.Item>
@@ -58,18 +91,41 @@ export default function Dashboard() {
                 Snippets
               </NavDropdown.Item>
             </NavDropdown>
+
             <Nav.Item>
-              <Nav.Link as={Link} to="/stats" className="px-3 rounded-pill text-dark">
+              <Nav.Link
+                as={Link}
+                to="/stats"
+                className="px-4 rounded-pill text-dark fw-semibold"
+                activeclassname="active"
+              >
                 Stats
               </Nav.Link>
             </Nav.Item>
-            <NavDropdown title="More" id="more-dropdown">
-              <NavDropdown.Item as={Link} to="/members">Members</NavDropdown.Item>
-              <NavDropdown.Item as={Link} to="/documents">Documents</NavDropdown.Item>
-              <NavDropdown.Item as={Link} to="/sms-sender">SMS Sender</NavDropdown.Item>
-              <NavDropdown.Item as={Link} to="/subdomain">Subdomain</NavDropdown.Item>
-              <NavDropdown.Item as={Link} to="/email-domain">Email Domain</NavDropdown.Item>
-              <NavDropdown.Item as={Link} to="/billing">Billing</NavDropdown.Item>
+
+            <NavDropdown
+              title="More"
+              id="more-dropdown"
+              className="nav-dropdown"
+            >
+              <NavDropdown.Item as={Link} to="/members">
+                Members
+              </NavDropdown.Item>
+              <NavDropdown.Item as={Link} to="/documents">
+                Documents
+              </NavDropdown.Item>
+              <NavDropdown.Item as={Link} to="/sms-sender">
+                SMS Sender
+              </NavDropdown.Item>
+              <NavDropdown.Item as={Link} to="/subdomain">
+                Subdomain
+              </NavDropdown.Item>
+              <NavDropdown.Item as={Link} to="/email-domain">
+                Email Domain
+              </NavDropdown.Item>
+              <NavDropdown.Item as={Link} to="/billing">
+                Billing
+              </NavDropdown.Item>
             </NavDropdown>
           </Nav>
         </div>
@@ -78,9 +134,19 @@ export default function Dashboard() {
           {/* Create Button */}
           <Button
             variant="dark"
-            className="me-3 px-4 py-2 rounded-pill fw-bold"
-            style={{ backgroundColor: "black", border: "none" }}
+            className="me-3 px-4 py-2 rounded-pill fw-bold shadow-sm"
+            style={{
+              backgroundColor: "#222",
+              border: "none",
+              transition: "background-color 0.3s",
+            }}
             onClick={() => navigate("/template-builder")}
+            onMouseEnter={(e) =>
+              (e.currentTarget.style.backgroundColor = "#000")
+            }
+            onMouseLeave={(e) =>
+              (e.currentTarget.style.backgroundColor = "#222")
+            }
           >
             Create
           </Button>
@@ -91,12 +157,20 @@ export default function Dashboard() {
             style={{
               width: "38px",
               height: "38px",
-              backgroundColor: "#F5F5F5",
+              backgroundColor: "#f0f0f0",
               cursor: "pointer",
+              transition: "background-color 0.3s",
             }}
             onClick={() => navigate("/notifications")}
+            onMouseEnter={(e) =>
+              (e.currentTarget.style.backgroundColor = "#e1e1e1")
+            }
+            onMouseLeave={(e) =>
+              (e.currentTarget.style.backgroundColor = "#f0f0f0")
+            }
+            title="Notifications"
           >
-            <Bell size={18} />
+            <Bell size={20} color="#444" />
             <span
               className="position-absolute top-0 start-50 translate-middle"
               style={{
@@ -110,22 +184,26 @@ export default function Dashboard() {
           </div>
 
           {/* Profile Dropdown */}
-          <Dropdown align="end">
+          <Dropdown align="end" className="nav-dropdown">
             <Dropdown.Toggle
               id="profile-dropdown"
-              className="d-flex align-items-center rounded-pill border bg-white px-2"
-              style={{ borderColor: "#ddd" }}
+              className="d-flex align-items-center rounded-pill border bg-white px-3 py-1 shadow-sm"
+              style={{
+                borderColor: "#ddd",
+                cursor: "pointer",
+                userSelect: "none",
+              }}
             >
               <img
-                src={user?.profile_image ||"/images/bird.jpg"}
+                src={user?.profile_image || "/images/bird.jpg"}
                 alt="Profile"
                 className="rounded-circle me-2"
-                style={{ width: "30px", height: "30px", objectFit: "cover" }}
+                style={{ width: "32px", height: "32px", objectFit: "cover" }}
                 onError={(e) => {
                   e.target.src = "/images/placeholder-user.jpg";
                 }}
               />
-              <span className="fw-medium me-2 text-dark">
+              <span className="fw-semibold text-dark">
                 {user?.firstName || user?.email || "Guest"}
               </span>
             </Dropdown.Toggle>
@@ -154,6 +232,40 @@ export default function Dashboard() {
       <div className="container-fluid py-4">
         <Outlet />
       </div>
+
+      {/* Custom styles for dropdown hover */}
+      <style>{`
+        /* Make nav dropdown open on hover */
+        .nav-hover-dropdown .nav-dropdown:hover > .dropdown-menu,
+        .nav-dropdown:hover > .dropdown-menu,
+        .dropdown:hover > .dropdown-menu {
+          display: block !important;
+          margin-top: 0;
+          opacity: 1;
+          visibility: visible;
+          transition: opacity 0.2s ease-in-out;
+        }
+
+        .nav-hover-dropdown .nav-dropdown > .dropdown-menu,
+        .nav-dropdown > .dropdown-menu,
+        .dropdown > .dropdown-menu {
+          margin-top: 0;
+          opacity: 0;
+          visibility: hidden;
+          transition: opacity 0.2s ease-in-out;
+        }
+
+        /* Better pills styles */
+        .nav-pills .nav-link {
+          color: #555;
+          transition: background-color 0.3s, color 0.3s;
+        }
+        .nav-pills .nav-link.active,
+        .nav-pills .nav-link:hover {
+          background-color: #5c6ac4;
+          color: white !important;
+        }
+      `}</style>
     </div>
   );
 }

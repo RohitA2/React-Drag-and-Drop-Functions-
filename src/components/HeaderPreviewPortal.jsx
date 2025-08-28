@@ -24,22 +24,34 @@ const HeaderPreviewPortal = ({ position, onSelect, onClose }) => {
 
   return ReactDOM.createPortal(
     <div
-      className="bg-white rounded-md shadow-lg p-0 position-fixed d-flex flex-column"
-      style={{
-        top: Math.max(50, position.top || 50), // keep gap from header
-        left: safeLeft,
-        zIndex: 1050,
-        width: "250px",
-        borderRadius: "5px",
-        maxHeight: "calc(100vh - 68px)",
-        overflow: "hidden",
-      }}
-      onMouseEnter={() => clearTimeout(window.__hoverTimeout)}
-      onMouseLeave={onClose}
+className="rounded-md shadow-lg p-0 position-fixed d-flex flex-column"
+style={{
+  top: Math.max(50, position.top || 50),
+  left: safeLeft,
+  zIndex: 1050,
+  width: "200px",
+  marginTop: "-45px",
+  height: "900px",
+  marginLeft: "-10px",
+  borderRadius: "5px",
+  maxHeight: "calc(100vh - 68px)",
+  overflow: "hidden",
+  backgroundColor: "rgba(255, 255, 255, 0.7)", 
+  backdropFilter: "blur(10px)", 
+  WebkitBackdropFilter: "blur(10px)", 
+}}
+onMouseEnter={() => clearTimeout(window.__hoverTimeout)}
+onMouseLeave={onClose}
+
     >
       <div
-        className="overflow-auto thin-scrollbar pr-0 flex-grow-1"
-        style={{ scrollBehavior: "smooth" }}
+        className="flex-grow-1"
+        style={{
+          overflow: "auto",
+          scrollBehavior: "smooth",
+          msOverflowStyle: "none",
+          scrollbarWidth: "none",
+        }}
       >
         <div className="space-y-2">
           {previewBlocks.map(({ id, component: Component }) => (
@@ -50,7 +62,7 @@ const HeaderPreviewPortal = ({ position, onSelect, onClose }) => {
                 onSelect(id);
                 onClose();
               }}
-              style={{ marginTop: "-15px", padding: "4px", height: "180px" }}
+              style={{ marginTop: "-40px", padding: "40px", height: "180px", marginRight: "10px", marginLeft: "-32px", }}
             >
               {/* Scale down preview */}
               <div
@@ -67,6 +79,11 @@ const HeaderPreviewPortal = ({ position, onSelect, onClose }) => {
           ))}
         </div>
       </div>
+      <style>{`
+        .flex-grow-1::-webkit-scrollbar {
+          display: none;
+        }
+      `}</style>
     </div>,
     document.body
   );

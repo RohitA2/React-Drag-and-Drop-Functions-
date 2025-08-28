@@ -23,7 +23,7 @@ import HeaderBlock5 from "../../Blocks/HeaderBlocks/HeaderBlock5";
 import TermsBlock from "../../Blocks/TermsBlock";
 
 
-const API_URL= import.meta.env.VITE_API_URL
+const API_URL = import.meta.env.VITE_API_URL
 
 const Canvas = forwardRef(
   (
@@ -332,38 +332,41 @@ const Canvas = forwardRef(
                   <div style={{ width: "100%" }}>{renderBlock(block)}</div>
 
                   {/* Control Panel */}
-                  <div className="control-panel position-absolute top-0 end-0 p-1 z-3 d-flex flex-column align-items-end">
+                  <div className="control-panel position-absolute top-0 end-0 p-1 z-3 d-flex flex-column align-items-end"
+                  style={{ gap: "6px", margin: "8px" }}>
                     <div className="d-flex align-items-start gap-2 mb-1">
                       {/* Edit Button */}
                       {["text", "header", "header-1", "header-2"].includes(
                         block.type
                       ) && (
-                        <Button
-                          variant="light"
-                          className="rounded d-flex align-items-center border px-2 py-1 shadow-sm"
-                          onClick={() => onEditBlock(block)}
-                        >
-                          <span className="me-2 fw-semibold text-secondary">
-                            Edit
-                          </span>
-                          <div
-                            className="d-flex flex-wrap"
-                            style={{ width: 16, height: 16, gap: 2 }}
+                          <Button
+                            variant="light"
+                            className="rounded d-flex align-items-center justify-content-between border px-1 py-0 shadow-sm"
+                            style={{ width: "65px", minWidth: "65px", height: "30px" }}
+                            onClick={() => onEditBlock(block)}
                           >
-                            {["red", "orange", "cyan", "blue"].map((color) => (
-                              <span
-                                key={color}
-                                className="rounded-circle"
-                                style={{
-                                  width: 6,
-                                  height: 6,
-                                  backgroundColor: color,
-                                }}
-                              />
-                            ))}
-                          </div>
-                        </Button>
-                      )}
+                            <span className="fw-semibold text-secondary" style={{ fontSize: "12px" }}>
+                              Edit
+                            </span>
+                            <div
+                              className="d-flex flex-wrap"
+                              style={{ width: 12, height: 12, gap: 1 }}
+                            >
+                              {["red", "orange", "cyan", "blue"].map((color) => (
+                                <span
+                                  key={color}
+                                  className="rounded-circle"
+                                  style={{
+                                    width: 4,
+                                    height: 4,
+                                    backgroundColor: color,
+                                  }}
+                                />
+                              ))}
+                            </div>
+                          </Button>
+
+                        )}
                       {/* Move Controls */}
                       <div
                         className="bg-white rounded d-flex flex-column border shadow-sm"
@@ -391,7 +394,7 @@ const Canvas = forwardRef(
                     {/* Delete Button */}
                     <button
                       onClick={() => onRemoveBlock(block.id)}
-                      className="btn btn-white border p-1 shadow-sm"
+                      className=" bg-white border rounded  shadow-sm"
                       aria-label="Remove block"
                     >
                       <X size={14} className="text-danger" />

@@ -108,42 +108,43 @@ const LAYOUTS = {
   },
 };
 
-
-const API_URL =import.meta.env.VITE_API_URL
+const API_URL = import.meta.env.VITE_API_URL;
 
 const HeaderBlock = ({
   id,
-  layoutType = "left-panel", // This should come from parent
+  layoutType = "left-panel",
   onSettingsChange = () => {},
   initialTitle = "Sales Proposal",
   initialSubtitle = "Optional",
   initialClientName = "Prepared by Client name",
   initialSenderName = "By Sender name",
   initialPrice = "INCL.VAT",
-  initialLogo = null,
-  backgroundImage=`${API_URL}/uploads/1756115657883.png`,
-  backgroundColor="#2D5000",
-  textColor, // This should come from parent
-  backgroundFilter, // This should come from parent
-  textAlign, // This should come from parent
+  initialLogoUrl = null, // Changed to match database field
+  backgroundImage = `${API_URL}/uploads/1756115657883.png`,
+  backgroundColor = "#2D5000",
+  textColor,
+  backgroundFilter,
+  textAlign,
   isPreview = false,
+  layoutStyles = null,
 }) => {
   const userId = useSelector(selectedUserId);
   const [isCreated, setIsCreated] = useState(false);
   const [headerBlock, setHeaderBlock] = useState({
-    layoutType, // Use the layoutType prop
+    layoutType,
     title: initialTitle,
     subtitle: initialSubtitle,
     clientName: initialClientName,
     senderName: initialSenderName,
     price: initialPrice,
-    logo: initialLogo,
+    logoUrl: initialLogoUrl, // Changed to match database field
     backgroundImage: backgroundImage,
     backgroundColor: backgroundColor,
-    textColor,
-    backgroundFilter,
-    textAlign,
+    textColor: textColor || "#ffffff",
+    backgroundFilter: backgroundFilter || null,
+    textAlign: textAlign || "left",
     leftWidth: 50,
+    layoutStyles: layoutStyles || LAYOUTS[layoutType] || LAYOUTS.default,
   });
   const [cropModalOpen, setCropModalOpen] = useState(false);
   const [imageSrc, setImageSrc] = useState(null);
@@ -163,20 +164,22 @@ const HeaderBlock = ({
   useEffect(() => {
     setHeaderBlock((prev) => ({
       ...prev,
-      layoutType, // Update layoutType from props
+      layoutType,
       backgroundImage,
       backgroundColor,
-      textColor,
-      backgroundFilter,
-      textAlign,
+      textColor: textColor || prev.textColor,
+      backgroundFilter: backgroundFilter || prev.backgroundFilter,
+      textAlign: textAlign || prev.textAlign,
+      layoutStyles: layoutStyles || LAYOUTS[layoutType] || LAYOUTS.default,
     }));
   }, [
-    layoutType, // Include layoutType in dependencies
+    layoutType,
     backgroundImage,
     backgroundColor,
     textColor,
     backgroundFilter,
     textAlign,
+    layoutStyles,
   ]);
 
   const updateHeaderBlock = useCallback(
@@ -191,80 +194,87 @@ const HeaderBlock = ({
   );
 
   // In HeaderBlock.jsx - update the API call
-useEffect(() => {
-  const saveHeaderBlock = async () => {
-    if (isPreview) return;
+  useEffect(() => {
+    const saveHeaderBlock = async () => {
+      if (isPreview) return;
 
-    try {
-      let exists = false;
+      try {
+        let exists = false;
 
-      // 🔍 Step 1: Check if header block exists
-      const checkRes = await fetch(`${API_URL}/api/headerBlock/${id}`);
-      if (checkRes.ok) {
-        exists = true;
-      }
-
-      // Step 2: Decide method and URL
-      const url = exists
-        ? `${API_URL}/api/headerBlock/${id}` // update
-        : `${API_URL}/api/CreateHeaderBlock`; // create
-
-      const method = exists ? "PUT" : "POST";
-
-      // Step 3: Send request
-      const response = await fetch(url, {
-        method,
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          id,
-          layoutType: headerBlock.layoutType,
-          title: headerBlock.title,
-          subtitle: headerBlock.subtitle,
-          clientName: headerBlock.clientName,
-          senderName: headerBlock.senderName,
-          price: headerBlock.price,
-          logoUrl: headerBlock.logo,
-          backgroundImage: headerBlock.backgroundImage,
-          backgroundColor: headerBlock.backgroundColor,
-          textColor: headerBlock.textColor,
-          backgroundFilter: headerBlock.backgroundFilter,
-          textAlign: headerBlock.textAlign,
-          leftWidth: headerBlock.leftWidth,
-          userId: userId,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error("Failed to save header block:", errorData);
-      } else {
-        const result = await response.json();
-        console.log("Header block saved successfully:", result);
-
-        // ✅ If newly created, store ID and mark as created
-        if (!exists && result?.data?.id) {
-          setIsCreated(true);
-          localStorage.setItem("headerId", result.data.id);
-          console.log("HeaderId saved in localStorage:", result.data.id);
+        // 🔍 Step 1: Check if header block exists
+        if (id) {
+          try {
+            const checkRes = await fetch(`${API_URL}/api/headerBlock/${id}`);
+            if (checkRes.ok) {
+              exists = true;
+            }
+          } catch (error) {
+            console.log("Header block doesn't exist yet, will create new");
+          }
         }
+
+        // Step 2: Decide method and URL
+        const url = exists
+          ? `${API_URL}/api/headerBlock/${id}` // update
+          : `${API_URL}/api/CreateHeaderBlock`; // create
+
+        const method = exists ? "PUT" : "POST";
+
+        // Step 3: Send request
+        const response = await fetch(url, {
+          method,
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            id,
+            layoutType: headerBlock.layoutType,
+            title: headerBlock.title,
+            subtitle: headerBlock.subtitle,
+            clientName: headerBlock.clientName,
+            senderName: headerBlock.senderName,
+            price: headerBlock.price,
+            logoUrl: headerBlock.logoUrl, // Changed to match database field
+            backgroundImage: headerBlock.backgroundImage,
+            backgroundColor: headerBlock.backgroundColor,
+            textColor: headerBlock.textColor,
+            backgroundFilter: headerBlock.backgroundFilter,
+            textAlign: headerBlock.textAlign,
+            leftWidth: headerBlock.leftWidth,
+            userId: userId,
+            layoutStyles: headerBlock.layoutStyles,
+          }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error("Failed to save header block:", errorData);
+        } else {
+          const result = await response.json();
+          console.log("Header block saved successfully:", result);
+
+          // ✅ If newly created, store ID and mark as created
+          if (!exists && result?.data?.id) {
+            setIsCreated(true);
+            setHeaderId(result.data.id);
+            localStorage.setItem("headerId", result.data.id);
+            console.log("HeaderId saved in localStorage:", result.data.id);
+          }
+        }
+      } catch (error) {
+        console.error("Error saving header block:", error);
       }
-    } catch (error) {
-      console.error("Error saving header block:", error);
-    }
-  };
+    };
 
-  // ⏳ Debounce save call by 1 second
-  const timeout = setTimeout(() => {
-    if (headerBlock.title && headerBlock.title !== "Sales Proposal") {
-      saveHeaderBlock();
-    }
-  }, 1000);
+    // ⏳ Debounce save call by 1 second
+    const timeout = setTimeout(() => {
+      if (headerBlock.title && headerBlock.title !== "Sales Proposal") {
+        saveHeaderBlock();
+      }
+    }, 1000);
 
-  return () => clearTimeout(timeout);
-}, [headerBlock, id, userId, isPreview]);
-
+    return () => clearTimeout(timeout);
+  }, [headerBlock, id, userId, isPreview]);
 
   const isWhiteBackground =
     (headerBlock.backgroundColor || "").toLowerCase() === "#ffffff";
@@ -338,7 +348,7 @@ useEffect(() => {
   const handleLogoReset = () => {
     if (isPreview) return;
 
-    updateHeaderBlock({ logo: null });
+    updateHeaderBlock({ logoUrl: null }); // Changed to match database field
     setImageSrc(null);
     setShowLogo(true);
     setCropModalOpen(false);
@@ -374,7 +384,6 @@ useEffect(() => {
       }
 
       const updatedLogoUrl = uploadData.url;
-      const updatedBlock = { ...headerBlock, logo: updatedLogoUrl };
 
       const url = isCreated
         ? `${API_URL}/api/headerBlock/${headerId}`
@@ -385,7 +394,11 @@ useEffect(() => {
       const saveRes = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...updatedBlock, userId }),
+        body: JSON.stringify({ 
+          ...headerBlock, 
+          logoUrl: updatedLogoUrl, // Changed to match database field
+          userId 
+        }),
       });
 
       const saveData = await saveRes.json();
@@ -396,7 +409,7 @@ useEffect(() => {
       } else {
         console.log("Header block saved with updated logo:", saveData);
 
-        updateHeaderBlock({ logo: updatedLogoUrl });
+        updateHeaderBlock({ logoUrl: updatedLogoUrl }); // Changed to match database field
         setCropModalOpen(false);
 
         // Update local ID if newly created
@@ -456,7 +469,7 @@ useEffect(() => {
   const wrapperStyle = isPreview
     ? {}
     : {
-        maxWidth: "1400px",
+        maxWidth: "1800px",
       };
 
   const CustomToggle = React.forwardRef(({ children, onClick }, ref) => (
@@ -571,7 +584,7 @@ useEffect(() => {
           {headerBlock.layoutType !== "default" && (
             <div className="logo-management-container" style={{ textAlign: headerBlock.textAlign }}>
               <div className="logo-actions-wrapper">
-                {headerBlock.logo ? (
+                {headerBlock.logoUrl ? ( // Changed to match database field
                   <Dropdown>
                     <Dropdown.Toggle
                       as={CustomToggle}
@@ -581,7 +594,7 @@ useEffect(() => {
                       <div className="logo-preview-container">
                         {showLogo ? (
                           <img
-                            src={headerBlock.logo}
+                            src={headerBlock.logoUrl} // Changed to match database field
                             alt="Logo"
                             className="logo-preview"
                           />
@@ -699,9 +712,9 @@ useEffect(() => {
               <div style={{ ...LAYOUTS.default.titleBox, textAlign: headerBlock.textAlign }}>
                 {/* Logo inside title box */}
                 <div className="d-flex justify-content-start align-items-start mb-2">
-                  {headerBlock.logo ? (
+                  {headerBlock.logoUrl ? ( // Changed to match database field
                     <img
-                      src={headerBlock.logo}
+                      src={headerBlock.logoUrl} // Changed to match database field
                       alt="Logo"
                       style={{
                         height: "80px",
@@ -802,36 +815,38 @@ useEffect(() => {
           )}
 
           {/* Main Content */}
-          <div
-            className="w-full bg-gray-800 rounded-xl overflow-hidden editable-quill-wrapper"
-            style={{ textAlign: headerBlock.textAlign }}
-          >
+          {headerBlock.layoutType !== "default" && (
             <div
-              className="w-full px-6 py-8 space-y-3"
-              style={{ color: dynamicTextColor, textAlign: "inherit" }}
+              className="w-full bg-gray-800 rounded-xl overflow-hidden editable-quill-wrapper"
+              style={{ textAlign: headerBlock.textAlign }}
             >
-              <EditableQuill
-                id={`subtitle-${id}`}
-                value={headerBlock.subtitle}
-                onChange={(value) => handleTextChange("subtitle", value)}
-                placeholder="Enter subtitle..."
-                className="text-xl"
-                style={{ textAlign: "inherit", fontSize: "2rem" }}
-              />
-              <EditableQuill
-                id={`title-${id}`}
-                value={headerBlock.title}
-                onChange={(value) => handleTextChange("title", value)}
-                placeholder="Enter title..."
-                className="text-3xl font-bold"
-                style={{
-                  textAlign: "inherit",
-                  fontSize: "3rem",
-                  fontWeight: 700,
-                }}
-              />
+              <div
+                className="w-full px-6 py-8 space-y-3"
+                style={{ color: dynamicTextColor, textAlign: "inherit" }}
+              >
+                <EditableQuill
+                  id={`subtitle-${id}`}
+                  value={headerBlock.subtitle}
+                  onChange={(value) => handleTextChange("subtitle", value)}
+                  placeholder="Enter subtitle..."
+                  className="text-xl"
+                  style={{ textAlign: "inherit", fontSize: "2rem" }}
+                />
+                <EditableQuill
+                  id={`title-${id}`}
+                  value={headerBlock.title}
+                  onChange={(value) => handleTextChange("title", value)}
+                  placeholder="Enter title..."
+                  className="text-3xl font-bold"
+                  style={{
+                    textAlign: "inherit",
+                    fontSize: "3rem",
+                    fontWeight: 700,
+                  }}
+                />
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Client/Sender Info */}
           {headerBlock.layoutType !== "default" && (
@@ -1010,7 +1025,7 @@ useEffect(() => {
         .logo-dropdown-item {
           padding: 4px 8px;
           font-size: 12px;
-          color: #333;
+          color: "inherit",
           cursor: pointer;
         }
 
@@ -1021,7 +1036,7 @@ useEffect(() => {
         .logo-placeholder-btn {
           background: none;
           border: none;
-          color: #f9f9f9;
+          color: "inherit",
           font-size: 14px;
           font-weight: 500;
           padding: 8px 12px;

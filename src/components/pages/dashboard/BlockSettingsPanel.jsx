@@ -18,7 +18,6 @@ import axios from "axios";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-
 const layoutOptions = [
   { id: "left-panel", icon: <LayoutPanelLeft size={18} />, label: "Left" },
   { id: "right-panel", icon: <LayoutDashboard size={18} />, label: "Right" },
@@ -40,15 +39,13 @@ const layoutOptions = [
 const BlockSettingsPanel = ({
   activeBlock,
   onClose,
-  block, // Now get the full block object
+  block,
   onSettingsChange,
   isPreview = false,
 }) => {
   if (!activeBlock || !block) return null;
 
-  // Use block.settings instead of separate blockSettings
   const blockSettings = block?.settings || {};
-
   const [cropModalOpen, setCropModalOpen] = useState(false);
   const [imageSrc, setImageSrc] = useState(null);
   const cropperRef = useRef(null);
@@ -59,76 +56,107 @@ const BlockSettingsPanel = ({
 
     const reader = new FileReader();
     reader.onload = () => {
-      setImageSrc(reader.result); // for cropper preview
+      setImageSrc(reader.result);
       setCropModalOpen(true);
     };
     reader.readAsDataURL(file);
   };
 
-
-const handleCropSave = async () => {
-  const cropper = cropperRef.current?.cropper;
-  if (cropper) {
-    cropper.getCroppedCanvas().toBlob(async (blob) => {
-      if (!blob) return;
-
-      const formData = new FormData();
-      formData.append("file", blob, "cropped.png");
-
-      try {
-        // ✅ Upload cropped image
-        const res = await axios.post(`${API_URL}/upload/img`, formData);
-        const data = res.data;
-
-        if (data.success) {
-          // ✅ Update parent state
-          onSettingsChange(activeBlock.id, {
-            backgroundImage: data.url,
-            backgroundFilter: null,
-          });
-
-          // ✅ Save to backend
-          try {
-            await axios.put(`${API_URL}/api/headerBlock/${activeBlock.id}`, {
-              ...blockSettings,
-              backgroundImage: data.url,
-              backgroundFilter: null,
-              id: activeBlock.id,
-              userId: activeBlock.userId || blockSettings.userId,
-            });
-
-            console.log("Header block updated with new background.");
-          } catch (err) {
-            console.error("Error saving to backend:", err.message);
-          }
-        }
-      } catch (err) {
-        console.error("Error uploading background:", err.message);
-      }
-
-      setCropModalOpen(false);
-    }, "image/png");
-  }
-};
-
-
-  const handleLayoutChange = (layoutType) => {
+  const handleLayoutChange = async (layoutType) => {
     const updates = { layoutType };
     if (layoutType === "grid") {
       updates.backgroundColor = blockSettings.backgroundColor;
     }
+
+    // Update local state
     onSettingsChange(activeBlock.id, updates);
+
+    // Send to API
+    try {
+      await axios.put(`${API_URL}/api/headerBlock/${activeBlock.id}`, {
+        ...blockSettings,
+        layoutType,
+        id: activeBlock.id,
+        userId: activeBlock.userId || blockSettings.userId,
+      });
+      console.log("Layout updated in backend:", layoutType);
+    } catch (err) {
+      console.error("Error updating layout in backend:", err.message);
+    }
   };
 
-  const handleColorChange = (field, value) => {
+  const handleColorChange = async (field, value) => {
     const updates = { [field]: value };
 
-    // agar filter color select kiya, to image hata do
+    // If filter color is selected, remove the image
     if (field === "backgroundFilter") {
       updates.backgroundImage = null;
     }
 
+    // Update local state
     onSettingsChange(activeBlock.id, updates);
+
+    // Send to API
+    try {
+      await axios.put(`${API_URL}/api/headerBlock/${activeBlock.id}`, {
+        ...blockSettings,
+        [field]: value,
+        layoutType: blockSettings.layoutType,
+        id: activeBlock.id,
+        userId: activeBlock.userId || blockSettings.userId,
+      });
+      console.log(`${field} updated in backend:`, value);
+    } catch (err) {
+      console.error(`Error updating ${field} in backend:`, err.message);
+    }
+  };
+
+  const handleCropSave = async () => {
+    const cropper = cropperRef.current?.cropper;
+    if (cropper) {
+      cropper.getCroppedCanvas().toBlob(async (blob) => {
+        if (!blob) return;
+
+        const formData = new FormData();
+        formData.append("file", blob, "cropped.png");
+
+        try {
+          // Upload cropped image
+          const res = await axios.post(`${API_URL}/upload/img`, formData);
+          const data = res.data;
+
+          if (data.success) {
+            // Update parent state
+            onSettingsChange(activeBlock.id, {
+              backgroundImage: data.url,
+              backgroundFilter: null,
+            });
+
+            // Save to backend with layout info
+            try {
+              await axios.put(`${API_URL}/api/headerBlock/${activeBlock.id}`, {
+                ...blockSettings,
+                backgroundImage: data.url,
+                backgroundFilter: null,
+                layoutType: blockSettings.layoutType,
+                id: activeBlock.id,
+                userId: activeBlock.userId || blockSettings.userId,
+              });
+
+              console.log(
+                "Header block updated with new background and layout info."
+              );
+            } catch (err) {
+              console.error("Error saving to backend:", err.message);
+            }
+          }
+        } catch (err) {
+          console.error("Error uploading background:", err.message);
+        }
+
+        setCropModalOpen(false);
+      }, "image/png");
+    }
   };
 
   const getActiveLayout = () => {
@@ -161,23 +189,21 @@ const handleCropSave = async () => {
             <div key={layout.id} className="col-4">
               <button
                 className={`btn w-100 d-flex flex-column align-items-center justify-content-center border rounded p-0 ${
-                  // p-0 = less padding
                   blockSettings?.layoutType === layout.id
                     ? "bg-primary text-white"
                     : "bg-light"
                 }`}
                 style={{
-                  height: 36, // reduce height
+                  height: 36,
                   cursor: "pointer",
-                  fontSize: "0.6rem", // smaller text
-                  gap: "2px", // smaller spacing between icon and label
-                  minWidth: 40, // smaller width if needed
+                  fontSize: "0.6rem",
+                  gap: "2px",
+                  minWidth: 40,
                 }}
                 onClick={() => handleLayoutChange(layout.id)}
                 title={layout.description}
               >
                 {layout.icon}
-                {/* <small>{layout.label}</small> */}
               </button>
             </div>
           ))}
@@ -220,7 +246,6 @@ const handleCropSave = async () => {
                     backgroundPosition: "center",
                   }}
                 >
-                  {/* Agar image hai aur filter nahi hai to "Change Image" overlay dikhao */}
                   {blockSettings?.backgroundImage &&
                     !blockSettings?.backgroundFilter && (
                       <div
@@ -322,7 +347,7 @@ const handleCropSave = async () => {
         <div
           className={`d-flex justify-content-between align-items-center border-bottom py-1 ${
             blockSettings?.layoutType === "grid" ? "opacity-50" : ""
-          }`}
+          }`}    
         >
           <label className="form-label mb-0" style={{ fontSize: "0.8rem" }}>
             Background color
@@ -369,7 +394,7 @@ const handleCropSave = async () => {
           >
             {["left", "center", "right"].map((align) => {
               const icons = {
-                left: <AlignLeft size={14} />, // smaller icons
+                left: <AlignLeft size={14} />,
                 center: <AlignCenter size={14} />,
                 right: <AlignRight size={14} />,
               };
@@ -382,12 +407,33 @@ const handleCropSave = async () => {
                       ? "btn-primary"
                       : "btn-outline-secondary"
                   }`}
-                  onClick={() =>
-                    onSettingsChange(activeBlock.id, { textAlign: align })
-                  }
+                  onClick={async () => {
+                    // Update local state
+                    onSettingsChange(activeBlock.id, { textAlign: align });
+
+                    // Send to API
+                    try {
+                      await axios.put(
+                        `${API_URL}/api/headerBlock/${activeBlock.id}`,
+                        {
+                          ...blockSettings,
+                          textAlign: align,
+                          layoutType: blockSettings.layoutType,
+                          id: activeBlock.id,
+                          userId: activeBlock.userId || blockSettings.userId,
+                        }
+                      );
+                      console.log("Text alignment updated in backend:", align);
+                    } catch (err) {
+                      console.error(
+                        "Error updating text alignment in backend:",
+                        err.message
+                      );
+                    }
+                  }}
                   style={{
-                    padding: "0.15rem 0.35rem", // compact padding
-                    minWidth: "26px", // keeps buttons from shrinking too much
+                    padding: "0.15rem 0.35rem",
+                    minWidth: "26px",
                   }}
                 >
                   {icons[align]}
