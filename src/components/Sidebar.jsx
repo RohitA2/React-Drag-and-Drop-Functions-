@@ -7,56 +7,162 @@ const blockSections = [
   {
     title: "Block",
     blocks: [
+      { divider: true },
       {
         type: "header",
-        icon: "bi-layout-text-window-reverse",
+        icon: (
+          <img
+            src="./images/sidebar/header.png"
+            alt="header"
+            className="sidebar-icon"
+          />
+        ),
         label: "Header",
         hasPreview: true,
       },
-      // { type: "parties", icon: "bi-person-badge", label: "Parties" },
-      // {
-      //   type: "pricing & services",
-      //   icon: "bi-currency-dollar",
-      //   label: "Pricing & Services",
-      //   hasPreview: true,
-      // },
-      // { type: "text", icon: "bi-type", label: "Text" },
-      // { type: "signature", icon: "bi-pencil", label: "Signature" },
-      // { divider: true },
-      // { type: "cover", icon: "bi-image", label: "Cover", hasPreview: true },
-      // {
-      //   type: "video",
-      //   icon: "bi-camera-video",
-      //   label: "Video",
-      //   hasPreview: true,
-      // },
-      // { type: "attachment", icon: "bi-paperclip", label: "Attachments" },
-      // { type: "pdf", icon: "bi-file-earmark-pdf", label: "PDF" },
-      // { type: "embed", icon: "bi-box", label: "Embed", hasPreview: true },
-      // {
-      //   type: "custom",
-      //   icon: "bi-code-slash",
-      //   label: "Custom",
-      //   hasPreview: true,
-      // },
-      // {type:"schedule", icon: "bi-calendar-event", label: "Schedule"},
-      // { type: "terms", icon: "bi-file-text", label: "Terms" },
+      {
+        type: "parties",
+        icon: (
+          <img
+            src="./images/sidebar/parties.png"
+            alt="header"
+            className="sidebar-icon"
+          />
+        ),
+        label: "Parties",
+      },
+      {
+        type: "pricing & services",
+        icon: (
+          <img
+            src="./images/sidebar/price.png"
+            alt="header"
+            className="sidebar-icon"
+          />
+        ),
+        label: "Pricing & Services",
+        hasPreview: true,
+      },
+      {
+        type: "text",
+        icon: (
+          <img
+            src="./images/sidebar/text.png"
+            alt="header"
+            className="sidebar-icon"
+          />
+        ),
+        label: "Text",
+      },
+      {
+        type: "signature",
+        icon: (
+          <img
+            src="./images/sidebar/signature.png"
+            alt="header"
+            className="sidebar-icon"
+          />
+        ),
+        label: "Signature",
+      },
+      {
+        type: "cover",
+        icon: (
+          <img
+            src="./images/sidebar/cover.png"
+            alt="header"
+            className="sidebar-icon"
+          />
+        ),
+        label: "Cover",
+        hasPreview: true,
+      },
+      {
+        type: "video",
+        icon: (
+          <img
+            src="./images/sidebar/video.png"
+            alt="header"
+            className="sidebar-icon"
+          />
+        ),
+        label: "Video",
+        hasPreview: true,
+      },
+      {
+        type: "attachment",
+        icon: (
+          <img
+            src="./images/sidebar/link.png"
+            alt="header"
+            className="sidebar-icon"
+          />
+        ),
+        label: "Attachments",
+      },
+      {
+        type: "pdf",
+        icon: (
+          <img
+            src="./images/sidebar/pdf.png"
+            alt="header"
+            className="sidebar-icon"
+          />
+        ),
+        label: "PDF",
+      },
+      {
+        type: "embed",
+        icon: (
+          <img
+            src="./images/sidebar/embed.png"
+            alt="header"
+            className="sidebar-icon"
+          />
+        ),
+        label: "Embed",
+        hasPreview: true,
+      },
+      {
+        type: "custom",
+        icon: (
+          <img
+            src="./images/sidebar/custom.png"
+            alt="header"
+            className="sidebar-icon"
+          />
+        ),
+        label: "Custom",
+        hasPreview: true,
+      },
+      // { type: "schedule", icon: "bi-calendar-event", label: "Schedule" },
+      {
+        type: "terms",
+        icon: (
+          <img
+            src="./images/sidebar/terms.png"
+            alt="header"
+            className="sidebar-icon"
+          />
+        ),
+        label: "Terms",
+      },
     ],
   },
-  // {
-  //   title: "Design",
-  //   blocks: [],
-  // },
-  // {
-  //   title: "Fields",
-  //   blocks: [],
-  // },
-  // {
-  //   title: "settings",
-  //   iconOnly: true,
-  //   icon: "bi-gear",
-  //   blocks: [],
-  // },
+  {
+    title: "Design",
+    blocks: [],
+  },
+  {
+    title: "Fields",
+    blocks: [],
+  },
+  {
+    title: "settings",
+    iconOnly: true,
+    icon: "bi-gear",
+    blocks: [],
+  },
 ];
 
 const Sidebar = () => {
@@ -87,30 +193,26 @@ const Sidebar = () => {
   };
 
   return (
-    <div className="sidebar  d-flex flex-column p-2 bg-white border-end   border rounded overflow-hidden shadow-sm mt-1">
+    <div className="sidebar d-flex flex-column p-2 bg-white border-end rounded overflow-hidden shadow-sm mt-1">
       {/* Tabs */}
-      <div className="d-flex align-items-center border-bottom mb-2">
-        {blockSections.map((section) => (
-          <button
-            key={section.title}
-            onClick={() => setActiveTab(section.title)}
-            className={`btn btn-sm position-relative tab-btn ${
-              activeTab === section.title ? "active" : ""
-            } ${section.iconOnly ? "px-1" : "me-1"}`}
-            title={section.iconOnly ? "Settings" : ""}
-          >
-            {section.iconOnly ? (
-              <i className={`bi ${section.icon}`} />
-            ) : (
-              <>
-                {section.title}
-                {activeTab === section.title && (
-                  <div className="tab-underline" />
-                )}
-              </>
-            )}
-          </button>
-        ))}
+      <div className="d-flex align-items-center justify-content-between mb-1 tabs-container">
+        <div className="d-flex tabs">
+          {blockSections.map((section, idx) => (
+            <button
+              key={section.title}
+              onClick={() => setActiveTab(section.title)}
+              className={`tab-btn ${
+                activeTab === section.title ? "active" : ""
+              }`}
+            >
+              {section.iconOnly ? (
+                <i className={`bi ${section.icon}`} />
+              ) : (
+                section.title
+              )}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Block List */}
@@ -124,7 +226,7 @@ const Sidebar = () => {
               ) : (
                 <div
                   key={block.type}
-                  className={`block-item d-flex align-items-center justify-content-between gap-1 p-1 rounded ${
+                  className={`block-item d-flex align-items-center justify-content-between gap-2 p-2 rounded ${
                     block.disabled ? "text-muted bg-light" : ""
                   }`}
                   draggable={!block.disabled}
@@ -154,11 +256,9 @@ const Sidebar = () => {
                     cursor: block.disabled ? "not-allowed" : "pointer",
                   }}
                 >
-                  <div className="d-flex align-items-center gap-3">
-                    <i className={`bi ${block.icon} fs-6`} />
-                    <span className="text-secondary font-femily-sans-serif fw-bold">
-                      {block.label}
-                    </span>
+                  <div className="d-flex align-items-center gap-2">
+                    {block.icon}
+                    <span className="sidebar-label">{block.label}</span>
                   </div>
                   {block.hasPreview && (
                     <i
@@ -174,9 +274,15 @@ const Sidebar = () => {
 
       {/* Bottom Tutorial */}
       <div className="mt-auto pt-2">
-        <button className="btn btn-sm btn-outline-secondary w-100 d-flex align-items-center justify-content-center gap-1 shadow-sm border">
-          <i className="bi bi-question-circle"></i>
-          <span>Tutorial</span>
+        <button className="btn btn-sm btn-outline-secondary w-100 d-flex align-items-start justify-content-start p-2 border-0 gap-2 ">
+          <div>
+            <img
+              src="./images/sidebar/tutorial.png"
+              alt="tutorial"
+              className="sidebar-icon me-2"
+            />
+            <span className="label">Tutorial</span>
+          </div>
         </button>
       </div>
 
@@ -194,66 +300,67 @@ const Sidebar = () => {
 
       <style>
         {`
-       .sidebar {
-  position: absolute;   /* 🔥 position add */
-  top: 52px;            /* 🔥 top se gap */
-  bottom: 9px;         /* 🔥 bottom se gap */
-  left: 0;
-  width: 230px;
-  min-width: 200px;
-  max-width: 230px;
-  font-size: 0.85rem;
-  border-right: 2px solid #dee2e6;
-  background-color: #fff;
-  overflow-y: auto;      /* 🔥 scroll allow karna zaruri */
-  border-radius: 6px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.08);
-}
 
-  
+        .label{
+        width: 39;
+        height: 14;
+        angle: 0 deg;
+        opacity: 1;
+        font-family: Poppins;
+        font-weight: 500;
+        font-style: Medium;
+        font-size: 14px;
+        leading-trim: NONE;
+        line-height: 120%;
+        letter-spacing: 1.6%;
+        }
+        
+       .sidebar {
+          position: absolute;
+          top: 62px;
+          bottom: 9px;
+          left: 0;
+          width: 230px;
+          min-width: 200px;
+          max-width: 230px;
+          font-size: 0.85rem;
+          border-right: 2px solid #dee2e6;
+          background-color: #fff;
+          overflow-y: auto;
+          border-radius: 6px;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+        }
+
+        .tabs-container {
+              background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 999px;
+            padding: 6px 4px;
+            gap: 6px;
+        }
+
+        .tabs {
+          display: flex;
+          gap: 0px;
+        }
+
         .tab-btn {
-          background: transparent;
+          background-color: transparent;
           border: none;
-          color: #888;
-          cursor: pointer;
-          position: relative;
-          font-size: 0.8rem;
-          min-width: 24px;
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          padding: 0.25rem 0.5rem;
+          color: #555;
+          padding: 7px 10px;
+          border-radius: 999px;
+          font-size: 0.85rem;
+          font-weight: 500;
+          transition: all 0.2s ease;
         }
 
         .tab-btn.active {
-          color: #000;
+          background-color: #007bff;
+          color: #fff;
           font-weight: 600;
         }
 
-        .tab-underline {
-          position: absolute;
-          bottom: -2px;
-          left: 0;
-          height: 1px;
-          width: 100%;
-          background-color: #3C3C3C;
-          animation: slideIn 0.3s ease-out;
-        }
-
-        @keyframes slideIn {
-          0% {
-            width: 0;
-            opacity: 0;
-          }
-          50% {
-            width: 50%;
-            opacity: 0.5;
-          }
-          100% {
-            width: 100%;
-            opacity: 1;
-          }
-        }
 
         .block-item {
           font-size: 0.8rem;
@@ -264,15 +371,46 @@ const Sidebar = () => {
           transition: background-color 0.2s ease;
         }
 
-        .block-item:active {
-          background-color: #e9ecef;
+        // .block-item:active {
+        //   background-color: #e9ecef;
+        // }
+
+        // .block-item i {
+        //   width: 14px;
+        //   text-align: center;
+        //   font-size: 0.9rem;
+        // }
+
+        .block-item {
+          font-size: 0.8rem;
+          transition: background-color 0.2s ease;
         }
 
-        .block-item i {
-          width: 14px;
-          text-align: center;
-          font-size: 0.9rem;
+        // .block-item:hover {
+        //   background-color: #f0f8ff; /* light blue, or use #e7f1ff or your brand color */
+        // }
+
+        .block-item:hover .sidebar-icon {
+          background-color: #007bff;
         }
+
+        .block-item:hover .sidebar-label {
+          color: #007bff;
+        }
+
+
+      /* Icon styles */
+        .sidebar-icon {
+                 width: 54px;
+                height: 37px;
+                border-radius: 24px;
+                padding: 9px;
+                background-color: #f2f2f2;
+                object-fit: contain;
+                transition: background-color 0.2s ease;
+        }
+  
+
       `}
       </style>
     </div>

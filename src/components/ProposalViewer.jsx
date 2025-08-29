@@ -99,6 +99,37 @@ const LAYOUTS = {
   },
 };
 
+// Add only the necessary Quill CSS classes that appear in your API response
+const quillStyles = `
+  .ql-align-center {
+    text-align: center;
+  }
+  
+  .ql-align-right {
+    text-align: right;
+  }
+  
+  .ql-align-justify {
+    text-align: justify;
+  }
+  
+  .ql-editor p {
+    margin-bottom: 1rem;
+  }
+  
+  .ql-editor h1, .ql-editor h2, .ql-editor h3, .ql-editor h4, .ql-editor h5, .ql-editor h6 {
+    margin-bottom: 1rem;
+    font-weight: bold;
+  }
+  
+  .ql-editor h1 { font-size: 2.5rem; }
+  .ql-editor h2 { font-size: 2rem; }
+  .ql-editor h3 { font-size: 1.75rem; }
+  .ql-editor h4 { font-size: 1.5rem; }
+  .ql-editor h5 { font-size: 1.25rem; }
+  .ql-editor h6 { font-size: 1rem; }
+`;
+
 const resolveUrl = (path) => {
   if (!path) return "";
   if (path.startsWith("http")) return path;
@@ -153,7 +184,8 @@ export default function ProposalViewer() {
 
     const styles = data.styles || {};
     const layoutType = data.layoutType || "left-panel";
-    const layoutStyles = data.layoutStyles || LAYOUTS[layoutType] || LAYOUTS.default;
+    const layoutStyles =
+      data.layoutStyles || LAYOUTS[layoutType] || LAYOUTS.default;
 
     return {
       id: data.id,
@@ -163,7 +195,8 @@ export default function ProposalViewer() {
       senderNameHtml: data.senderName || styles.senderName || "",
       logoUrl: data.logoUrl || "",
       bgImage: data.backgroundImage || styles.backgroundImage || "",
-      backgroundColor: data.backgroundColor || styles.backgroundColor || "#2d5000",
+      backgroundColor:
+        data.backgroundColor || styles.backgroundColor || "#2d5000",
       textColor: data.textColor || styles.textColor || "#ffffff",
       price: data.price || styles.price || null,
       layoutType: layoutType,
@@ -251,14 +284,16 @@ export default function ProposalViewer() {
 
   const renderSidePanelLayout = () => {
     const isLeftPanel = layoutType === "left-panel";
-    
+
     return (
-      <div style={{ 
-        display: "flex", 
-        width: "100%", 
-        minHeight: "600px",
-        flexDirection: isLeftPanel ? "row" : "row-reverse" 
-      }}>
+      <div
+        style={{
+          display: "flex",
+          width: "100%",
+          minHeight: "600px",
+          flexDirection: isLeftPanel ? "row" : "row-reverse",
+        }}
+      >
         {/* Image panel */}
         <div
           style={{
@@ -354,59 +389,61 @@ export default function ProposalViewer() {
   };
 
   const renderBottomPanelLayout = () => {
-  return (
-    <div style={{ 
-      display: "flex", 
-      flexDirection: "column-reverse", 
-      width: "100%", 
-      minHeight: "600px" 
-    }}>
-      {/* Image panel (at the bottom due to column-reverse) */}
+    return (
       <div
         style={{
-          width: "100%",
-          height: "250px",
-          backgroundImage: `url(${resolveUrl(bgImage)})`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          position: "relative",
-          flex: "0 0 auto",
-          ...(layoutStyles.imageStyle || {}),
-        }}
-      >
-        {ui.backgroundFilter && (
-          <div
-            style={{
-              position: "absolute",
-              inset: 0,
-              background: ui.backgroundFilter,
-            }}
-          />
-        )}
-      </div>
-
-      {/* Content panel (at the top due to column-reverse) */}
-      <div
-        style={{
-          width: "100%",
-          backgroundColor: backgroundColor,
-          color: dynamicTextColor,
-          padding: "2rem",
           display: "flex",
-          flexDirection: "column",
-          boxSizing: "border-box",
-          textAlign: ui.textAlign,
-          flex: "1 1 auto",
-          ...(layoutStyles.contentStyle || {}),
+          flexDirection: "column-reverse",
+          width: "100%",
+          minHeight: "600px",
         }}
       >
-        {renderLogo()}
-        {renderContent()}
-        {renderFooter()}
+        {/* Image panel (at the bottom due to column-reverse) */}
+        <div
+          style={{
+            width: "100%",
+            height: "250px",
+            backgroundImage: `url(${resolveUrl(bgImage)})`,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            position: "relative",
+            flex: "0 0 auto",
+            ...(layoutStyles.imageStyle || {}),
+          }}
+        >
+          {ui.backgroundFilter && (
+            <div
+              style={{
+                position: "absolute",
+                inset: 0,
+                background: ui.backgroundFilter,
+              }}
+            />
+          )}
+        </div>
+
+        {/* Content panel (at the top due to column-reverse) */}
+        <div
+          style={{
+            width: "100%",
+            backgroundColor: backgroundColor,
+            color: dynamicTextColor,
+            padding: "2rem",
+            display: "flex",
+            flexDirection: "column",
+            boxSizing: "border-box",
+            textAlign: ui.textAlign,
+            flex: "1 1 auto",
+            ...(layoutStyles.contentStyle || {}),
+          }}
+        >
+          {renderLogo()}
+          {renderContent()}
+          {renderFooter()}
+        </div>
       </div>
-    </div>
-  );
-};
+    );
+  };
 
   const renderGridLayout = () => {
     return (
@@ -534,7 +571,14 @@ export default function ProposalViewer() {
             }}
           >
             {/* Logo */}
-            <div style={{ display: "flex", justifyContent: "flex-start", alignItems: "flex-start", marginBottom: "0.5rem" }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "flex-start",
+                alignItems: "flex-start",
+                marginBottom: "0.5rem",
+              }}
+            >
               {logoUrl ? (
                 <img
                   src={resolveUrl(logoUrl)}
@@ -625,7 +669,16 @@ export default function ProposalViewer() {
           )}
 
           {/* Footer */}
-          <div style={{ display: "grid", gap: "0.5rem", fontSize: "0.875rem", marginTop: "1rem", width: "100%", maxWidth: "500px" }}>
+          <div
+            style={{
+              display: "grid",
+              gap: "0.5rem",
+              fontSize: "0.875rem",
+              marginTop: "1rem",
+              width: "100%",
+              maxWidth: "500px",
+            }}
+          >
             {clientNameHtml && (
               <div
                 className="ql-editor"
@@ -652,16 +705,24 @@ export default function ProposalViewer() {
         style={{
           maxHeight: "80px",
           objectFit: "contain",
-          alignSelf: ui.textAlign === "right" ? "flex-end" : 
-                   ui.textAlign === "center" ? "center" : "flex-start",
+          alignSelf:
+            ui.textAlign === "right"
+              ? "flex-end"
+              : ui.textAlign === "center"
+              ? "center"
+              : "flex-start",
           marginBottom: "1.5rem",
         }}
       />
     ) : (
       <div
         style={{
-          alignSelf: ui.textAlign === "right" ? "flex-end" : 
-                   ui.textAlign === "center" ? "center" : "flex-start",
+          alignSelf:
+            ui.textAlign === "right"
+              ? "flex-end"
+              : ui.textAlign === "center"
+              ? "center"
+              : "flex-start",
           background: "rgba(255,255,255,0.08)",
           borderRadius: "8px",
           padding: "10px 14px",
@@ -715,7 +776,14 @@ export default function ProposalViewer() {
 
   const renderFooter = () => {
     return (
-      <div style={{ marginTop: "auto", display: "grid", gap: "0.5rem", fontSize: "0.875rem" }}>
+      <div
+        style={{
+          marginTop: "auto",
+          display: "grid",
+          gap: "0.5rem",
+          fontSize: "0.875rem",
+        }}
+      >
         {clientNameHtml && (
           <div
             className="ql-editor"
@@ -743,6 +811,8 @@ export default function ProposalViewer() {
         fontFamily: "Inter, Arial, sans-serif",
       }}
     >
+      <style>{quillStyles}</style>
+
       <div
         style={{
           maxWidth: "1280px",
