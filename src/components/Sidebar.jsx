@@ -8,161 +8,24 @@ const blockSections = [
     title: "Block",
     blocks: [
       { divider: true },
-      {
-        type: "header",
-        icon: (
-          <img
-            src="./images/sidebar/header.png"
-            alt="header"
-            className="sidebar-icon"
-          />
-        ),
-        label: "Header",
-        hasPreview: true,
-      },
-      {
-        type: "parties",
-        icon: (
-          <img
-            src="./images/sidebar/parties.png"
-            alt="header"
-            className="sidebar-icon"
-          />
-        ),
-        label: "Parties",
-      },
-      {
-        type: "pricing & services",
-        icon: (
-          <img
-            src="./images/sidebar/price.png"
-            alt="header"
-            className="sidebar-icon"
-          />
-        ),
-        label: "Pricing & Services",
-        hasPreview: true,
-      },
-      {
-        type: "text",
-        icon: (
-          <img
-            src="./images/sidebar/text.png"
-            alt="header"
-            className="sidebar-icon"
-          />
-        ),
-        label: "Text",
-      },
-      {
-        type: "signature",
-        icon: (
-          <img
-            src="./images/sidebar/signature.png"
-            alt="header"
-            className="sidebar-icon"
-          />
-        ),
-        label: "Signature",
-      },
-      {
-        type: "cover",
-        icon: (
-          <img
-            src="./images/sidebar/cover.png"
-            alt="header"
-            className="sidebar-icon"
-          />
-        ),
-        label: "Cover",
-        hasPreview: true,
-      },
-      {
-        type: "video",
-        icon: (
-          <img
-            src="./images/sidebar/video.png"
-            alt="header"
-            className="sidebar-icon"
-          />
-        ),
-        label: "Video",
-        hasPreview: true,
-      },
-      {
-        type: "attachment",
-        icon: (
-          <img
-            src="./images/sidebar/link.png"
-            alt="header"
-            className="sidebar-icon"
-          />
-        ),
-        label: "Attachments",
-      },
-      {
-        type: "pdf",
-        icon: (
-          <img
-            src="./images/sidebar/pdf.png"
-            alt="header"
-            className="sidebar-icon"
-          />
-        ),
-        label: "PDF",
-      },
-      {
-        type: "embed",
-        icon: (
-          <img
-            src="./images/sidebar/embed.png"
-            alt="header"
-            className="sidebar-icon"
-          />
-        ),
-        label: "Embed",
-        hasPreview: true,
-      },
-      {
-        type: "custom",
-        icon: (
-          <img
-            src="./images/sidebar/custom.png"
-            alt="header"
-            className="sidebar-icon"
-          />
-        ),
-        label: "Custom",
-        hasPreview: true,
-      },
-      // { type: "schedule", icon: "bi-calendar-event", label: "Schedule" },
-      {
-        type: "terms",
-        icon: (
-          <img
-            src="./images/sidebar/terms.png"
-            alt="header"
-            className="sidebar-icon"
-          />
-        ),
-        label: "Terms",
-      },
+      { type: "header", label: "Header", hasPreview: true },
+      { type: "calender", label: "Calender", hasPreview: true },
+      { type: "parties", label: "Parties" },
+      { type: "price", label: "Pricing & Services", hasPreview: true },
+      { type: "text", label: "Text" },
+      { type: "signature", label: "Signature" },
+      { type: "cover", label: "Cover", hasPreview: true },
+      { type: "video", label: "Video", hasPreview: true },
+      { type: "link", label: "Attachments" },
+      { type: "pdf", label: "PDF" },
+      { type: "embed", label: "Embed", hasPreview: true },
+      { type: "custom", label: "Custom", hasPreview: true },
+      { type: "terms", label: "Terms" },
+      { type: "tutorial", label: "Tutorial" },
     ],
   },
-  {
-    title: "Design",
-    blocks: [],
-  },
-  {
-    title: "Fields",
-    blocks: [],
-  },
-  {
-    title: "settings",
-    iconOnly: true,
-    icon: "bi-gear",
-    blocks: [],
-  },
+  { title: "Design", blocks: [] },
+  { title: "Fields", blocks: [] },
 ];
 
 const Sidebar = () => {
@@ -193,11 +56,11 @@ const Sidebar = () => {
   };
 
   return (
-    <div className="sidebar d-flex flex-column p-2 bg-white border-end rounded overflow-hidden shadow-sm mt-1">
+    <div className="sidebar d-flex flex-column p-2 bg-white border-end rounded overflow-auto shadow-sm mt-1">
       {/* Tabs */}
-      <div className="d-flex align-items-center justify-content-between mb-1 tabs-container">
-        <div className="d-flex tabs">
-          {blockSections.map((section, idx) => (
+      <div className="d-flex align-items-center mb-3">
+        <div className="d-flex tabs-header">
+          {blockSections.map((section) => (
             <button
               key={section.title}
               onClick={() => setActiveTab(section.title)}
@@ -205,14 +68,18 @@ const Sidebar = () => {
                 activeTab === section.title ? "active" : ""
               }`}
             >
-              {section.iconOnly ? (
-                <i className={`bi ${section.icon}`} />
-              ) : (
-                section.title
-              )}
+              {section.title}
             </button>
           ))}
         </div>
+
+        <button className="settings-btn ms-2 d-flex align-items-center justify-content-center">
+          <img
+            src="./images/sidebar/setting.png"
+            alt="setting"
+            className="block-item"
+          />
+        </button>
       </div>
 
       {/* Block List */}
@@ -224,69 +91,66 @@ const Sidebar = () => {
               block.divider ? (
                 <hr key={idx} className="my-1" />
               ) : (
-                <div
-                  key={block.type}
-                  className={`block-item d-flex align-items-center justify-content-between gap-2 p-2 rounded ${
-                    block.disabled ? "text-muted bg-light" : ""
-                  }`}
-                  draggable={!block.disabled}
-                  onDragStart={(e) =>
-                    !block.disabled && handleDragStart(e, block.type)
-                  }
-                  onClick={() => handleClick(block.type)}
-                  onMouseEnter={(e) => {
-                    const rect = e.currentTarget.getBoundingClientRect();
-                    if (block.type === "header") {
-                      setPreviewPosition({
-                        top: rect.top,
-                        left: rect.right + 10,
-                      });
-                    } else if (block.type === "cover") {
-                      setCoverPreviewPosition({
-                        top: rect.top,
-                        left: rect.right + 10,
-                      });
-                    }
-                  }}
-                  onMouseLeave={() => {
-                    if (block.type === "header") closePreview();
-                    else if (block.type === "cover") closeCoverPreview();
-                  }}
-                  style={{
-                    cursor: block.disabled ? "not-allowed" : "pointer",
-                  }}
-                >
-                  <div className="d-flex align-items-center gap-2">
-                    {block.icon}
-                    <span className="sidebar-label">{block.label}</span>
-                  </div>
-                  {block.hasPreview && (
-                    <i
-                      className="bi bi-chevron-right text-muted"
-                      style={{ fontSize: "0.65rem" }}
-                    />
+                <React.Fragment key={block.type}>
+                  {/* Add divider + gap before Tutorial */}
+                  {block.type === "tutorial" && (
+                    <hr className="my-3" /> // thicker gap than normal my-1
                   )}
-                </div>
+
+                  <div
+                    className={`block-item d-flex align-items-center justify-content-between gap-2 p-2 rounded ${
+                      block.disabled ? "text-muted bg-light" : ""
+                    }`}
+                    draggable={!block.disabled}
+                    onDragStart={(e) =>
+                      !block.disabled && handleDragStart(e, block.type)
+                    }
+                    onClick={() => handleClick(block.type)}
+                    onMouseEnter={(e) => {
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      if (block.type === "header") {
+                        setPreviewPosition({
+                          top: rect.top,
+                          left: rect.right + 10,
+                        });
+                      } else if (block.type === "cover") {
+                        setCoverPreviewPosition({
+                          top: rect.top,
+                          left: rect.right + 10,
+                        });
+                      }
+                    }}
+                    onMouseLeave={() => {
+                      if (block.type === "header") closePreview();
+                      else if (block.type === "cover") closeCoverPreview();
+                    }}
+                    style={{
+                      cursor: block.disabled ? "not-allowed" : "pointer",
+                    }}
+                  >
+                    <div className="d-flex align-items-center gap-2">
+                      <img
+                        src={`./images/sidebar/${block.type}.png`}
+                        alt={block.label}
+                        className="sidebar-icon"
+                        data-type={block.type}
+                      />
+                      <span className="sidebar-label">{block.label}</span>
+                    </div>
+                    {block.hasPreview && (
+                      <i
+                        className="bi bi-chevron-right text-muted"
+                        style={{ fontSize: "0.65rem" }}
+                      />
+                    )}
+                  </div>
+                </React.Fragment>
               )
             )}
           </div>
         ))}
 
-      {/* Bottom Tutorial */}
-      <div className="mt-auto pt-2">
-        <button className="btn btn-sm btn-outline-secondary w-100 d-flex align-items-start justify-content-start p-2 border-0 gap-2 ">
-          <div>
-            <img
-              src="./images/sidebar/tutorial.png"
-              alt="tutorial"
-              className="sidebar-icon me-2"
-            />
-            <span className="label">Tutorial</span>
-          </div>
-        </button>
-      </div>
-
-      {/* Floating Preview Panels */}
+      {/* Floating Previews */}
       <HeaderPreviewPortal
         position={previewPosition}
         onSelect={(type) => handleClick(type)}
@@ -298,97 +162,84 @@ const Sidebar = () => {
         onClose={closeCoverPreview}
       />
 
+      {/* CSS */}
       <style>
         {`
-
-        .label{
-        width: 39;
-        height: 14;
-        angle: 0 deg;
-        opacity: 1;
-        font-family: Poppins;
-        font-weight: 500;
-        font-style: Medium;
-        font-size: 14px;
-        leading-trim: NONE;
-        line-height: 120%;
-        letter-spacing: 1.6%;
+        .tabs-header {
+          border: 1px solid #e0e0e0;
+          border-radius: 30px;
+          padding: 4px;
+          background: #fff;
+          display: inline-flex;
         }
-        
-       .sidebar {
+
+        .tabs-header .tab-btn {
+          border: none;
+          background: transparent;
+          padding: 6px 14px;
+          border-radius: 20px;
+          cursor: pointer;
+          font-size: 14px;
+          color: #555;
+          transition: all 0.2s ease;
+        }
+
+        .tabs-header .tab-btn.active {
+          background: #007bff;
+          color: #fff;
+        }
+
+        .settings-btn {
+          border: 1px solid #e0e0e0;
+          background: #fff;
+          border-radius: 50%;
+          width: 46px;
+          height: 41px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: background 0.2s ease, color 0.2s ease;
+        }
+
+        .settings-btn:hover {
+          background: #007bff;
+          color: #fff;
+        }
+
+        .label {
+          font-family: Poppins;
+          font-weight: 500;
+          font-size: 14px;
+          line-height: 120%;
+        }
+
+        .sidebar {
           position: absolute;
-          top: 62px;
+          top: 56px;
           bottom: 9px;
           left: 0;
-          width: 230px;
-          min-width: 200px;
-          max-width: 230px;
+          width: 270px;
+          max-width: 270px;
           font-size: 0.85rem;
           border-right: 2px solid #dee2e6;
           background-color: #fff;
-          overflow-y: auto;
           border-radius: 6px;
           box-shadow: 0 2px 4px rgba(0,0,0,0.08);
         }
 
-        .tabs-container {
-              background-color: #fff;
-            border: 1px solid #ddd;
-            border-radius: 999px;
-            padding: 6px 4px;
-            gap: 6px;
+        .sidebar::-webkit-scrollbar {
+          width: 6px;
         }
-
-        .tabs {
-          display: flex;
-          gap: 0px;
-        }
-
-        .tab-btn {
-          background-color: transparent;
-          border: none;
-          color: #555;
-          padding: 7px 10px;
-          border-radius: 999px;
-          font-size: 0.85rem;
-          font-weight: 500;
-          transition: all 0.2s ease;
-        }
-
-        .tab-btn.active {
-          background-color: #007bff;
-          color: #fff;
-          font-weight: 600;
-        }
-
 
         .block-item {
           font-size: 0.8rem;
+          transition: background-color 0.2s ease;
         }
 
         .block-item:hover {
           background-color: #f8f9fa;
-          transition: background-color 0.2s ease;
         }
-
-        // .block-item:active {
-        //   background-color: #e9ecef;
-        // }
-
-        // .block-item i {
-        //   width: 14px;
-        //   text-align: center;
-        //   font-size: 0.9rem;
-        // }
-
-        .block-item {
-          font-size: 0.8rem;
-          transition: background-color 0.2s ease;
-        }
-
-        // .block-item:hover {
-        //   background-color: #f0f8ff; /* light blue, or use #e7f1ff or your brand color */
-        // }
 
         .block-item:hover .sidebar-icon {
           background-color: #007bff;
@@ -398,18 +249,62 @@ const Sidebar = () => {
           color: #007bff;
         }
 
-
-      /* Icon styles */
         .sidebar-icon {
-                 width: 54px;
-                height: 37px;
-                border-radius: 24px;
-                padding: 9px;
-                background-color: #f2f2f2;
-                object-fit: contain;
-                transition: background-color 0.2s ease;
+          width: 54px;
+          height: 37px;
+          border-radius: 24px;
+          padding: 9px;
+          background-color: #f2f2f2;
+          object-fit: contain;
+          transition: background-color 0.2s ease;
         }
-  
+
+        /* Default icons */
+        .sidebar-icon[data-type="header"] { content: url("./images/sidebar/header.png"); }
+        .sidebar-icon[data-type="calender"] { content: url("./images/sidebar/calender.png"); }
+        .sidebar-icon[data-type="cover"] { content: url("./images/sidebar/cover.png"); }
+        .sidebar-icon[data-type="link"] { content: url("./images/sidebar/link.png"); }
+        .sidebar-icon[data-type="parties"] { content: url("./images/sidebar/parties.png"); }
+        .sidebar-icon[data-type="price"] { content: url("./images/sidebar/price.png"); }
+        .sidebar-icon[data-type="text"] { content: url("./images/sidebar/text.png"); }
+        .sidebar-icon[data-type="signature"] { content: url("./images/sidebar/signature.png"); }
+        .sidebar-icon[data-type="video"] { content: url("./images/sidebar/video.png"); }
+        .sidebar-icon[data-type="embed"] { content: url("./images/sidebar/embed.png"); }
+        .sidebar-icon[data-type="custom"] { content: url("./images/sidebar/custom.png"); }
+        .sidebar-icon[data-type="terms"] { content: url("./images/sidebar/terms.png"); }
+        .sidebar-icon[data-type="pdf"] { content: url("./images/sidebar/pdf.png"); }
+        .sidebar-icon[data-type="tutorial"] { content: url("./images/sidebar/tutorial.png"); }
+
+        /* Hover icons */
+        .block-item:hover .sidebar-icon[data-type="header"] { content: url("./images/sidebar/header-hover.png"); }
+        .block-item:hover .sidebar-icon[data-type="calender"] { content: url("./images/sidebar/calender-hover.png"); }
+        .block-item:hover .sidebar-icon[data-type="cover"] { content: url("./images/sidebar/cover-hover.png"); }
+        .block-item:hover .sidebar-icon[data-type="link"] { content: url("./images/sidebar/lnk-hover.png"); }
+        .block-item:hover .sidebar-icon[data-type="parties"] { content: url("./images/sidebar/parties-hover.png"); }
+        .block-item:hover .sidebar-icon[data-type="price"] { content: url("./images/sidebar/price-hover.png"); }
+        .block-item:hover .sidebar-icon[data-type="text"] { content: url("./images/sidebar/text-hover.png"); }
+        .block-item:hover .sidebar-icon[data-type="signature"] { content: url("./images/sidebar/signature-hover.png"); }
+        .block-item:hover .sidebar-icon[data-type="video"] { content: url("./images/sidebar/video-hover.png"); }
+        .block-item:hover .sidebar-icon[data-type="embed"] { content: url("./images/sidebar/embed-hover.png"); }
+        .block-item:hover .sidebar-icon[data-type="custom"] { content: url("./images/sidebar/custom-hover.png"); }
+        .block-item:hover .sidebar-icon[data-type="terms"] { content: url("./images/sidebar/terms-hover.png"); }
+        .block-item:hover .sidebar-icon[data-type="pdf"] { content: url("./images/sidebar/pdf-hover.png"); }
+        .block-item:hover .sidebar-icon[data-type="tutorial"] { content: url("./images/sidebar/tutorial-hover.png"); }
+
+
+
+        /* Sidebar scroll but scrollbar invisible */
+        .sidebar {
+          overflow-y: auto;     /* allow scroll */
+          scrollbar-width: none; /* Firefox hide */
+          -ms-overflow-style: none; /* IE/Edge legacy */
+        }
+
+        .sidebar::-webkit-scrollbar {
+          display: none; /* Chrome, Safari, Opera */
+        }
+      
+        
 
       `}
       </style>

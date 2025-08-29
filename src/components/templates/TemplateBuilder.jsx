@@ -7,7 +7,6 @@ import BlockSettingsPanel from "../pages/dashboard/BlockSettingsPanel";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-
 const TemplateBuilder = () => {
   const [sidebarVisible, setSidebarVisible] = useState(true);
   const [blocks, setBlocks] = useState([]);
@@ -26,7 +25,8 @@ const TemplateBuilder = () => {
           backgroundColor: newBlock.settings?.backgroundColor || "#2d5000",
           textColor: newBlock.settings?.textColor || "#ffffff",
           backgroundImage:
-            newBlock.settings?.backgroundImage || `${API_URL}/uploads/1756115657883.png`,
+            newBlock.settings?.backgroundImage ||
+            `${API_URL}/uploads/1756115657883.png`,
           textAlign: newBlock.settings?.textAlign || "left",
           ...newBlock.settings,
         },
@@ -105,7 +105,7 @@ const TemplateBuilder = () => {
         <div
           className="h-100 bg-[#E8EAED] border-end shadow-sm thin-scrollbar"
           style={{
-            width: sidebarVisible ? "230px" : "0",
+            width: sidebarVisible ? "270px" : "0",
             transition: "width 0.3s ease",
             overflow: "hidden",
           }}

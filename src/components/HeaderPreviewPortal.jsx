@@ -24,25 +24,24 @@ const HeaderPreviewPortal = ({ position, onSelect, onClose }) => {
 
   return ReactDOM.createPortal(
     <div
-className="rounded-md shadow-lg p-0 position-fixed d-flex flex-column"
-style={{
-  top: Math.max(50, position.top || 50),
-  left: safeLeft,
-  zIndex: 1050,
-  width: "200px",
-  marginTop: "-45px",
-  height: "900px",
-  marginLeft: "-10px",
-  borderRadius: "5px",
-  maxHeight: "calc(100vh - 68px)",
-  overflow: "hidden",
-  backgroundColor: "rgba(255, 255, 255, 0.7)", 
-  backdropFilter: "blur(10px)", 
-  WebkitBackdropFilter: "blur(10px)", 
-}}
-onMouseEnter={() => clearTimeout(window.__hoverTimeout)}
-onMouseLeave={onClose}
-
+      className="rounded-md shadow-lg p-0 position-fixed d-flex flex-column"
+      style={{
+        top: Math.max(50, position.top || 50),
+        left: safeLeft,
+        zIndex: 1050,
+        width: "200px",
+        marginTop: "-45px",
+        height: "950px",
+        marginLeft: "0px",
+        borderRadius: "5px",
+        maxHeight: "calc(100vh - 68px)",
+        overflow: "hidden",
+        backgroundColor: "rgba(255, 255, 255, 0.7)",
+        backdropFilter: "blur(10px)",
+        WebkitBackdropFilter: "blur(10px)",
+      }}
+      onMouseEnter={() => clearTimeout(window.__hoverTimeout)}
+      onMouseLeave={onClose}
     >
       <div
         className="flex-grow-1"
@@ -62,7 +61,13 @@ onMouseLeave={onClose}
                 onSelect(id);
                 onClose();
               }}
-              style={{ marginTop: "-40px", padding: "40px", height: "180px", marginRight: "10px", marginLeft: "-32px", }}
+              style={{
+                marginTop: "-40px",
+                padding: "40px",
+                height: "180px",
+                marginRight: "10px",
+                marginLeft: "-32px",
+              }}
             >
               {/* Scale down preview */}
               <div
