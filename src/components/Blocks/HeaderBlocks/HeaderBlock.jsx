@@ -204,8 +204,10 @@ const HeaderBlock = ({
         // 🔍 Step 1: Check if header block exists
         if (id) {
           try {
-            const checkRes = await fetch(`${API_URL}/api/headerBlock?ids=${id}`);
-            console.log("checkRes from api",checkRes);
+            const checkRes = await fetch(
+              `${API_URL}/api/headerBlock?ids=${id}`
+            );
+            console.log("checkRes from api", checkRes);
             if (checkRes.ok) {
               exists = true;
             }

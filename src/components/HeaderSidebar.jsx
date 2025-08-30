@@ -3,6 +3,7 @@ import { X, Save } from "lucide-react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import CreateClientModal from "./Forms/CreateClientModal";
 import { useSelector } from "react-redux";
+import { toast } from "react-toastify";
 
 import {
   selectUserFullName,
@@ -38,11 +39,11 @@ const HeaderSidebar = ({
   // Send document handler
   const handleSendDocument = async () => {
     if (!headerIds || headerIds.length === 0) {
-      alert("HeaderId missing, please create header first!");
+      toast.error("Please select at least one header block.");
       return;
     }
     if (!selectedRecipient) {
-      alert("Please select a recipient.");
+      toast.error("Please select a recipient.");
       return;
     }
 
@@ -75,16 +76,16 @@ const HeaderSidebar = ({
 
       const data = await res.json();
       if (res.ok) {
-        alert("Document sent successfully!");
+        toast.success("Document sent successfully!");
         console.log("Mail API response:", data);
         onClose();
       } else {
         console.error("Failed to send document:", data);
-        alert("Failed to send document.");
+        toast.error("Failed to send document.");
       }
     } catch (err) {
       console.error("Error sending document:", err);
-      alert("Error while sending document.");
+      toast.error("Failed to send document.");
     }
   };
 
