@@ -26,7 +26,7 @@ const HeaderPreviewPortal = ({ position, onSelect, onClose }) => {
     <div
       className="rounded-md shadow-lg p-0 position-fixed d-flex flex-column"
       style={{
-        top: Math.max(50, position.top || 50),
+        top: Math.max(60, position.top || 60),
         left: safeLeft,
         zIndex: 1050,
         width: "200px",

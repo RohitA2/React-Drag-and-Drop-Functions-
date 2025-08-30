@@ -12,7 +12,7 @@ import EditableQuill from "./EditableQuill";
 import CustomToolbar from "./CustomToolbar";
 import { useSelector, useDispatch } from "react-redux";
 import { selectedUserId } from "../../../store/authSlice";
-import { setHeaderId } from "../../../store/headerSlice";
+import { addHeaderId } from "../../../store/headerSlice";
 
 const LAYOUTS = {
   "left-panel": {
@@ -204,7 +204,8 @@ const HeaderBlock = ({
         // 🔍 Step 1: Check if header block exists
         if (id) {
           try {
-            const checkRes = await fetch(`${API_URL}/api/headerBlock/${id}`);
+            const checkRes = await fetch(`${API_URL}/api/headerBlock?ids=${id}`);
+            console.log("checkRes from api",checkRes);
             if (checkRes.ok) {
               exists = true;
             }
@@ -257,7 +258,7 @@ const HeaderBlock = ({
           if (!exists && result?.data?.id) {
             setIsCreated(true);
             setHeaderId(result.data.id);
-            localStorage.setItem("headerId", result.data.id);
+            dispatch(addHeaderId(result.data.id));
             console.log("HeaderId saved in localStorage:", result.data.id);
           }
         }
@@ -271,7 +272,7 @@ const HeaderBlock = ({
       if (headerBlock.title && headerBlock.title !== "Sales Proposal") {
         saveHeaderBlock();
       }
-    }, 1000);
+    }, 5000);
 
     return () => clearTimeout(timeout);
   }, [headerBlock, id, userId, isPreview]);
@@ -394,10 +395,10 @@ const HeaderBlock = ({
       const saveRes = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          ...headerBlock, 
+        body: JSON.stringify({
+          ...headerBlock,
           logoUrl: updatedLogoUrl, // Changed to match database field
-          userId 
+          userId,
         }),
       });
 
@@ -582,7 +583,10 @@ const HeaderBlock = ({
         >
           {/* Logo and Controls */}
           {headerBlock.layoutType !== "default" && (
-            <div className="logo-management-container" style={{ textAlign: headerBlock.textAlign }}>
+            <div
+              className="logo-management-container"
+              style={{ textAlign: headerBlock.textAlign }}
+            >
               <div className="logo-actions-wrapper">
                 {headerBlock.logoUrl ? ( // Changed to match database field
                   <Dropdown>
@@ -709,7 +713,12 @@ const HeaderBlock = ({
           {headerBlock.layoutType === "default" && (
             <>
               {/* Overlayed Title/SubTitle Box */}
-              <div style={{ ...LAYOUTS.default.titleBox, textAlign: headerBlock.textAlign }}>
+              <div
+                style={{
+                  ...LAYOUTS.default.titleBox,
+                  textAlign: headerBlock.textAlign,
+                }}
+              >
                 {/* Logo inside title box */}
                 <div className="d-flex justify-content-start align-items-start mb-2">
                   {headerBlock.logoUrl ? ( // Changed to match database field
@@ -852,7 +861,10 @@ const HeaderBlock = ({
           {headerBlock.layoutType !== "default" && (
             <div
               className="mt-1"
-              style={{ color: dynamicTextColor, textAlign: headerBlock.textAlign }}
+              style={{
+                color: dynamicTextColor,
+                textAlign: headerBlock.textAlign,
+              }}
             >
               {/* Prepared for Client */}
               <div

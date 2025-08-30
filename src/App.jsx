@@ -31,6 +31,7 @@ function App() {
         </Route>
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/proposal" element={<ProposalViewer />} />
         <Route path="/proposal/:headerId" element={<ProposalViewer />} />
 
         {/* FULLSCREEN editor (no dashboard layout) */}

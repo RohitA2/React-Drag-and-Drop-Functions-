@@ -1,18 +1,18 @@
 import React, { useState, useEffect } from "react";
-import { X, Search, Save, Settings } from "lucide-react";
+import { X, Save } from "lucide-react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import CreateClientModal from "./Forms/CreateClientModal";
-import SignatureBlock from "./Blocks/SignatureBlock";
-import { components } from "react-select";
 import { useSelector } from "react-redux";
+
 import {
   selectUserFullName,
   selectUserEmail,
   selectedUserId,
-} from "../store/authSlice"; // adjust path
+} from "../store/authSlice";
+import { selectHeaderIds } from "../store/headerSlice"; // ✅ import selector for ids
 
-const FRONT_API_URL=import.meta.env.FRONT_API_URL
-const API_URL=import.meta.env.VITE_API_URL
+const FRONT_API_URL = import.meta.env.FRONT_API_URL;
+const API_URL = import.meta.env.VITE_API_URL;
 
 const HeaderSidebar = ({
   isOpen,
@@ -25,9 +25,11 @@ const HeaderSidebar = ({
   const fullName = useSelector(selectUserFullName);
   const email = useSelector(selectUserEmail);
   const userId = useSelector(selectedUserId);
-  const [name, setName] = React.useState("Sales Proposal");
+  const headerIds = useSelector(selectHeaderIds); // ✅ now using Redux ids
+  console.log("headerIds:", headerIds);
+  const [name, setName] = useState("Sales Proposal");
   const [showModal, setShowModal] = useState(false);
-  const [expirationDate, setExpirationDate] = React.useState(" ");
+  const [expirationDate, setExpirationDate] = useState("");
   const [recipients, setRecipients] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredRecipients, setFilteredRecipients] = useState([]);
@@ -35,9 +37,7 @@ const HeaderSidebar = ({
 
   // Send document handler
   const handleSendDocument = async () => {
-    const headerId = localStorage.getItem("headerId");
-
-    if (!headerId) {
+    if (!headerIds || headerIds.length === 0) {
       alert("HeaderId missing, please create header first!");
       return;
     }
@@ -46,10 +46,14 @@ const HeaderSidebar = ({
       return;
     }
 
-    const documentLink = `http://13.204.3.50/proposal/${headerId}`;
+    // Build dynamic link
+    const documentLink =
+      headerIds.length === 1
+        ? `http://13.204.3.50/proposal/${headerIds[0]}`
+        : `http://13.204.3.50/proposal?ids=${headerIds.join(",")}`;
 
     const payload = {
-      headerId,
+      headerIds, // ✅ always send array
       userId,
       name,
       from: { fullName, email },
@@ -59,7 +63,7 @@ const HeaderSidebar = ({
         email: selectedRecipient.email,
       },
       expirationDate,
-      link: documentLink, // send link in payload
+      link: documentLink,
     };
 
     try {
@@ -112,14 +116,11 @@ const HeaderSidebar = ({
 
     const fetchRecipients = async () => {
       try {
-        const res = await fetch(
-          `${API_URL}/api/recipients?user_id=${userId}`
-        );
+        const res = await fetch(`${API_URL}/api/recipients?user_id=${userId}`);
         const data = await res.json();
 
-        // Make sure we store an array
         if (data.success === false) {
-          setRecipients([]); // handle error
+          setRecipients([]);
         } else {
           setRecipients(Array.isArray(data.data) ? data.data : data);
         }
@@ -217,8 +218,6 @@ const HeaderSidebar = ({
                   <p className="m-1  text-black fs-8  small-text1">
                     {fullName}
                   </p>
-                  {/* <p className="m-1 text-black fs-8 small-text1">{email}</p> */}
-                  {/* <p className="m-1 text-black fs-8 small-text1"> {userId}</p> */}
                   <p className="m-1  text-black fs-8 small-text1">
                     Sender. Needs to sign
                   </p>
@@ -247,7 +246,6 @@ const HeaderSidebar = ({
                     </span>
                   </button>
 
-                  {/* OR text */}
                   <p className="flex-grow-0 text-center text-muted align-self-center m-0">
                     or
                   </p>
@@ -262,11 +260,11 @@ const HeaderSidebar = ({
                     }
                     onChange={(e) => {
                       setSearchTerm(e.target.value);
-                      setSelectedRecipient(null); // reset selection
+                      setSelectedRecipient(null);
                     }}
                   />
 
-                  {/* Dropdown for search results */}
+                  {/* Dropdown */}
                   {filteredRecipients.length > 0 && !selectedRecipient && (
                     <ul
                       className="list-group position-absolute mt-1 w-100 shadow-sm"
@@ -290,7 +288,7 @@ const HeaderSidebar = ({
                 </div>
               </div>
 
-              {/* Modal Component */}
+              {/* Modal */}
               <CreateClientModal
                 show={showModal}
                 onHide={() => setShowModal(false)}
@@ -337,14 +335,12 @@ const HeaderSidebar = ({
                 Expiration:
               </label>
               <div className="d-flex gap-2 align-items-center">
-                {/* Date picker input */}
                 <input
                   type="date"
                   value={expirationDate}
                   onChange={(e) => setExpirationDate(e.target.value)}
                   className="form-control flex-grow-1"
                 />
-                {/* Send as field (readonly) */}
                 <input
                   type="text"
                   placeholder="Send as"
@@ -360,7 +356,6 @@ const HeaderSidebar = ({
         {/* Footer */}
         <div className="position-absolute bottom-0 start-0 end-0 p-3 border-top bg-white">
           <div className="d-flex align-items-center gap-2">
-            {/* Small save button */}
             <button
               className="btn btn-sm btn-light position-relative d-flex align-items-center justify-content-center"
               style={{ width: "32px", height: "32px" }}
@@ -369,7 +364,6 @@ const HeaderSidebar = ({
               <Save size={16} />
             </button>
 
-            {/* Send document button */}
             <button
               className="btn btn-primary flex-grow-1 small-text1"
               onClick={handleSendDocument}
@@ -377,7 +371,6 @@ const HeaderSidebar = ({
               Send document
             </button>
           </div>
-          {/* Checkbox */}
           <div className="form-check m-0 d-flex align-items-center">
             <input
               className="form-check-input me-2"

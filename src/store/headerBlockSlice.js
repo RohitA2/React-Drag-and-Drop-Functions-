@@ -1,10 +1,10 @@
-// store/headerSlice.js
+// headerSlice.js
 import { createSlice } from "@reduxjs/toolkit";
 
 const headerSlice = createSlice({
-  name: "header",
+  name: "headerBlocks",
   initialState: {
-    ids: [],   // store one or many headerIds
+    ids: [],
   },
   reducers: {
     addHeaderId: (state, action) => {
@@ -16,7 +16,7 @@ const headerSlice = createSlice({
       state.ids = state.ids.filter((id) => id !== action.payload);
     },
     setHeaderIds: (state, action) => {
-      state.ids = action.payload; // overwrite
+      state.ids = action.payload;
     },
     clearHeaderIds: (state) => {
       state.ids = [];
@@ -24,14 +24,5 @@ const headerSlice = createSlice({
   },
 });
 
-export const {
-  addHeaderId,
-  removeHeaderId,
-  setHeaderIds,
-  clearHeaderIds,
-} = headerSlice.actions;
-
-// ✅ Selector (must be exported manually)
-export const selectHeaderIds = (state) => state.header.ids;
-
+export const { addHeaderId, removeHeaderId, setHeaderIds, clearHeaderIds } = headerSlice.actions;
 export default headerSlice.reducer;
