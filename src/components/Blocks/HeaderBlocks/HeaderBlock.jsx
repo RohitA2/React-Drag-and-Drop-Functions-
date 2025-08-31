@@ -84,7 +84,8 @@ const LAYOUTS = {
       "position-absolute top-50 start-50 translate-middle w-100 px-3 z-2 d-flex flex-column align-items-center",
     imageStyle: {
       width: "100%",
-      height: "600px",
+      height: "100%",
+      minHeight: "600px",
       backgroundSize: "cover",
       backgroundPosition: "center",
     },
@@ -495,10 +496,13 @@ const HeaderBlock = ({
       style={wrapperStyle}
     >
       <div
-        className={`row rounded-3 overflow-hidden shadow d-flex ${container}`}
+        className={`row rounded-3 overflow-hidden shadow ${container}`}
         ref={containerRef}
         style={{
           position: "relative",
+          display: "flex",
+          flexDirection: "row",
+          alignItems: "stretch",
           // Use flexbox for resizable layouts
           ...(isPreview ||
           !["left-panel", "right-panel"].includes(headerBlock.layoutType)
@@ -568,10 +572,22 @@ const HeaderBlock = ({
           }`}
           style={{
             ...(headerBlock.layoutType === "grid"
-              ? { ...contentStyle, color: dynamicTextColor }
+              ? {
+                  ...contentStyle,
+                  color: dynamicTextColor,
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  gap: "10rem",
+                  height: "100%",
+                }
               : {
                   backgroundColor: headerBlock.backgroundColor,
                   color: dynamicTextColor,
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "space-between",
                 }),
             // Add dynamic width for resizable layouts
             ...(isPreview ||
@@ -783,7 +799,7 @@ const HeaderBlock = ({
               <div
                 style={{
                   ...priceSection,
-                  backgroundColor: dynamicPriceSectionBg,
+                  backgroundColor: "#ECECEC",
                   textAlign: headerBlock.textAlign,
                 }}
               >
