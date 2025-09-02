@@ -23,6 +23,7 @@ const HeaderSidebar = ({
   canvasRef,
   blocks = [],
 }) => {
+  const partyId = useSelector((state) => state.party.partyId);
   const fullName = useSelector(selectUserFullName);
   const email = useSelector(selectUserEmail);
   const userId = useSelector(selectedUserId);
@@ -50,8 +51,10 @@ const HeaderSidebar = ({
     // Build dynamic link
     const documentLink =
       headerIds.length === 1
-        ? `http://13.204.3.50/proposal/${headerIds[0]}`
-        : `http://13.204.3.50/proposal?ids=${headerIds.join(",")}`;
+        ? `http://13.204.3.50/proposal/${headerIds[0]}?partyId=${partyId}`
+        : `http://13.204.3.50/proposal?ids=${headerIds.join(
+            ","
+          )}&partyId=${partyId}`;
 
     const payload = {
       headerIds, // ✅ always send array

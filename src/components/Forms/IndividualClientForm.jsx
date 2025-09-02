@@ -3,7 +3,7 @@ import { Check, Copy, Edit3, ArrowRight } from "lucide-react";
 import { Form, Dropdown } from "react-bootstrap";
 import CustomPhoneInput from "./PhoneInput";
 import { useSelector, useDispatch } from "react-redux";
-import { createRecipient } from "../../store/recipientSlice";
+import { createRecipient, updateRecipient } from "../../store/recipientSlice";
 import { selectedUserId } from "../../store/authSlice";
 
 const roleOptions = [
@@ -21,7 +21,7 @@ const signOptions = [
 ];
 
 // 📌 Main Form Component
-export default function IndividualClientForm({ onCreated } ) {
+export default function IndividualClientForm({ onCreated, recipient }) {
   const [showAdditional, setShowAdditional] = useState(false);
   const [addressType, setAddressType] = useState("work");
 
@@ -48,18 +48,29 @@ export default function IndividualClientForm({ onCreated } ) {
   };
 
   // Handle submit
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  
-  // Dispatch and wait for result
-  const resultAction = await dispatch(createRecipient(formData));
-  
-  // If creation successful, call onCreated
-  if (createRecipient.fulfilled.match(resultAction)) {
-    const newRecipient = resultAction.payload; // this should be the created recipient from API
-    if (onCreated) onCreated(newRecipient);
-  }
-};
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    let resultAction;
+
+    if (recipient?.id) {
+      // 🔹 Update existing
+      resultAction = await dispatch(
+        updateRecipient({ id: recipient.id, data: formData })
+      );
+    } else {
+      // 🔹 Create new
+      resultAction = await dispatch(createRecipient(formData));
+    }
+
+    if (
+      (createRecipient.fulfilled.match(resultAction) ||
+        updateRecipient.fulfilled.match(resultAction)) &&
+      onCreated
+    ) {
+      onCreated(resultAction.payload);
+    }
+  };
 
   return (
     <div>

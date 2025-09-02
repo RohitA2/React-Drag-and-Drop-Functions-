@@ -2,7 +2,12 @@ import React, { useState, useEffect } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import CreateClientModal from "../Forms/CreateClientModal";
+import EditFromModal from "../Blocks/HeaderBlocks/EditFromModal";
+import Dropdown from "react-bootstrap/Dropdown";
 import { useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
+import { setPartyId } from "../../store/partySlice";
+import axios from "axios";
 import {
   selectedUserId,
   selectUserFullName,
@@ -13,13 +18,15 @@ import { toast } from "react-toastify";
 const API_URL = import.meta.env.VITE_API_URL;
 
 const Parties = () => {
+  const dispatch = useDispatch();
   const userId = useSelector(selectedUserId);
   const userFullName = useSelector(selectUserFullName);
   const userEmail = useSelector(selectUserEmail);
 
-  const [toParty, setToParty] = useState(null);
+  const [toParties, setToParties] = useState([]);
   const [fromParty, setFromParty] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [showFromModal, setShowFromModal] = useState(false);
   const [currentSection, setCurrentSection] = useState("to");
 
   const [recipients, setRecipients] = useState([]);
@@ -33,8 +40,11 @@ const Parties = () => {
   };
 
   const handleSave = (data) => {
-    if (currentSection === "to") setToParty(data);
-    else setFromParty(data);
+    if (currentSection === "to") {
+      setToParties((prev) => [...prev, data]); // ✅ append to list
+    } else {
+      setFromParty(data);
+    }
     setShowModal(false);
   };
 
@@ -45,7 +55,7 @@ const Parties = () => {
       try {
         const res = await fetch(`${API_URL}/api/recipients?user_id=${userId}`);
         const data = await res.json();
-
+        console.log("data from recipents", data);
         if (data.success === false) {
           setRecipients([]);
         } else {
@@ -72,12 +82,56 @@ const Parties = () => {
     setFilteredRecipients(filtered);
   }, [searchTerm, recipients]);
 
+  // 1️⃣ Fetch saved data when component mounts
+  useEffect(() => {
+    if (!userId) return;
 
-  
+    const fetchParties = async () => {
+      try {
+        const res = await axios.get(`${API_URL}/parties/${userId}`);
+        if (res.data.success && res.data.data) {
+          setToParties(res.data.data.toParty || []);
+          setFromParty(res.data.data.fromParty || null);
+        }
+      } catch (err) {
+        console.error("❌ Error fetching parties:", err);
+      }
+    };
 
+    fetchParties();
+  }, [userId]);
 
+  // 2️⃣ Auto-save when state changes
+  useEffect(() => {
+    if (!userId) return;
 
-  
+    const saveParties = async () => {
+      try {
+        const res = await axios.post(`${API_URL}/parties/save`, {
+          userId,
+          toParty: toParties,
+          fromParty: fromParty,
+        });
+        console.log("parties saved", res.data);
+        if (res.data.success) {
+          toast.success(res.data.message);
+          console.log("parties saved and id", res.data.data.id);
+          
+          dispatch(setPartyId(res.data.data.id));
+        }
+      } catch (err) {
+        console.error("❌ Error saving parties:", err.message);
+        toast.error(err.message);
+      }
+    };
+
+    saveParties();
+  }, [userId, toParties, fromParty, userId]);
+
+  const handleEditRecipient = (recipient) => {
+    setSelectedRecipient(recipient);
+    setShowModal(true); // open modal for editing
+  };
 
   return (
     <div
@@ -86,26 +140,90 @@ const Parties = () => {
     >
       {/* TO Section */}
       <div className="mb-5 w-100 p-4">
-        <div
-          className="d-flex justify-content-between align-items-center mb-2 text-secondary fw-semibold"
-          style={{ maxWidth: "500px", margin: "0 auto" }}
-        >
-          <h4 className="fw-bold mb-4 ">Parties</h4>
-          <div className="d-flex">
+        <div style={{ maxWidth: "500px", margin: "0 auto" }}>
+          <h4 className="fw-bold text-secondary mb-1">Parties</h4>
+          <div className="d-flex align-items-center text-secondary fw-semibold mb-2">
             <span className="text-dark fw-bold me-2">01</span>
             <span className="text-primary me-2">—</span>
             To
           </div>
         </div>
 
-        {toParty ? (
-          <div
-            className="border rounded p-3 bg-light mx-auto"
-            style={{ maxWidth: "500px" }}
-          >
-            <h6 className="mb-1">{toParty.name}</h6>
-            <p className="mb-0 small text-muted">{toParty.email}</p>
-          </div>
+        <div className="position-absolute top-2 end-0 mt-2 me-2">
+          <Dropdown align="end">
+            <Dropdown.Toggle
+              variant="light"
+              size="sm"
+              className="px-3 py-1 shadow-sm border-0 fw-semibold fs-6 more-button"
+              id="recipient-actions-global"
+            >
+              More
+            </Dropdown.Toggle>
+
+            <Dropdown.Menu className="shadow-sm border-0 mt-2">
+              {/* Add new recipient */}
+              <Dropdown.Item
+                onClick={() => {
+                  setSelectedRecipient(null);
+                  setSearchTerm("");
+                  handleAddRecipient("to");
+                }}
+              >
+                <i className="bi bi-plus-circle me-2"></i>
+                Add more recipients
+              </Dropdown.Item>
+
+              <Dropdown.Divider />
+
+              {/* List of recipients with edit option */}
+              {toParties.map((party, idx) => (
+                <Dropdown.Item
+                  key={idx}
+                  onClick={() => handleEditRecipient(party)}
+                  className="d-flex align-items-center"
+                >
+                  <i className="bi bi-pencil-square me-2"></i>
+                  {party.company || party.name || party.email}
+                </Dropdown.Item>
+              ))}
+            </Dropdown.Menu>
+          </Dropdown>
+        </div>
+
+        {/* Recipient cards */}
+        {toParties.length > 0 ? (
+          toParties.map((party, idx) => (
+            <div
+              key={idx}
+              className="border rounded mx-auto position-relative mb-3"
+              style={{ maxWidth: "500px" }}
+            >
+              <div className="row m-0 border-bottom">
+                <div className="col-6 p-2 border-end">
+                  <small className="text-muted d-block">Company</small>
+                  <span className="fw-small">
+                    {party.companyName || party.name}
+                  </span>
+                </div>
+                <div className="col-6 p-2">
+                  <small className="text-muted d-block">Reference</small>
+                  <span className="fw-small">{party.name || "—"}</span>
+                </div>
+              </div>
+              <div className="row m-0 border-bottom">
+                <div className="col-12 p-2">
+                  <small className="text-muted d-block">Email</small>
+                  <span className="fw-small">{party.email}</span>
+                </div>
+              </div>
+              <div className="row m-0">
+                <div className="col-12 p-2">
+                  <small className="text-muted d-block">Phone</small>
+                  <span className="fw-small">{party.phone || "—"}</span>
+                </div>
+              </div>
+            </div>
+          ))
         ) : (
           <div
             className="border p-4 rounded bg-light mx-auto"
@@ -146,7 +264,7 @@ const Parties = () => {
                         className="list-group-item list-group-item-action small"
                         onClick={() => {
                           setSelectedRecipient(r);
-                          setToParty(r);
+                          setToParties((prev) => [...prev, r]); // ✅ add to list
                           setSearchTerm("");
                           setFilteredRecipients([]);
                         }}
@@ -158,13 +276,12 @@ const Parties = () => {
                     <li className="list-group-item small d-flex justify-content-between align-items-center">
                       <span>No results found for "{searchTerm}"</span>
                       <button
-                        className="btn btn-[#F4F4F4] shadow-sm btn-sm py-1 p-2 rounded-3 text-primary fw-semibold hover:bg-[#ACCCFC]"
+                        className="btn btn-light btn-sm px-3 py-1"
                         onClick={() => {
-                          setFilteredRecipients([]); // hide dropdown
-                          setSearchTerm(""); // reset search input
-                          setSelectedRecipient(null); // clear selection
+                          setFilteredRecipients([]);
+                          setSearchTerm("");
+                          setSelectedRecipient(null);
                           handleAddRecipient("to");
-                          l;
                         }}
                       >
                         Add
@@ -191,8 +308,8 @@ const Parties = () => {
           </div>
 
           <button
-            className="btn btn-[#F4F4F4] shadow-sm btn-sm py-1 p-2 rounded-3 text-secondary fw-semibold hover:bg-[#ACCCFC]"
-            onClick={() => handleAddRecipient("from")}
+            className="btn btn-light btn-sm px-3 py-1"
+            onClick={() => setShowFromModal(true)}
           >
             Edit
           </button>
@@ -206,13 +323,16 @@ const Parties = () => {
           <div className="row m-0 border-bottom">
             <div className="col-6 p-2 border-end">
               <small className="text-muted d-block">Company</small>
-              <span className="fw-small">
+              <span
+                className="fw-small "
+                onClick={() => setShowFromModal(true)}
+              >
                 {fromParty?.company || userFullName}
               </span>
             </div>
             <div className="col-6 p-2">
               <small className="text-muted d-block">Reference</small>
-              <span className="fw-small">
+              <span className="fw-small" onClick={() => setShowFromModal(true)}>
                 {fromParty?.name || userFullName}
               </span>
             </div>
@@ -220,21 +340,52 @@ const Parties = () => {
           <div className="row m-0">
             <div className="col-12 p-2">
               <small className="text-muted d-block">Email</small>
-              <span className="fw-small">{fromParty?.email || userEmail}</span>
+              <span className="fw-small" onClick={() => setShowFromModal(true)}>
+                {fromParty?.email || userEmail}
+              </span>
             </div>
           </div>
         </div>
       </div>
+      <EditFromModal
+        show={showFromModal}
+        onHide={() => setShowFromModal(false)}
+        fromParty={fromParty}
+        userFallback={{ fullName: userFullName, email: userEmail }}
+        onUpdated={(updated) => setFromParty(updated)}
+      />
 
       {/* Modal */}
       <CreateClientModal
         show={showModal}
-        onHide={() => setShowModal(false)}
+        onHide={() => {
+          setShowModal(false);
+          setSelectedRecipient(null); // reset after close
+        }}
+        recipient={selectedRecipient} // ✅ pass selected recipient here
         onCreated={(newRecipient) => {
-          setRecipients((prev) => [...prev, newRecipient]);
-          handleSave(newRecipient);
+          if (selectedRecipient) {
+            // Editing
+            setToParties((prev) =>
+              prev.map((p) => (p.id === newRecipient.id ? newRecipient : p))
+            );
+          } else {
+            // Adding new
+            setRecipients((prev) => [...prev, newRecipient]);
+            handleSave(newRecipient);
+          }
+          setSelectedRecipient(null);
         }}
       />
+
+      <style>{`
+      .more-button{
+        position: absolute;
+        top: -48px;
+        right: 340px;
+        z-index: 1000;
+      }
+      `}</style>
     </div>
   );
 };

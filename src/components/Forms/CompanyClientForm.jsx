@@ -1,9 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Check, Copy, Edit3, ArrowRight } from "lucide-react";
 import { Form, Dropdown } from "react-bootstrap";
 import CustomPhoneInput from "./PhoneInput";
 import { useSelector, useDispatch } from "react-redux";
-import { createRecipient } from "../../store/recipientSlice"; // ✅ adjust import path
+import { createRecipient,updateRecipient } from "../../store/recipientSlice"; // ✅ adjust import path
 import { selectedUserId } from "../../store/authSlice";
 
 const roleOptions = [
@@ -20,7 +20,7 @@ const signOptions = [
   { label: "In Person", sub: "Signature on print document" },
 ];
 
-export default function CompanyClientForm({ onCreated }) {
+export default function CompanyClientForm({ onCreated, recipient }) {
   const [showAdditional, setShowAdditional] = useState(false);
   const [addressType, setAddressType] = useState("work");
   const [selectedRole, setSelectedRole] = useState(roleOptions[0]);
@@ -29,6 +29,8 @@ export default function CompanyClientForm({ onCreated }) {
 
   const dispatch = useDispatch();
   const { loading, success, error } = useSelector((state) => state.recipients);
+
+  const userId = useSelector(selectedUserId);
 
   const [formData, setFormData] = useState({
     type: "company",
@@ -44,6 +46,21 @@ export default function CompanyClientForm({ onCreated }) {
     user_id: useSelector(selectedUserId),
   });
 
+  useEffect(() => {
+    if (recipient) {
+      setFormData({
+        ...formData,
+        ...recipient, // overwrite defaults with recipient data
+        user_id: userId, // keep current user
+      });
+      setPhone(recipient.phone || "");
+      if (recipient.role) setSelectedRole({ label: recipient.role });
+      if (recipient.signMethod)
+        setSelectedSign({ label: recipient.signMethod });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [recipient]);
+
   // ✅ Update formData dynamically
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -57,13 +74,24 @@ export default function CompanyClientForm({ onCreated }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Dispatch and wait for result
-    const resultAction = await dispatch(createRecipient(formData));
+    let resultAction;
 
-    // If creation successful, call onCreated
-    if (createRecipient.fulfilled.match(resultAction)) {
-      const newRecipient = resultAction.payload; // this should be the created recipient from API
-      if (onCreated) onCreated(newRecipient);
+    if (recipient?.id) {
+      // 🔹 Update existing
+      resultAction = await dispatch(
+        updateRecipient({ id: recipient.id, data: formData })
+      );
+    } else {
+      // 🔹 Create new
+      resultAction = await dispatch(createRecipient(formData));
+    }
+
+    if (
+      (createRecipient.fulfilled.match(resultAction) ||
+        updateRecipient.fulfilled.match(resultAction)) &&
+      onCreated
+    ) {
+      onCreated(resultAction.payload);
     }
   };
 
@@ -195,94 +223,94 @@ export default function CompanyClientForm({ onCreated }) {
 
         {/* Document role + Sign method */}
         <div className="d-flex gap-2 mt-2 form-container align-items-center">
-                  {/* Document Role Dropdown */}
-                  <Dropdown className="flex-grow-1">
-                    <div className="small fw-semibold mb-1">Document role</div>
-                    <Dropdown.Toggle
-                      variant="light"
-                      className="w-100 border rounded d-flex justify-content-between align-items-center small"
-                    >
-                      <div className="d-flex align-items-center gap-2 text-start">
-                        <span className="text-secondary">
-                          {roleOptions.find((r) => r.label === formData.role)?.icon}
-                        </span>
-                        <div className="d-flex flex-column">
-                          <span className="small fw-semibold">{formData.role}</span>
-                          <span className="text-muted small">
-                            {roleOptions.find((r) => r.label === formData.role)?.sub}
-                          </span>
-                        </div>
-                      </div>
-                    </Dropdown.Toggle>
-        
-                    <Dropdown.Menu className="w-100">
-                      {roleOptions.map((opt, idx) => (
-                        <Dropdown.Item
-                          key={idx}
-                          onClick={() => setFormData({ ...formData, role: opt.label })}
-                          className="d-flex align-items-start gap-2"
-                        >
-                          {opt.icon}
-                          <div className="d-flex flex-column">
-                            <span className="small fw-semibold">{opt.label}</span>
-                            <span className="text-muted small">{opt.sub}</span>
-                          </div>
-                        </Dropdown.Item>
-                      ))}
-                    </Dropdown.Menu>
-                  </Dropdown>
-        
-                  {/* Sign Method Dropdown */}
-                  <Dropdown className="flex-grow-1">
-                    <div className="small fw-semibold mb-1">Sign method</div>
-                    <Dropdown.Toggle
-                      variant="light"
-                      className="w-100 border rounded d-flex justify-content-between align-items-center small"
-                    >
-                      <div className="d-flex flex-column text-start">
-                        <span className="small fw-semibold">{formData.signMethod}</span>
-                        <span
-                          className={`text-muted ${
-                            formData.signMethod === "Signature" ? "text-truncate" : ""
-                          }`}
-                          style={{
-                            fontSize:
-                              formData.signMethod === "Signature" ? "10px" : "12px",
-                            maxWidth: "200px",
-                          }}
-                        >
-                          {
-                            signOptions.find((s) => s.label === formData.signMethod)
-                              ?.sub
-                          }
-                        </span>
-                      </div>
-                    </Dropdown.Toggle>
-        
-                    <Dropdown.Menu className="w-100">
-                      {signOptions.map((opt, idx) => (
-                        <Dropdown.Item
-                          key={idx}
-                          onClick={() =>
-                            setFormData({ ...formData, signMethod: opt.label })
-                          }
-                          className="d-flex flex-column align-items-start"
-                        >
-                          <span className="small fw-semibold">{opt.label}</span>
-                          <span
-                            className="text-muted"
-                            style={{
-                              fontSize: opt.label === "Signature" ? "10px" : "12px",
-                              maxWidth: "220px",
-                            }}
-                          >
-                            {opt.sub}
-                          </span>
-                        </Dropdown.Item>
-                      ))}
-                    </Dropdown.Menu>
-                  </Dropdown>
+          {/* Document Role Dropdown */}
+          <Dropdown className="flex-grow-1">
+            <div className="small fw-semibold mb-1">Document role</div>
+            <Dropdown.Toggle
+              variant="light"
+              className="w-100 border rounded d-flex justify-content-between align-items-center small"
+            >
+              <div className="d-flex align-items-center gap-2 text-start">
+                <span className="text-secondary">
+                  {roleOptions.find((r) => r.label === formData.role)?.icon}
+                </span>
+                <div className="d-flex flex-column">
+                  <span className="small fw-semibold">{formData.role}</span>
+                  <span className="text-muted small">
+                    {roleOptions.find((r) => r.label === formData.role)?.sub}
+                  </span>
                 </div>
+              </div>
+            </Dropdown.Toggle>
+
+            <Dropdown.Menu className="w-100">
+              {roleOptions.map((opt, idx) => (
+                <Dropdown.Item
+                  key={idx}
+                  onClick={() => setFormData({ ...formData, role: opt.label })}
+                  className="d-flex align-items-start gap-2"
+                >
+                  {opt.icon}
+                  <div className="d-flex flex-column">
+                    <span className="small fw-semibold">{opt.label}</span>
+                    <span className="text-muted small">{opt.sub}</span>
+                  </div>
+                </Dropdown.Item>
+              ))}
+            </Dropdown.Menu>
+          </Dropdown>
+
+          {/* Sign Method Dropdown */}
+          <Dropdown className="flex-grow-1">
+            <div className="small fw-semibold mb-1">Sign method</div>
+            <Dropdown.Toggle
+              variant="light"
+              className="w-100 border rounded d-flex justify-content-between align-items-center small"
+            >
+              <div className="d-flex flex-column text-start">
+                <span className="small fw-semibold">{formData.signMethod}</span>
+                <span
+                  className={`text-muted ${
+                    formData.signMethod === "Signature" ? "text-truncate" : ""
+                  }`}
+                  style={{
+                    fontSize:
+                      formData.signMethod === "Signature" ? "10px" : "12px",
+                    maxWidth: "200px",
+                  }}
+                >
+                  {
+                    signOptions.find((s) => s.label === formData.signMethod)
+                      ?.sub
+                  }
+                </span>
+              </div>
+            </Dropdown.Toggle>
+
+            <Dropdown.Menu className="w-100">
+              {signOptions.map((opt, idx) => (
+                <Dropdown.Item
+                  key={idx}
+                  onClick={() =>
+                    setFormData({ ...formData, signMethod: opt.label })
+                  }
+                  className="d-flex flex-column align-items-start"
+                >
+                  <span className="small fw-semibold">{opt.label}</span>
+                  <span
+                    className="text-muted"
+                    style={{
+                      fontSize: opt.label === "Signature" ? "10px" : "12px",
+                      maxWidth: "220px",
+                    }}
+                  >
+                    {opt.sub}
+                  </span>
+                </Dropdown.Item>
+              ))}
+            </Dropdown.Menu>
+          </Dropdown>
+        </div>
 
         {/* Save Button */}
         <button

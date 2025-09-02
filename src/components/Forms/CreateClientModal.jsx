@@ -1,10 +1,15 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Modal } from "react-bootstrap";
 import IndividualClientForm from "./IndividualClientForm";
 import CompanyClientForm from "./CompanyClientForm";
 import ConfirmationModal from "./ConfirmationModal";
 
-export default function CreateClientModal({ show, onHide, onCreated }) {
+export default function CreateClientModal({
+  show,
+  onHide,
+  onCreated,
+  recipient,
+}) {
   const [selectedType, setSelectedType] = useState("individual");
   const [showConfirmModal, setShowConfirmModal] = useState(false);
 
@@ -25,6 +30,11 @@ export default function CreateClientModal({ show, onHide, onCreated }) {
     if (onCreated) onCreated(newRecipient); // notify parent
     onHide(); // close modal
   };
+
+  useEffect(() => {
+    if (recipient?.company) setSelectedType("company");
+    else if (recipient) setSelectedType("individual");
+  }, [recipient]);
 
   return (
     <>
@@ -55,10 +65,16 @@ export default function CreateClientModal({ show, onHide, onCreated }) {
 
           {/* Render form */}
           {selectedType === "individual" && (
-            <IndividualClientForm onCreated={handleRecipientCreated} />
+            <IndividualClientForm
+              onCreated={handleRecipientCreated}
+              recipient={recipient}
+            />
           )}
           {selectedType === "company" && (
-            <CompanyClientForm onCreated={handleRecipientCreated} />
+            <CompanyClientForm
+              onCreated={handleRecipientCreated}
+              recipient={recipient}
+            />
           )}
         </Modal.Body>
       </Modal>

@@ -45,7 +45,7 @@ export const updateRecipient = createAsyncThunk(
   "recipients/update",
   async ({ id, data }, { rejectWithValue }) => {
     try {
-      const res = await axios.put(`${API_URL}/${id}`, data);
+      const res = await axios.put(`${API_URL}/api/recipients/${id}`, data);
       return res.data;
     } catch (err) {
       return rejectWithValue(err.response?.data || err.message);

@@ -2,6 +2,7 @@
 import React, { useEffect, useMemo, useState, useCallback } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import "react-quill/dist/quill.snow.css";
+import PartiesView from "./PartiesView";
 
 const API_BASE = import.meta.env.VITE_API_URL;
 
@@ -942,9 +943,11 @@ const ProposalLayout = React.memo(({ proposal }) => {
 
 // Main Component
 export default function ProposalViewer() {
+  const [party, setParty] = useState(null);
   const { headerId: idFromPath } = useParams();
   const [sp] = useSearchParams();
   const idsFromQuery = sp.get("ids"); // 🔹 support multiple ids
+  const partyId = sp.get("partyId");
 
   // ✅ Memoize headerIds to avoid infinite re-renders
   const headerIds = useMemo(() => {
@@ -991,6 +994,28 @@ export default function ProposalViewer() {
       isMounted = false;
     };
   }, [headerIds]);
+
+  useEffect(() => {
+    if (!partyId) return;
+
+    (async () => {
+      try {
+        const res = await fetch(`${API_BASE}/parties/${partyId}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+        const json = await res.json();
+        if (!json.success) throw new Error("API failed");
+        console.log(
+          "🚀 ~ file: ProposalViewer.jsx ~ line 237 ~ json",
+          json.data
+        );
+
+        setParty(json.data);
+      } catch (err) {
+        console.error("❌ Party fetch error:", err);
+      }
+    })();
+  }, [partyId]);
 
   if (status.loading) {
     return (
@@ -1054,6 +1079,7 @@ export default function ProposalViewer() {
             }}
           >
             <ProposalLayout proposal={proposal} />
+            <PartiesView parties={party} />
           </div>
         ))}
       </div>
