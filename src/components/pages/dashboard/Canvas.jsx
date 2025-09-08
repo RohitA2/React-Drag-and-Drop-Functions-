@@ -21,9 +21,9 @@ import HeaderBlock3 from "../../Blocks/HeaderBlocks/HeaderBlock3";
 import HeaderBlock4 from "../../Blocks/HeaderBlocks/HeaderBlock4";
 import HeaderBlock5 from "../../Blocks/HeaderBlocks/HeaderBlock5";
 import TermsBlock from "../../Blocks/TermsBlock";
+import Schedule from "../../Blocks/Schedule";
 
-
-const API_URL = import.meta.env.VITE_API_URL
+const API_URL = import.meta.env.VITE_API_URL;
 
 const Canvas = forwardRef(
   (
@@ -69,9 +69,10 @@ const Canvas = forwardRef(
           textAlign: "left",
         },
         "header-2": {
+          layoutType: "right-panel",
           backgroundColor: "#1a1a2e",
           textColor: "#ffffff",
-          backgroundImage: "images/headers/buid.avif",
+          backgroundImage: `${API_URL}/uploads/1756892631033.avif`,
           title: "Project Proposal",
           subtitle: "For your consideration",
           clientName: "Client name",
@@ -80,9 +81,10 @@ const Canvas = forwardRef(
           textAlign: "left",
         },
         "header-3": {
+          layoutType: "bottom-panel",
           backgroundColor: "#16213e",
           textColor: "#ffffff",
-          backgroundImage: "images/headers/cam.avif",
+          backgroundImage: `${API_URL}/uploads/1756892487290.avif`,
           title: "Business Proposal",
           subtitle: "Confidential",
           clientName: "Client name",
@@ -91,9 +93,10 @@ const Canvas = forwardRef(
           textAlign: "center",
         },
         "header-4": {
+          layoutType: "top-panel",
           backgroundColor: "#FCCAA4",
           textColor: "#ffffff",
-          backgroundImage: "images/headers/flowers.jfif",
+          backgroundImage: `${API_URL}/uploads/1756892697938.jfif`,
           title: "Service Proposal",
           subtitle: "Custom solution",
           clientName: "Client name",
@@ -102,9 +105,10 @@ const Canvas = forwardRef(
           textAlign: "center",
         },
         "header-5": {
+          layoutType: "grid",
           backgroundColor: "#B4D2E5",
           textColor: "#ffffff",
-          backgroundImage: "images/headers/bird.jpg",
+          backgroundImage: `${API_URL}/uploads/1756884733919.avif`,
           title: "Service Proposal",
           subtitle: "Custom solution",
           clientName: "Client name",
@@ -148,7 +152,19 @@ const Canvas = forwardRef(
     };
 
     const handleDragOver = (e) => e.preventDefault();
-    const handleRemoveBlock = (id) => onRemoveBlock(id);
+    // In Canvas.jsx - modify the handleRemoveBlock function
+    const handleRemoveBlock = (id) => {
+      // Before removing, check if this is a header block and clean up localStorage
+      const blockToRemove = blocks.find((block) => block.id === id);
+
+      if (blockToRemove && blockToRemove.type.startsWith("header")) {
+        // Remove any stored header ID for this block
+        localStorage.removeItem("headerId");
+        console.log("Cleaned up header ID for removed block:", id);
+      }
+
+      onRemoveBlock(id);
+    };
 
     const renderBlock = (block) => {
       const commonProps = {
@@ -172,7 +188,8 @@ const Canvas = forwardRef(
               }
               layoutType={block.settings?.layoutType || "left-panel"}
               backgroundImage={
-                block.settings?.backgroundImage || "images/headers/leaf.avif"
+                block.settings?.backgroundImage ||
+                `${API_URL}/uploads/1756115657883.png`
               }
               backgroundColor={block.settings?.backgroundColor || "#2d5000"}
               textColor={block.settings?.textColor || "#CFCFCF"}
@@ -190,13 +207,113 @@ const Canvas = forwardRef(
             />
           );
         case "header-2":
-          return <HeaderBlock2 {...commonProps} />;
+          return (
+            <HeaderBlock2
+              id={block.id}
+              onSettingsChange={(newSettings) =>
+                onSettingsChange(block.id, newSettings)
+              }
+              layoutType={block.settings?.layoutType || "right-panel"}
+              backgroundImage={
+                block.settings?.backgroundImage ||
+                `${API_URL}/uploads/1756892631033.avif`
+              }
+              backgroundColor={block.settings?.backgroundColor || "#2d5000"}
+              textColor={block.settings?.textColor || "#CFCFCF"}
+              backgroundFilter={block.settings?.backgroundFilter}
+              textAlign={block.settings?.textAlign || "left"}
+              initialTitle={block.settings?.title || "Sales Proposal"}
+              initialSubtitle={block.settings?.subtitle || "Optional"}
+              initialClientName={
+                block.settings?.clientName || "Prepared by Client name"
+              }
+              initialSenderName={block.settings?.senderName || "By Sender name"}
+              initialPrice={block.settings?.price || "INCL.VAT"}
+              initialLogo={block.settings?.logo}
+              isPreview={false}
+            />
+          );
         case "header-3":
-          return <HeaderBlock3 {...commonProps} />;
+          return (
+            <HeaderBlock3
+              id={block.id}
+              onSettingsChange={(newSettings) =>
+                onSettingsChange(block.id, newSettings)
+              }
+              layoutType={block.settings?.layoutType || "top-panel"}
+              backgroundImage={
+                block.settings?.backgroundImage ||
+                `${API_URL}/uploads/1756892487290.avif`
+              }
+              backgroundColor={block.settings?.backgroundColor || "#2d5000"}
+              textColor={block.settings?.textColor || "#CFCFCF"}
+              backgroundFilter={block.settings?.backgroundFilter}
+              textAlign={block.settings?.textAlign || "left"}
+              initialTitle={block.settings?.title || "Sales Proposal"}
+              initialSubtitle={block.settings?.subtitle || "Optional"}
+              initialClientName={
+                block.settings?.clientName || "Prepared by Client name"
+              }
+              initialSenderName={block.settings?.senderName || "By Sender name"}
+              initialPrice={block.settings?.price || "INCL.VAT"}
+              initialLogo={block.settings?.logo}
+              isPreview={false}
+            />
+          );
         case "header-4":
-          return <HeaderBlock4 {...commonProps} />;
+          return (
+            <HeaderBlock4
+              id={block.id}
+              onSettingsChange={(newSettings) =>
+                onSettingsChange(block.id, newSettings)
+              }
+              layoutType={block.settings?.layoutType || "bottom-panel"}
+              backgroundImage={
+                block.settings?.backgroundImage ||
+                `${API_URL}/uploads/1756892697938.jfif`
+              }
+              backgroundColor={block.settings?.backgroundColor || "#2d5000"}
+              textColor={block.settings?.textColor || "#CFCFCF"}
+              backgroundFilter={block.settings?.backgroundFilter}
+              textAlign={block.settings?.textAlign || "left"}
+              initialTitle={block.settings?.title || "Sales Proposal"}
+              initialSubtitle={block.settings?.subtitle || "Optional"}
+              initialClientName={
+                block.settings?.clientName || "Prepared by Client name"
+              }
+              initialSenderName={block.settings?.senderName || "By Sender name"}
+              initialPrice={block.settings?.price || "INCL.VAT"}
+              initialLogo={block.settings?.logo}
+              isPreview={false}
+            />
+          );
         case "header-5":
-          return <HeaderBlock5 {...commonProps} />;
+          return (
+            <HeaderBlock5
+              id={block.id}
+              onSettingsChange={(newSettings) =>
+                onSettingsChange(block.id, newSettings)
+              }
+              layoutType={block.settings?.layoutType || "grid"}
+              backgroundImage={
+                block.settings?.backgroundImage ||
+                `${API_URL}/uploads/1756884733919.avif`
+              }
+              backgroundColor={block.settings?.backgroundColor || "#2d5000"}
+              textColor={block.settings?.textColor || "#CFCFCF"}
+              backgroundFilter={block.settings?.backgroundFilter}
+              textAlign={block.settings?.textAlign || "left"}
+              initialTitle={block.settings?.title || "Sales Proposal"}
+              initialSubtitle={block.settings?.subtitle || "Optional"}
+              initialClientName={
+                block.settings?.clientName || "Prepared by Client name"
+              }
+              initialSenderName={block.settings?.senderName || "By Sender name"}
+              initialPrice={block.settings?.price || "INCL.VAT"}
+              initialLogo={block.settings?.logo}
+              isPreview={false}
+            />
+          );
         // Cover blocks
         case "cover":
         case "cover-1":
@@ -212,21 +329,23 @@ const Canvas = forwardRef(
 
         // Other blocks
         case "text":
-          return <TextEditor {...commonProps} />;
+          return <TextEditor {...commonProps} blockId={block.id} />;
         case "signature":
-          return <SignatureBlock {...commonProps} />;
+          return <SignatureBlock {...commonProps} blockId={block.id} />;
         case "video":
-          return <VideoBlock {...commonProps} />;
+          return <VideoBlock {...commonProps} blockId={block.id} />;
         case "pdf":
-          return <PDFBlock {...commonProps} />;
-        case "attachment":
-          return <AttachmentBlock {...commonProps} />;
+          return <PDFBlock {...commonProps} blockId={block.id} />;
+        case "link":
+          return <AttachmentBlock {...commonProps} blockId={block.id} />;
         case "parties":
-          return <Parties {...commonProps} />;
-        case "pricing & services":
-          return <PricingAndServices {...commonProps} />;
+          return <Parties {...commonProps} blockId={block.id} />;
+        case "price":
+          return <PricingAndServices {...commonProps} blockId={block.id} />;
         case "terms":
-          return <TermsBlock {...commonProps} />;
+          return <TermsBlock {...commonProps} blockId={block.id} />;
+        case "calender":
+          return <Schedule {...commonProps} blockId={block.id} />;
         default:
           return null;
       }
@@ -324,7 +443,7 @@ const Canvas = forwardRef(
                 className="position-relative block-container"
                 style={{
                   width: "100%",
-                  marginBottom: "2rem",
+                  marginBottom: "0",
                 }}
               >
                 <div className="position-relative hover-wrapper">
@@ -332,41 +451,54 @@ const Canvas = forwardRef(
                   <div style={{ width: "100%" }}>{renderBlock(block)}</div>
 
                   {/* Control Panel */}
-                  <div className="control-panel position-absolute top-0 end-0 p-1 z-3 d-flex flex-column align-items-end"
-                  style={{ gap: "6px", margin: "8px" }}>
+                  <div
+                    className="control-panel position-absolute top-0 end-0 p-1 z-3 d-flex flex-column align-items-end"
+                    style={{ gap: "6px", margin: "8px" }}
+                  >
                     <div className="d-flex align-items-start gap-2 mb-1">
                       {/* Edit Button */}
-                      {["text", "header", "header-1", "header-2"].includes(
-                        block.type
-                      ) && (
-                          <Button
-                            variant="light"
-                            className="rounded d-flex align-items-center justify-content-between border px-1 py-0 shadow-sm"
-                            style={{ width: "65px", minWidth: "65px", height: "30px" }}
-                            onClick={() => onEditBlock(block)}
+                      {[
+                        "header",
+                        "header-1",
+                        "header-2",
+                        "header-3",
+                        "header-4",
+                        "header-5",
+                      ].includes(block.type) && (
+                        <Button
+                          variant="light"
+                          className="rounded d-flex align-items-center justify-content-between border px-1 py-0 shadow-sm"
+                          style={{
+                            width: "65px",
+                            minWidth: "65px",
+                            height: "30px",
+                          }}
+                          onClick={() => onEditBlock(block)}
+                        >
+                          <span
+                            className="fw-semibold text-secondary"
+                            style={{ fontSize: "12px" }}
                           >
-                            <span className="fw-semibold text-secondary" style={{ fontSize: "12px" }}>
-                              Edit
-                            </span>
-                            <div
-                              className="d-flex flex-wrap"
-                              style={{ width: 12, height: 12, gap: 1 }}
-                            >
-                              {["red", "orange", "cyan", "blue"].map((color) => (
-                                <span
-                                  key={color}
-                                  className="rounded-circle"
-                                  style={{
-                                    width: 4,
-                                    height: 4,
-                                    backgroundColor: color,
-                                  }}
-                                />
-                              ))}
-                            </div>
-                          </Button>
-
-                        )}
+                            Edit
+                          </span>
+                          <div
+                            className="d-flex flex-wrap"
+                            style={{ width: 12, height: 12, gap: 1 }}
+                          >
+                            {["red", "orange", "cyan", "blue"].map((color) => (
+                              <span
+                                key={color}
+                                className="rounded-circle"
+                                style={{
+                                  width: 4,
+                                  height: 4,
+                                  backgroundColor: color,
+                                }}
+                              />
+                            ))}
+                          </div>
+                        </Button>
+                      )}
                       {/* Move Controls */}
                       <div
                         className="bg-white rounded d-flex flex-column border shadow-sm"

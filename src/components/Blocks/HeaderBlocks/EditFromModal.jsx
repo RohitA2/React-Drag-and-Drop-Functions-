@@ -1,4 +1,4 @@
-import React, { useState, useEffect, use } from "react";
+import React, { useState, useEffect } from "react";
 import { Modal, Button, Form, Row, Col } from "react-bootstrap";
 import { toast } from "react-toastify";
 import PhoneInput from "react-phone-input-2";
@@ -18,7 +18,7 @@ const EditFromModal = ({
 }) => {
   const userId = useSelector(selectedUserId);
   const [formData, setFormData] = useState({
-    company: "",
+    companyName: "",
     firstName: "",
     lastName: "",
     email: "",
@@ -26,10 +26,13 @@ const EditFromModal = ({
   });
 
   useEffect(() => {
-    const fullName = fromParty?.name || userFallback?.fullName || "";
+    const fullName = `${fromParty?.firstName || ""} ${fromParty?.lastName || ""}`.trim()
+      || userFallback?.fullName
+      || "";
+
     const [firstName = "", lastName = ""] = fullName.split(" ");
     setFormData({
-      company: fromParty?.company || userFallback?.fullName || "",
+      companyName: fromParty?.companyName || "",
       firstName,
       lastName,
       email: fromParty?.email || userFallback?.email || "",
@@ -48,8 +51,9 @@ const EditFromModal = ({
   const handleSave = async () => {
     try {
       const payload = {
-        company: formData.company,
-        name: `${formData.firstName} ${formData.lastName}`,
+        companyName: formData.companyName,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
         email: formData.email,
         phone: formData.phone,
       };
@@ -66,7 +70,12 @@ const EditFromModal = ({
       }
 
       toast.success("From party updated successfully");
-      onUpdated(data.data || payload);
+      onUpdated({
+        ...data.data,
+        name: `${data.data.firstName || ""} ${data.data.lastName || ""}`.trim(),
+        companyName: data.data.companyName || "",
+      });
+
       onHide();
     } catch (err) {
       console.error("Update failed:", err);
@@ -89,8 +98,8 @@ const EditFromModal = ({
           <Form.Group className="mb-3 topper">
             <Form.Control
               type="text"
-              name="company"
-              value={formData.company}
+              name="companyName"   // ✅ fixed here
+              value={formData.companyName}
               onChange={handleChange}
               placeholder="Company name"
             />

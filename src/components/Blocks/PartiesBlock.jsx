@@ -4,8 +4,7 @@ import "bootstrap-icons/font/bootstrap-icons.css";
 import CreateClientModal from "../Forms/CreateClientModal";
 import EditFromModal from "../Blocks/HeaderBlocks/EditFromModal";
 import Dropdown from "react-bootstrap/Dropdown";
-import { useSelector } from "react-redux";
-import { useDispatch } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { setPartyId } from "../../store/partySlice";
 import axios from "axios";
 import {
@@ -19,7 +18,8 @@ const API_URL = import.meta.env.VITE_API_URL;
 
 const Parties = () => {
   const dispatch = useDispatch();
-  const userId = useSelector(selectedUserId);
+  const rawUserId = useSelector(selectedUserId);
+  const userId = rawUserId && rawUserId !== "null" ? Number(rawUserId) : null;
   const userFullName = useSelector(selectUserFullName);
   const userEmail = useSelector(selectUserEmail);
 
@@ -39,6 +39,14 @@ const Parties = () => {
     setShowModal(true);
   };
 
+  const handleRemoveRecipient = (section, index) => {
+    if (section === "to") {
+      // ✅ remove from list
+      setToParties((prev) => prev.filter((_, i) => i !== index));
+    } else {
+      setFromParty(null);
+    }
+  };
   const handleSave = (data) => {
     if (currentSection === "to") {
       setToParties((prev) => [...prev, data]); // ✅ append to list
@@ -116,7 +124,7 @@ const Parties = () => {
         if (res.data.success) {
           toast.success(res.data.message);
           console.log("parties saved and id", res.data.data.id);
-          
+
           dispatch(setPartyId(res.data.data.id));
         }
       } catch (err) {
@@ -161,7 +169,6 @@ const Parties = () => {
             </Dropdown.Toggle>
 
             <Dropdown.Menu className="shadow-sm border-0 mt-2">
-              {/* Add new recipient */}
               <Dropdown.Item
                 onClick={() => {
                   setSelectedRecipient(null);
@@ -175,7 +182,6 @@ const Parties = () => {
 
               <Dropdown.Divider />
 
-              {/* List of recipients with edit option */}
               {toParties.map((party, idx) => (
                 <Dropdown.Item
                   key={idx}
@@ -190,20 +196,40 @@ const Parties = () => {
           </Dropdown>
         </div>
 
-        {/* Recipient cards */}
         {toParties.length > 0 ? (
           toParties.map((party, idx) => (
             <div
               key={idx}
-              className="border rounded mx-auto position-relative mb-3"
+              className="hover-card border rounded mx-auto position-relative mb-3"
               style={{ maxWidth: "500px" }}
             >
+              {/* Hover Action Buttons */}
+              <div className="hover-card-container">
+                {/* Left side: The card */}
+                <div className="hover-card">{/* Card content here */}</div>
+
+                {/* Right side: Buttons that appear on hover */}
+                <div className="hover-actions">
+                  <button
+                    className="btn btn-sm"
+                    onClick={() => handleEditRecipient(party)}
+                  >
+                    <i className="bi bi-pencil-square"></i>
+                  </button>
+                  <button
+                    className="btn btn-sm"
+                    onClick={() => handleRemoveRecipient("to", idx)}
+                  >
+                    <i className="bi bi-recycle"></i>
+                  </button>
+                </div>
+              </div>
+
+              {/* Card Content */}
               <div className="row m-0 border-bottom">
                 <div className="col-6 p-2 border-end">
                   <small className="text-muted d-block">Company</small>
-                  <span className="fw-small">
-                    {party.companyName || party.name}
-                  </span>
+                  <span className="fw-small">{party.companyName || "—"}</span>
                 </div>
                 <div className="col-6 p-2">
                   <small className="text-muted d-block">Reference</small>
@@ -234,7 +260,7 @@ const Parties = () => {
             </p>
             <div className="d-flex gap-2 position-relative">
               <button
-                className="btn btn-primary btn-sm flex-shrink-0"
+                className="btn btn-primary bg-[#0088F0] btn-sm flex-shrink-0"
                 onClick={() => handleAddRecipient("to")}
               >
                 + Add new recipient
@@ -251,7 +277,6 @@ const Parties = () => {
                 }}
               />
 
-              {/* Dropdown list */}
               {searchTerm.trim().length > 0 && !selectedRecipient && (
                 <ul
                   className="list-group position-absolute mt-1 w-100 shadow-sm"
@@ -264,7 +289,7 @@ const Parties = () => {
                         className="list-group-item list-group-item-action small"
                         onClick={() => {
                           setSelectedRecipient(r);
-                          setToParties((prev) => [...prev, r]); // ✅ add to list
+                          setToParties((prev) => [...prev, r]);
                           setSearchTerm("");
                           setFilteredRecipients([]);
                         }}
@@ -327,7 +352,7 @@ const Parties = () => {
                 className="fw-small "
                 onClick={() => setShowFromModal(true)}
               >
-                {fromParty?.company || userFullName}
+                {fromParty?.companyName || userFullName}
               </span>
             </div>
             <div className="col-6 p-2">
@@ -385,6 +410,61 @@ const Parties = () => {
         right: 340px;
         z-index: 1000;
       }
+        /* Container must be relatively positioned for absolute buttons */
+      .hover-card-container {
+        position: relative;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        max-width: 520px;
+        margin: 0 auto;
+      }
+
+      /* The card itself */
+      .hover-card {
+        width: 100%;
+        border: 1px solid #dee2e6;
+        border-radius: 0.375rem;
+        background-color: #fff;
+      }
+
+      /* Action buttons on the right */
+      .hover-actions {
+        position: absolute;
+        top: 8px;
+        right: -60px; /* Puts buttons outside the card to the right */
+        opacity: 0;
+        transition: opacity 0.2s ease-in-out;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        z-index: 10;
+      }
+
+      /* Show buttons when hovering over the card container */
+      .hover-card-container:hover .hover-actions {
+        opacity: 1;
+      }
+
+      /* Button styles */
+      .hover-actions .btn {
+        padding: 4px 6px;
+        width: 25px;
+        height: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.85rem;
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+      }
+
+      .hover-actions .btn:hover {
+        background-color: #e2e6ea;
+      }
+
+
       `}</style>
     </div>
   );

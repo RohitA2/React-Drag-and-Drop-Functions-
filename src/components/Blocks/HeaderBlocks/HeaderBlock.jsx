@@ -336,6 +336,17 @@ const HeaderBlock = ({
     };
   }, [isDragging, handleMouseMove, handleMouseUp]);
 
+  // In HeaderBlock.jsx - add cleanup effect
+  useEffect(() => {
+    return () => {
+      // Cleanup when component unmounts (block is removed)
+      if (headerId && !isPreview) {
+        localStorage.removeItem("headerId");
+        console.log("HeaderId removed from localStorage:", headerId);
+      }
+    };
+  }, [headerId, isPreview]);
+
   const handleLogoUpload = (e) => {
     if (isPreview) return;
     const file = e.target.files[0];

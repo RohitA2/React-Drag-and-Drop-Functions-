@@ -1,10 +1,15 @@
 import React, { useState } from "react";
-import { X } from "lucide-react";
+import { useDispatch, useSelector } from "react-redux";
+import { createVideoBlock } from "../../store/videoBlockSlice";
+import { selectedUserId } from "../../store/authSlice";
 import "bootstrap/dist/css/bootstrap.min.css";
 
-const VideoBlock = ({ id, onRemove }) => {
+const VideoBlock = ({ blockId }) => {
+  const user_id = useSelector(selectedUserId);
   const [videoLink, setVideoLink] = useState("");
   const [embedUrl, setEmbedUrl] = useState("");
+  const dispatch = useDispatch();
+  
 
   const handleAddClick = () => {
     const trimmedLink = videoLink.trim();
@@ -16,6 +21,15 @@ const VideoBlock = ({ id, onRemove }) => {
     const embed = getEmbedUrl(trimmedLink);
     if (embed) {
       setEmbedUrl(embed);
+
+      // 🔹 Save to backend + redux
+      dispatch(
+        createVideoBlock({
+          blockId: blockId,
+          link: trimmedLink,
+          user_id: user_id,
+        })
+      );
     } else {
       alert("Unsupported or invalid video URL.");
     }

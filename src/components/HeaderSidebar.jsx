@@ -10,7 +10,9 @@ import {
   selectUserEmail,
   selectedUserId,
 } from "../store/authSlice";
-import { selectHeaderIds } from "../store/headerSlice"; // ✅ import selector for ids
+import { selectHeaderIds } from "../store/headerSlice";
+import { selectLastUploadedPdfId } from "../store/pdfSlice";
+import { selectLastAttachmentIds, selectLastBlockId } from "../store/attachmentSlice";
 
 const FRONT_API_URL = import.meta.env.FRONT_API_URL;
 const API_URL = import.meta.env.VITE_API_URL;
@@ -24,11 +26,29 @@ const HeaderSidebar = ({
   blocks = [],
 }) => {
   const partyId = useSelector((state) => state.party.partyId);
+  const signatures = useSelector((state) => state.signatures.items);
+  const scheduleId = useSelector((state) => state.schedule.scheduleId);
+  const lastVideoBlockId = useSelector(
+    (state) => state.videoBlocks.lastCreatedId
+  );
+  
+  console.log("lastVideoBlockId", lastVideoBlockId);
+
+  console.log("scheduleId", scheduleId);
+  const pdfId = localStorage.getItem("lastUploadedPdfId");
+  console.log("PDF ID from localStorage:", pdfId);
+
+  // console.log("signatures", signatures[0]?.id);
+
   const fullName = useSelector(selectUserFullName);
   const email = useSelector(selectUserEmail);
   const userId = useSelector(selectedUserId);
-  const headerIds = useSelector(selectHeaderIds); // ✅ now using Redux ids
-  console.log("headerIds:", headerIds);
+  const headerIds = useSelector(selectHeaderIds);
+  const signatureId = signatures[0]?.id;
+  const lastIds = useSelector(selectLastAttachmentIds);
+  const blockId = useSelector(selectLastBlockId);
+
+  // console.log("headerIds:", headerIds);
   const [name, setName] = useState("Sales Proposal");
   const [showModal, setShowModal] = useState(false);
   const [expirationDate, setExpirationDate] = useState("");
@@ -51,13 +71,13 @@ const HeaderSidebar = ({
     // Build dynamic link
     const documentLink =
       headerIds.length === 1
-        ? `http://13.204.3.50/proposal/${headerIds[0]}?partyId=${partyId}`
-        : `http://13.204.3.50/proposal?ids=${headerIds.join(
+        ? `http://localhost:5173/proposal/${headerIds[0]}?partyId=${partyId}&scheduleId=${scheduleId}&name=${name}&signatureId=${signatureId}&pdfId=${pdfId}&videoId=${lastVideoBlockId}&attachmentId=${blockId}`
+        : `http://localhost:5173/proposal?ids=${headerIds.join(
             ","
-          )}&partyId=${partyId}`;
+          )}&partyId=${partyId}&scheduleId=${scheduleId}&name=${name}&signatureId=${signatureId}&pdfId=${pdfId}&videoId=${lastVideoBlockId}&attachmentId=${blockId}`;
 
     const payload = {
-      headerIds, // ✅ always send array
+      headerIds,
       userId,
       name,
       from: { fullName, email },

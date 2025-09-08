@@ -13,7 +13,7 @@ export const createRecipient = createAsyncThunk(
     try {
       const response = await axios.post(`${API_URL}/api/create`, payload);
       const resData = response.data;
- 
+
       if (resData.success) {
         toast.success("Recipient created successfully ✅");
         return resData.data; // This contains the recipient object
@@ -46,7 +46,11 @@ export const updateRecipient = createAsyncThunk(
   async ({ id, data }, { rejectWithValue }) => {
     try {
       const res = await axios.put(`${API_URL}/api/recipients/${id}`, data);
-      return res.data;
+      if (res.data.success) {
+        return res.data.data; // ✅ only return the recipient object
+      } else {
+        return rejectWithValue(res.data.message);
+      }
     } catch (err) {
       return rejectWithValue(err.response?.data || err.message);
     }
@@ -113,13 +117,11 @@ const recipientSlice = createSlice({
       // Update
       .addCase(updateRecipient.fulfilled, (state, action) => {
         state.loading = false;
-        const index = state.list.findIndex(
-          (r) => r.id === action.payload.data.id
-        );
+        const index = state.list.findIndex((r) => r.id === action.payload.id);
         if (index !== -1) {
-          state.list[index] = action.payload.data;
+          state.list[index] = action.payload; // ✅ replace with updated object
         }
-        state.success = action.payload.message;
+        state.success = "Recipient updated successfully ✅";
       })
 
       // Delete

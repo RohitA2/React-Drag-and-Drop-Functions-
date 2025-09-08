@@ -9,7 +9,7 @@ const blockSections = [
     blocks: [
       { divider: true },
       { type: "header", label: "Header", hasPreview: true },
-      { type: "calender", label: "Calender", hasPreview: true },
+      { type: "calender", label: "Calender" },
       { type: "parties", label: "Parties" },
       { type: "price", label: "Pricing & Services", hasPreview: true },
       { type: "text", label: "Text" },

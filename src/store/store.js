@@ -1,9 +1,15 @@
 import { configureStore } from "@reduxjs/toolkit";
 import authReducer from "./authSlice";
 import recipientReducer from "./recipientSlice";
-import headerReducer from "./headerSlice"
-import headerBlockReducer from "./headerBlockSlice"
-import partyReducer from "./partySlice"
+import headerReducer from "./headerSlice";
+import headerBlockReducer from "./headerBlockSlice";
+import partyReducer from "./partySlice";
+import signatureReducer from "./signatureSlice";
+import scheduleReducer from "./scheduleSlice";
+import pdfReducer from "./pdfSlice";
+import videoBlockReducer from "./videoBlockSlice";
+import attachmentReducer from "./attachmentSlice";
+
 
 export const store = configureStore({
   reducer: {
@@ -11,7 +17,12 @@ export const store = configureStore({
     recipients: recipientReducer,
     header: headerReducer,
     headerBlocks: headerBlockReducer,
-     party: partyReducer,
+    party: partyReducer,
+    signatures: signatureReducer,
+    schedule: scheduleReducer,
+    pdfs: pdfReducer,
+    videoBlocks: videoBlockReducer,
+    attachments: attachmentReducer,
   },
 });
 

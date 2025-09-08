@@ -3,7 +3,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import ProposalViewer from "./components/ProposalViewer";
+import ProposalViewer from "./components/Views/ProposalViewer";
 
 import Dashboard from "./components/pages/dashboard/Dashboard";
 import TemplateBuilder from "./components/templates/TemplateBuilder";
@@ -13,6 +13,7 @@ import Snippets from "./components/Snippet/SnippetsTable";
 import Profile from "./components/pages/profile/Profile";
 import Register from "./components/pages/profile/Register";
 import Login from "./components/pages/profile/Login";
+import Client from "./components/pages/profile/Client";
 
 function App() {
   return (
@@ -28,6 +29,7 @@ function App() {
           <Route path="products" element={<Products />} />
           <Route path="snippets" element={<Snippets />} />
           <Route path="profile" element={<Profile />} />
+          <Route path="clients" element={<Client />} />
         </Route>
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
