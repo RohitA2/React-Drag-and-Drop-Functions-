@@ -12,10 +12,8 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import axios from "axios";
 const API_URL = import.meta.env.VITE_API_URL;
 
-const SignatureView = ({ Signature, signatureId }) => {
+const SignatureView = ({ Signature, user, signatureId }) => {
   const sigCanvas = useRef();
-
-  // State
   const [showSignModal, setShowSignModal] = useState(false);
   const [showDeclineModal, setShowDeclineModal] = useState(false);
   const [signMethod, setSignMethod] = useState("type");
@@ -24,6 +22,7 @@ const SignatureView = ({ Signature, signatureId }) => {
   const [status, setStatus] = useState("pending"); // "pending" | "approved" | "declined"
   const [loading, setLoading] = useState(false);
 
+  const fullName = user?.firstName + " " + user?.lastName;
   // Handlers
   const clearSignature = () => {
     if (sigCanvas.current) sigCanvas.current.clear();
@@ -84,7 +83,7 @@ const SignatureView = ({ Signature, signatureId }) => {
   };
 
   return (
-    <div className="position-relative bg-white rounded-3 shadow-sm p-0 mb-4">
+    <div className="position-relative bg-white shadow-sm p-0">
       {/* ✅ Messages */}
       {status === "approved" && (
         <Alert
@@ -93,9 +92,7 @@ const SignatureView = ({ Signature, signatureId }) => {
           style={{ maxWidth: "600px" }}
         >
           <strong>The document is approved!</strong>
-          <div>
-            We have informed Rohit Chakrawarti the document is approved.
-          </div>
+          <div>We have informed {fullName} the document is approved.</div>
         </Alert>
       )}
       {status === "declined" && (
@@ -105,7 +102,8 @@ const SignatureView = ({ Signature, signatureId }) => {
           style={{ maxWidth: "600px" }}
         >
           <strong>The document has been declined.</strong>
-          <div>{comment ? `Reason: ${comment}` : "No comment provided."}</div>
+          <div>{fullName} has been notified.</div>
+          {/* <div>{comment ? `Reason: ${comment}` : "No comment provided."}</div> */}
         </Alert>
       )}
 

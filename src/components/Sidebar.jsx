@@ -215,12 +215,13 @@ const Sidebar = () => {
         }
 
         .sidebar {
-          position: absolute;
-          top: 56px;
-          bottom: 9px;
+          position: relative;
+          top: 0;
+          bottom: auto;
           left: 0;
-          width: 270px;
-          max-width: 270px;
+          width: 100%;
+          max-width: none;
+          height: 100%;
           font-size: 0.85rem;
           border-right: 2px solid #dee2e6;
           background-color: #fff;

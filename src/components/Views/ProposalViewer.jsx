@@ -10,6 +10,7 @@ import VideoView from "./VideoView";
 import AttachmentView from "./AttachmentView";
 
 import axios from "axios";
+import TextView from "./TextView";
 
 const API_BASE = import.meta.env.VITE_API_URL;
 
@@ -953,56 +954,187 @@ export default function ProposalViewer() {
   const [party, setParty] = useState(null);
   const [schedule, setSchedule] = useState(null);
   const [signature, setSignature] = useState(null);
+  const [text, setText] = useState(null);
   const [pdf, setPdf] = useState(null);
   const [video, setVideo] = useState(null);
+  const [user, setUser] = useState(null);
   const [attachments, setAttachments] = useState([]);
   const { headerId: idFromPath } = useParams();
   const [sp] = useSearchParams();
-  const idsFromQuery = sp.get("ids"); // 🔹 support multiple ids
-  console.log("idsFromQuery", idsFromQuery);
-
-  const partyId = sp.get("partyId");
-  const scheduleId = sp.get("scheduleId");
+  const idsFromQuery = sp.get("ids");
+  const parentIdFromQuery = sp.get("parentId");
   const proposalName = sp.get("name");
-  const signatureId = sp.get("signatureId");
-  const pdfId = sp.get("pdfId");
-  const videoId = sp.get("videoId");
-  const attachmentId = sp.get("attachmentId");
-  // console.log("scheduleId", scheduleId);
-
-  // ✅ Memoize headerIds to avoid infinite re-renders
-  const headerIds = useMemo(() => {
-    if (idFromPath) return [idFromPath];
-    if (idsFromQuery) return idsFromQuery.split(",");
-    return [];
-  }, [idFromPath, idsFromQuery]);
 
   const [data, setData] = useState([]);
   const [status, setStatus] = useState({ loading: true, error: null });
 
+  // When parentId is provided, fetch ordered block metadata, then fetch data per type
   useEffect(() => {
-    let isMounted = true;
-    if (!headerIds.length) {
-      setStatus({ loading: false, error: "Missing headerId" });
+    if (!parentIdFromQuery) {
+      setStatus({ loading: false, error: "Missing parentId" });
       return;
     }
 
+    let isMounted = true;
     (async () => {
       try {
         setStatus({ loading: true, error: null });
+        // 1) Get meta: [{ id:blockId, type, orderIndex }]
         const res = await fetch(
-          `${API_BASE}/api/headerBlock?ids=${headerIds.join(",")}`
+          `${API_BASE}/parents/${parentIdFromQuery}/blocks`
         );
-
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const json = await res.json();
+        if (isMounted) {
+          setUser(json.user || null); // ⬅️ save user here
+        }
+        const meta = Array.isArray(json?.blocks) ? json.blocks : [];
 
-        if (!json.success) throw new Error("API request failed");
+        // 2) For now, handle header blocks via existing API
+        const headerMeta = meta
+          .filter(
+            (b) => typeof b?.type === "string" && b.type.startsWith("header")
+          )
+          .sort((a, b) => (a.orderIndex ?? 0) - (b.orderIndex ?? 0));
 
-        const payload = json?.data || [];
+        if (headerMeta.length === 0) {
+          if (isMounted) {
+            setData([]);
+            setStatus({ loading: false, error: null });
+          }
+          return;
+        }
+
+        const headerIdsOrdered = headerMeta.map((b) => b.blockId || b.id);
+        const resHeaders = await fetch(
+          `${API_BASE}/api/headerBlock?ids=${headerIdsOrdered.join(",")}`
+        );
+        if (!resHeaders.ok) throw new Error(`HTTP ${resHeaders.status}`);
+        const jsonHeaders = await resHeaders.json();
+        if (!jsonHeaders.success) throw new Error("Header API request failed");
+        const headerPayload = Array.isArray(jsonHeaders.data)
+          ? jsonHeaders.data
+          : [];
+
+        // 3) Preserve original order
+        const payloadById = new Map(
+          headerPayload.map((h) => [String(h.id), h])
+        );
+        const ordered = headerIdsOrdered
+          .map((id) => payloadById.get(String(id)))
+          .filter(Boolean);
 
         if (isMounted) {
-          setData(payload);
+          setData(ordered);
+        }
+
+        // Fetch other block types by their blockId using the meta response
+        const findBlockId = (t) => {
+          const entry = meta.find((m) => m.type === t);
+          return entry ? entry.blockId || entry.id : null;
+        };
+
+        const partyMetaId = findBlockId("parties");
+        const scheduleMetaId = findBlockId("calender");
+        const signatureMetaId = findBlockId("signature");
+        const pdfMetaId = findBlockId("pdf");
+        const videoMetaId = findBlockId("video");
+        const attachmentMetaId = findBlockId("link");
+        const textMetaId = findBlockId("text");
+        console.log("Text block meta ID:", textMetaId);
+
+        // console.log("secheduleMetaId", scheduleMetaId);
+
+        const requests = [];
+        if (partyMetaId) {
+          requests.push(
+            axios
+              .get(`${API_BASE}/parties/block/${partyMetaId}`)
+              .then(
+                (r) => r.data?.success && isMounted && setParty(r.data.data)
+              )
+              .catch(() => {})
+          );
+        }
+        if (scheduleMetaId) {
+          requests.push(
+            axios
+              .get(`${API_BASE}/schedules/sign/${scheduleMetaId}`)
+              .then((r) => {
+                // console.log("✅ Schedule API response:", r.data); // ← log full response
+                if (r.data?.success && isMounted) {
+                  const firstItem = Array.isArray(r.data.data)
+                    ? r.data.data[0]
+                    : r.data.data;
+                  setSchedule(firstItem);
+                }
+              })
+              .catch((err) => {
+                console.error("❌ Error fetching schedule:", err.message); // optional
+              })
+          );
+        }
+        if (signatureMetaId) {
+          requests.push(
+            axios
+              .get(`${API_BASE}/signatures/sign/${signatureMetaId}`)
+              .then(
+                (r) => r.data?.success && isMounted && setSignature(r.data.data)
+              )
+              .catch(() => {})
+          );
+        }
+        if (pdfMetaId) {
+          requests.push(
+            axios
+              .get(`${API_BASE}/api/pdfblocks/${pdfMetaId}`)
+              .then((r) => isMounted && setPdf(r.data?.data))
+              .catch(() => {})
+          );
+        }
+        if (videoMetaId) {
+          requests.push(
+            axios
+              .get(`${API_BASE}/video/${videoMetaId}`)
+              .then((r) => isMounted && setVideo(r.data?.data))
+              .catch(() => {})
+          );
+        }
+        if (attachmentMetaId) {
+          requests.push(
+            axios
+              .get(`${API_BASE}/attachments/data/${attachmentMetaId}`)
+              .then(
+                (r) =>
+                  r.data?.success &&
+                  isMounted &&
+                  setAttachments(r.data.data || [])
+              )
+              .catch(() => {})
+          );
+        }
+        if (textMetaId) {
+          console.log("Fetching text block with ID:", textMetaId);
+          requests.push(
+            axios
+              .get(`${API_BASE}/text/${textMetaId}/${parentIdFromQuery}`)
+              .then((r) => {
+                console.log("Text API response:", r.data);
+                if (r.data?.success && isMounted) {
+                  setText(r.data.data);
+                }
+              })
+              .catch((err) => {
+                console.error("Error fetching text:", err);
+              })
+          );
+        }
+
+        if (requests.length) {
+          await Promise.allSettled(requests);
+        }
+
+        if (isMounted) {
           setStatus({ loading: false, error: null });
         }
       } catch (e) {
@@ -1014,113 +1146,7 @@ export default function ProposalViewer() {
     return () => {
       isMounted = false;
     };
-  }, [headerIds]);
-
-  useEffect(() => {
-    if (!partyId) return;
-
-    (async () => {
-      try {
-        const res = await fetch(`${API_BASE}/parties/${partyId}`);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
-        const json = await res.json();
-        if (!json.success) throw new Error("API failed");
-        // console.log(
-        //   "🚀 ~ file: ProposalViewer.jsx ~ line 237 ~ json",
-        //   json.data
-        // );
-
-        setParty(json.data);
-      } catch (err) {
-        console.error("❌ Party fetch error:", err);
-      }
-    })();
-  }, [partyId]);
-
-  useEffect(() => {
-    const fetchSchedule = async () => {
-      if (!scheduleId) return;
-      try {
-        const res = await axios.get(`${API_BASE}/schedules/${scheduleId}`);
-        if (res.data.success) {
-          // console.log("🚀 ~ file: ProposalViewer.jsx ~ line 1029 ~ res", res);
-          setSchedule(res.data.data); // { date, time, ... }
-        }
-      } catch (err) {
-        console.error("Error fetching schedule:", err);
-      }
-    };
-
-    fetchSchedule();
-  }, [scheduleId]);
-
-  useEffect(() => {
-    if (!signatureId) return;
-    console.log("signatureId fro m useEffect", signatureId);
-    (async () => {
-      try {
-        const res = await axios.get(
-          `${API_BASE}/signatures/sign/${signatureId}`
-        );
-        if (res.data.success) {
-          // console.log("🚀 ~ file: ProposalViewer.jsx ~ line 1029 ~ res", res);
-          setSignature(res.data.data); // { date, time, ... }
-        }
-      } catch (err) {
-        console.error("Error fetching signature:", err.message);
-      }
-    })();
-  }, [signatureId]);
-
-  useEffect(() => {
-    if (!pdfId) return;
-    (async () => {
-      try {
-        const res = await axios.get(`${API_BASE}/api/pdfblocks/${pdfId}`);
-        if (res.data.success) {
-          // console.log("🚀 ~ file: ProposalViewer.jsx ~ line 1029 ~ res", res);
-          // setSignature(res.data.data); // { date, time, ... }
-        }
-        setPdf(res.data.data);
-      } catch (err) {
-        console.error("Error fetching pdf:", err.message);
-      }
-    })();
-  }, [pdfId]);
-
-  useEffect(() => {
-    if (!videoId) return;
-    (async () => {
-      try {
-        const res = await axios.get(`${API_BASE}/video/${videoId}`);
-        if (res.data.success) {
-          // console.log("🚀 ~ file: ProposalViewer.jsx ~ line 1029 ~ res", res);
-          // setSignature(res.data.data); // { date, time, ... }
-        }
-        setVideo(res.data.data);
-      } catch (err) {
-        console.error("Error fetching video:", err.message);
-      }
-    })();
-  }, [videoId]);
-
-  useEffect(() => {
-    if (!attachmentId) return;
-
-    (async () => {
-      try {
-        const res = await axios.get(
-          `${API_BASE}/attachments/data/${attachmentId}`
-        );
-        if (res.data.success) {
-          setAttachments(res.data.data); // array of attachments
-        }
-      } catch (err) {
-        console.error("Error fetching attachments:", err.message);
-      }
-    })();
-  }, [attachmentId]);
+  }, [parentIdFromQuery]);
 
   if (status.loading) {
     return (
@@ -1191,7 +1217,16 @@ export default function ProposalViewer() {
         {/* 🔹 Shared blocks should be rendered ONCE */}
         <PartiesView parties={party} />
         <ScheduleView schedule={schedule} name={proposalName} />
-        <SignatureView Signature={signature} signatureId={signatureId} />
+        <SignatureView
+          Signature={signature}
+          signatureId={signature?.blockId}
+          user={user}
+        />
+        <TextView
+          blockId={text?.blockId || text?.id}
+          title={text?.title}
+          content={text?.content}
+        />
         {pdf && <PdfView fileUrl={`${API_BASE}${pdf.pdf}`} />}
         {video && <VideoView videoUrl={video.video} />}
         {attachments.length > 0 && <AttachmentView attachments={attachments} />}

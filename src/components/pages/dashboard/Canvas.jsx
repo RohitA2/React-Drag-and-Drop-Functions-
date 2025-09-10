@@ -1,7 +1,9 @@
-import { useEffect, forwardRef } from "react";
+import { useEffect, useRef, useState, forwardRef, useCallback } from "react";
 import { X, Hand, ChevronUp, ChevronDown } from "lucide-react";
 import { Button } from "react-bootstrap";
-
+import { v4 as uuidv4 } from "uuid";
+import { useSelector } from "react-redux";
+import { selectedUserId } from "../../../store/authSlice";
 // Import all your block components
 import TextEditor from "../../Blocks/TextEditor";
 import SignatureBlock from "../../Blocks/SignatureBlock";
@@ -37,10 +39,94 @@ const Canvas = forwardRef(
     },
     ref
   ) => {
+    const user_id = useSelector(selectedUserId);
+    const parentIdRef = useRef(localStorage.getItem("parentId") || null);
+    const [parentId, setParentId] = useState(parentIdRef.current);
+    const [isCreatingParent, setIsCreatingParent] = useState(false);
+
+    // Function to create a parent
+    const createParent = useCallback(async () => {
+      if (isCreatingParent) return null;
+
+      setIsCreatingParent(true);
+      try {
+        const res = await fetch(`${API_URL}/parents/CreateParent`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ user_id }),
+        });
+
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+
+        const data = await res.json();
+        if (data && data.id) {
+          parentIdRef.current = data.id;
+          localStorage.setItem("parentId", data.id);
+          setParentId(data.id);
+          return data.id;
+        }
+      } catch (error) {
+        console.error("Failed to create parent:", error);
+      } finally {
+        setIsCreatingParent(false);
+      }
+      return null;
+    }, [user_id, isCreatingParent]);
+
+    // Function to verify if a parent exists
+    const verifyParentExists = useCallback(async (id) => {
+      try {
+        const probe = await fetch(`${API_URL}/parents/${id}/block-ids`, {
+          method: "GET",
+        });
+        return probe.ok;
+      } catch {
+        return false;
+      }
+    }, []);
+
+    // Initialize parent on component mount
+    useEffect(() => {
+      const initializeParent = async () => {
+        const storedId = localStorage.getItem("parentId");
+
+        if (storedId) {
+          const exists = await verifyParentExists(storedId);
+          if (exists) {
+            parentIdRef.current = storedId;
+            setParentId(storedId);
+            return;
+          } else {
+            // ❌ Invalid parentId, clean it up
+            localStorage.removeItem("parentId");
+            parentIdRef.current = null;
+            setParentId(null);
+          }
+        }
+
+        // Create a new parent if none exists or old one is invalid
+        await createParent();
+      };
+
+      initializeParent();
+    }, [verifyParentExists, createParent]);
+
+    // Ensure we have a parent before making any block-related API calls
+    const ensureParentExists = useCallback(async () => {
+      if (parentIdRef.current) {
+        const exists = await verifyParentExists(parentIdRef.current);
+        if (exists) return parentIdRef.current;
+      }
+
+      return await createParent();
+    }, [verifyParentExists, createParent]);
+
     useEffect(() => {
       const listener = (e) => {
         const newBlock = {
-          id: Date.now(),
+          id: uuidv4(),
           type: e.detail,
           settings: {
             ...getDefaultSettings(e.detail),
@@ -52,6 +138,38 @@ const Canvas = forwardRef(
       window.addEventListener("sidebar-block-click", listener);
       return () => window.removeEventListener("sidebar-block-click", listener);
     }, [onAddBlock]);
+
+    // Persist block order on render/change
+    useEffect(() => {
+      if (!Array.isArray(blocks) || blocks.length === 0) return;
+
+      const persistBlockOrder = async () => {
+        const existingParentId = await ensureParentExists();
+        if (!existingParentId) return;
+
+        const payload = {
+          blocks: blocks.map((b, index) => ({
+            id: b.id,
+            type: b.type,
+            name: b.name || null,
+            orderIndex: index,
+          })),
+        };
+
+        try {
+          await fetch(`${API_URL}/parents/${existingParentId}/blocks/order`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+        } catch (error) {
+          console.error("Failed to store block order:", error);
+        }
+      };
+
+      const timeout = setTimeout(persistBlockOrder, 500);
+      return () => clearTimeout(timeout);
+    }, [blocks, ensureParentExists]);
 
     const getDefaultSettings = (blockType) => {
       const defaults = {
@@ -140,7 +258,7 @@ const Canvas = forwardRef(
       const blockType = e.dataTransfer.getData("blockType");
       if (blockType) {
         const newBlock = {
-          id: Date.now(),
+          id: uuidv4(),
           type: blockType,
           settings: {
             ...getDefaultSettings(blockType),
@@ -152,19 +270,33 @@ const Canvas = forwardRef(
     };
 
     const handleDragOver = (e) => e.preventDefault();
-    // In Canvas.jsx - modify the handleRemoveBlock function
-    const handleRemoveBlock = (id) => {
-      // Before removing, check if this is a header block and clean up localStorage
-      const blockToRemove = blocks.find((block) => block.id === id);
 
-      if (blockToRemove && blockToRemove.type.startsWith("header")) {
-        // Remove any stored header ID for this block
-        localStorage.removeItem("headerId");
-        console.log("Cleaned up header ID for removed block:", id);
-      }
+    const handleRemoveBlock = useCallback(
+      async (id) => {
+        // Before removing, check if this is a header block and clean up localStorage
+        const blockToRemove = blocks.find((block) => block.id === id);
 
-      onRemoveBlock(id);
-    };
+        if (blockToRemove && blockToRemove.type.startsWith("header")) {
+          // Remove any stored header ID for this block
+          localStorage.removeItem("headerId");
+          console.log("Cleaned up header ID for removed block:", id);
+        }
+
+        try {
+          const existingParentId = await ensureParentExists();
+          if (!existingParentId) throw new Error("Missing parent id");
+
+          await fetch(`${API_URL}/parents/${existingParentId}/blocks/${id}`, {
+            method: "DELETE",
+          });
+        } catch (error) {
+          console.error("Failed to delete block from server:", error);
+        } finally {
+          onRemoveBlock(id);
+        }
+      },
+      [blocks, onRemoveBlock, ensureParentExists]
+    );
 
     const renderBlock = (block) => {
       const commonProps = {
@@ -172,6 +304,7 @@ const Canvas = forwardRef(
         onRemove: handleRemoveBlock,
         onSettingsChange: (newSettings) =>
           onSettingsChange(block.id, newSettings),
+        parentId: parentIdRef.current,
         ...block.settings,
         textAlign: block.settings?.textAlign || "left",
       };
@@ -183,6 +316,7 @@ const Canvas = forwardRef(
           return (
             <HeaderBlock
               id={block.id}
+              parentId={parentIdRef.current}
               onSettingsChange={(newSettings) =>
                 onSettingsChange(block.id, newSettings)
               }
@@ -210,6 +344,7 @@ const Canvas = forwardRef(
           return (
             <HeaderBlock2
               id={block.id}
+              parentId={parentIdRef.current}
               onSettingsChange={(newSettings) =>
                 onSettingsChange(block.id, newSettings)
               }
@@ -237,6 +372,7 @@ const Canvas = forwardRef(
           return (
             <HeaderBlock3
               id={block.id}
+              parentId={parentIdRef.current}
               onSettingsChange={(newSettings) =>
                 onSettingsChange(block.id, newSettings)
               }
@@ -264,6 +400,7 @@ const Canvas = forwardRef(
           return (
             <HeaderBlock4
               id={block.id}
+              parentId={parentIdRef.current}
               onSettingsChange={(newSettings) =>
                 onSettingsChange(block.id, newSettings)
               }
@@ -291,6 +428,7 @@ const Canvas = forwardRef(
           return (
             <HeaderBlock5
               id={block.id}
+              parentId={parentIdRef.current}
               onSettingsChange={(newSettings) =>
                 onSettingsChange(block.id, newSettings)
               }
@@ -329,23 +467,77 @@ const Canvas = forwardRef(
 
         // Other blocks
         case "text":
-          return <TextEditor {...commonProps} blockId={block.id} />;
+          return (
+            <TextEditor
+              {...commonProps}
+              blockId={block.id}
+              parentId={parentIdRef.current}
+            />
+          );
         case "signature":
-          return <SignatureBlock {...commonProps} blockId={block.id} />;
+          return (
+            <SignatureBlock
+              {...commonProps}
+              blockId={block.id}
+              parentId={parentIdRef.current}
+            />
+          );
         case "video":
-          return <VideoBlock {...commonProps} blockId={block.id} />;
+          return (
+            <VideoBlock
+              {...commonProps}
+              blockId={block.id}
+              parentId={parentIdRef.current}
+            />
+          );
         case "pdf":
-          return <PDFBlock {...commonProps} blockId={block.id} />;
+          return (
+            <PDFBlock
+              {...commonProps}
+              blockId={block.id}
+              parentId={parentIdRef.current}
+            />
+          );
         case "link":
-          return <AttachmentBlock {...commonProps} blockId={block.id} />;
+          return (
+            <AttachmentBlock
+              {...commonProps}
+              blockId={block.id}
+              parentId={parentIdRef.current}
+            />
+          );
         case "parties":
-          return <Parties {...commonProps} blockId={block.id} />;
+          return (
+            <Parties
+              {...commonProps}
+              blockId={block.id}
+              parentId={parentIdRef.current}
+            />
+          );
         case "price":
-          return <PricingAndServices {...commonProps} blockId={block.id} />;
+          return (
+            <PricingAndServices
+              {...commonProps}
+              blockId={block.id}
+              parentId={parentIdRef.current}
+            />
+          );
         case "terms":
-          return <TermsBlock {...commonProps} blockId={block.id} />;
+          return (
+            <TermsBlock
+              {...commonProps}
+              blockId={block.id}
+              parentId={parentIdRef.current}
+            />
+          );
         case "calender":
-          return <Schedule {...commonProps} blockId={block.id} />;
+          return (
+            <Schedule
+              {...commonProps}
+              blockId={block.id}
+              parentId={parentIdRef.current}
+            />
+          );
         default:
           return null;
       }
@@ -436,7 +628,11 @@ const Canvas = forwardRef(
             `}</style>
           </div>
         ) : (
-          <div className="w-100">
+          <div
+            id={`block-group-${parentIdRef.current}`}
+            data-parent-id={parentIdRef.current}
+            className="w-100"
+          >
             {blocks.map((block, index) => (
               <div
                 key={block.id}
@@ -525,7 +721,7 @@ const Canvas = forwardRef(
 
                     {/* Delete Button */}
                     <button
-                      onClick={() => onRemoveBlock(block.id)}
+                      onClick={() => handleRemoveBlock(block.id)}
                       className=" bg-white border rounded  shadow-sm"
                       aria-label="Remove block"
                     >

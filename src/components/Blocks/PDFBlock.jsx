@@ -12,11 +12,13 @@ const API_URL = import.meta.env.VITE_API_URL; // http://localhost:5000
 // Configure PDF.js worker
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.js`;
 
-const PDFBlock = ({ blockId }) => {
+const PDFBlock = ({ blockId, parentId }) => {
   const user_id = useSelector(selectedUserId);
   const [file, setFile] = useState(null);
   const [numPages, setNumPages] = useState(null);
   const fileInputRef = useRef(null);
+
+  console.log("i am parentId from pdf block", parentId);
 
   // Modal states
   const [showModal, setShowModal] = useState(false);
@@ -37,11 +39,12 @@ const PDFBlock = ({ blockId }) => {
     if (!file) return;
     try {
       const result = await dispatch(
-        uploadPdf({ blockId, user_id, file })
+        uploadPdf({ blockId, parentId, user_id, file })
       ).unwrap();
 
       console.log("Uploaded PDF result:", result);
       console.log("PDF ID:", result.id);
+      console.log("PDF parent ID:", result.parentId);
 
       // ✅ Save PDF ID into localStorage
       localStorage.setItem("lastUploadedPdfId", result.id);
@@ -54,7 +57,7 @@ const PDFBlock = ({ blockId }) => {
 
   return (
     <div
-      className="position-relative bg-white border rounded-3 shadow-sm overflow-hidden mb-4"
+      className="position-relative bg-white border shadow-sm overflow-hidden"
       style={{ maxWidth: "1800px", width: "100%" }}
     >
       {/* Upload prompt */}

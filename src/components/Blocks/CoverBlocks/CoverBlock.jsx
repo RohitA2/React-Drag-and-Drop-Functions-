@@ -19,11 +19,11 @@ const CoverBlock = ({ isPreview = false }) => {
 
   return (
     <div
-      className={`position-relative bg-white border rounded-4 shadow-sm p-4 mb-4 ${
+      className={`position-relative bg-white border shadow-sm p-4 ${
         isPreview ? "pointer-events-none" : ""
       }`}
       style={{
-        maxWidth: "1400px",
+        maxWidth: "1800px",
         width: "100%",
         minHeight: "400px",
         border: "1px solid #e3e6e8",

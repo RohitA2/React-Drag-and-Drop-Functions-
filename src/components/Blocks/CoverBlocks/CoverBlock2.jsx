@@ -34,7 +34,7 @@ const CoverBlock = ({ isPreview = false }) => {
       {/* Cover Preview */}
       <div
         ref={coverRef}
-        className="position-relative rounded-4 overflow-hidden border border-2"
+        className="position-relative overflow-hidden border border-2"
         style={{ width: "100%", height: "400px" }}
       >
         <img

@@ -2,7 +2,7 @@
 import React from "react";
 import { CalendarClock, Clock, Calendar, CheckCircle } from "lucide-react";
 
-const ScheduleView = ({ schedule,name  }) => {
+const ScheduleView = ({ schedule, name }) => {
   if (!schedule) return null;
 
   const { date, time } = schedule;
@@ -34,7 +34,7 @@ const ScheduleView = ({ schedule,name  }) => {
         >
           <CalendarClock size={24} color="white" />
         </div>
-        <h3 className="fw-bold text-dark mb-0">Scheduled { name }</h3>
+        <h3 className="fw-bold text-dark mb-0">Scheduled {name}</h3>
       </div>
 
       {/* Main content */}

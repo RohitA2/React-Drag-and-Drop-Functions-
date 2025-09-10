@@ -50,7 +50,7 @@ const Schedule = ({blockId}) => {
     <div
       className="position-relative bg-gradient-to-br from-blue-50 to-indigo-50 shadow-lg p-6 rounded-2xl overflow-hidden"
       style={{
-        maxWidth: "1400px",
+        maxWidth: "1800px",
         width: "100%",
         minHeight: "450px",
         border: "1px solid #e0e7ff",

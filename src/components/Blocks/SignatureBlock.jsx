@@ -2,54 +2,20 @@ import { useRef, useState, useEffect } from "react";
 import SignatureCanvas from "react-signature-canvas";
 import { createSignature } from "../../store/signatureSlice";
 import { useSelector, useDispatch } from "react-redux";
-import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
 
-const API_URL = import.meta.env.VITE_API_URL; // your backend
-
-const SignatureBlock = ({ id, onRemove }) => {
-  const sigCanvas = useRef();
-  const [isSigned, setIsSigned] = useState(false);
+const SignatureBlock = ({ blockId, parentId }) => {
   const dispatch = useDispatch();
-  const signatureItems = useSelector((state) => state.signatures.items);
+
+  console.log("i am from signature block ids", blockId);
 
   useEffect(() => {
-    // Dispatch only to create local ID
-    dispatch(createSignature());
-  }, [dispatch]);
-
-  useEffect(() => {
-    // Get the latest block ID (last one pushed)
-    const latest = signatureItems[signatureItems.length - 1];
-    if (latest?.id) {
-      // ✅ Now call API manually here
-      axios
-        .post(`${API_URL}/signatures/create`, { blockId: latest.id })
-        .then((res) => {
-          console.log("Saved to backend:", res.data);
-        })
-        .catch((err) => {
-          console.error("Error saving:", err);
-        });
-    }
-  }, [signatureItems]);
-
-  const clearSignature = () => {
-    sigCanvas.current.clear();
-    setIsSigned(false);
-  };
-
-  const handleSign = () => {
-    if (sigCanvas.current.isEmpty()) {
-      alert("Please provide a signature first.");
-      return;
-    }
-    setIsSigned(true);
-  };
+    dispatch(createSignature({ blockId, parentId }));
+  }, []);
 
   return (
     <div
-      className="position-relative bg-white rounded-3 shadow-sm p-0 mb-4"
+      className="position-relative bg-white rounded-3 shadow-sm p-0"
       style={{ maxWidth: "1800px", width: "100%" }}
     >
       <div className="d-flex justify-content-center gap-4 border-bottom p-5 bg-white">

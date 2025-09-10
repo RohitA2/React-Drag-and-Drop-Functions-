@@ -6,18 +6,19 @@ const API_URL = import.meta.env.VITE_API_URL;
 // ✅ Thunk to upload PDF
 export const uploadPdf = createAsyncThunk(
   "pdf/uploadPdf",
-  async ({ blockId, user_id, file }, { rejectWithValue }) => {
+  async ({ blockId, parentId, user_id, file }, { rejectWithValue }) => {
     try {
       const formData = new FormData();
       formData.append("pdf", file);
       formData.append("blockId", blockId);
       formData.append("user_id", user_id);
+      formData.append("parentId", parentId);
 
       const res = await axios.post(`${API_URL}/api/pdfblocks`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      return res.data.data; 
+      return res.data.data;
     } catch (err) {
       return rejectWithValue(err.response?.data || err.message);
     }
@@ -27,7 +28,7 @@ export const uploadPdf = createAsyncThunk(
 const pdfSlice = createSlice({
   name: "pdf",
   initialState: {
-    pdfs: [],     // list of uploaded PDFs
+    pdfs: [], // list of uploaded PDFs
     loading: false,
     error: null,
   },
@@ -52,6 +53,5 @@ export const selectLastUploadedPdfId = (state) =>
   state.pdf?.pdfs?.length > 0
     ? state.pdf.pdfs[state.pdf.pdfs.length - 1].id
     : null;
-
 
 export default pdfSlice.reducer;

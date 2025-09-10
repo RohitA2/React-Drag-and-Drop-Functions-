@@ -25,7 +25,6 @@ const PdfView = ({ fileUrl }) => {
         style={{
           width: "800px", // fixed width (A4-ish ratio)
           backgroundColor: "#fff",
-          borderRadius: "6px",
           boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
           padding: "10px",
         }}

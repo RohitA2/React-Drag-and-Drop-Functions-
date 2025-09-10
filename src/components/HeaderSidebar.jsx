@@ -12,7 +12,10 @@ import {
 } from "../store/authSlice";
 import { selectHeaderIds } from "../store/headerSlice";
 import { selectLastUploadedPdfId } from "../store/pdfSlice";
-import { selectLastAttachmentIds, selectLastBlockId } from "../store/attachmentSlice";
+import {
+  selectLastAttachmentIds,
+  selectLastBlockId,
+} from "../store/attachmentSlice";
 
 const FRONT_API_URL = import.meta.env.FRONT_API_URL;
 const API_URL = import.meta.env.VITE_API_URL;
@@ -25,13 +28,13 @@ const HeaderSidebar = ({
   canvasRef,
   blocks = [],
 }) => {
-  const partyId = useSelector((state) => state.party.partyId);
+  const { toParties, fromParty, partyId } = useSelector((state) => state.party);
   const signatures = useSelector((state) => state.signatures.items);
   const scheduleId = useSelector((state) => state.schedule.scheduleId);
   const lastVideoBlockId = useSelector(
     (state) => state.videoBlocks.lastCreatedId
   );
-  
+
   console.log("lastVideoBlockId", lastVideoBlockId);
 
   console.log("scheduleId", scheduleId);
@@ -59,22 +62,19 @@ const HeaderSidebar = ({
 
   // Send document handler
   const handleSendDocument = async () => {
-    if (!headerIds || headerIds.length === 0) {
-      toast.error("Please select at least one header block.");
-      return;
-    }
     if (!selectedRecipient) {
       toast.error("Please select a recipient.");
       return;
     }
 
-    // Build dynamic link
-    const documentLink =
-      headerIds.length === 1
-        ? `http://localhost:5173/proposal/${headerIds[0]}?partyId=${partyId}&scheduleId=${scheduleId}&name=${name}&signatureId=${signatureId}&pdfId=${pdfId}&videoId=${lastVideoBlockId}&attachmentId=${blockId}`
-        : `http://localhost:5173/proposal?ids=${headerIds.join(
-            ","
-          )}&partyId=${partyId}&scheduleId=${scheduleId}&name=${name}&signatureId=${signatureId}&pdfId=${pdfId}&videoId=${lastVideoBlockId}&attachmentId=${blockId}`;
+    // Build document link with parentId only
+    const canvasParentId = localStorage.getItem("parentId");
+    if (!canvasParentId) {
+      toast.error("Missing document parent. Add a block to create it first.");
+      return;
+    }
+    const origin = window.location?.origin || "http://localhost:5173";
+    const documentLink = `${origin}/proposal?parentId=${canvasParentId}`;
 
     const payload = {
       headerIds,

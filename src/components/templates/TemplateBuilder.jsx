@@ -4,17 +4,20 @@ import Sidebar from "../Sidebar";
 import Canvas from "../pages/dashboard/Canvas";
 import HeaderBar from "../Header";
 import BlockSettingsPanel from "../pages/dashboard/BlockSettingsPanel";
+import { v4 as uuidv4 } from "uuid";
+
 
 const API_URL = import.meta.env.VITE_API_URL;
 
 const TemplateBuilder = () => {
+  
   const [sidebarVisible, setSidebarVisible] = useState(true);
   const [blocks, setBlocks] = useState([]);
   const [activeBlock, setActiveBlock] = useState(null);
   const canvasRef = useRef(null);
 
   const handleAddBlock = useCallback((newBlock) => {
-    const blockId = Date.now().toString();
+    const blockId =uuidv4();
     setBlocks((prev) => [
       ...prev,
       {
@@ -105,7 +108,7 @@ const TemplateBuilder = () => {
         <div
           className="h-100 bg-[#E8EAED] border-end shadow-sm thin-scrollbar"
           style={{
-            width: sidebarVisible ? "270px" : "0",
+            width: sidebarVisible ? "20%" : "0",
             transition: "width 0.3s ease",
             overflow: "hidden",
           }}

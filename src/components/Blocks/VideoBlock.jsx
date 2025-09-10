@@ -9,7 +9,6 @@ const VideoBlock = ({ blockId }) => {
   const [videoLink, setVideoLink] = useState("");
   const [embedUrl, setEmbedUrl] = useState("");
   const dispatch = useDispatch();
-  
 
   const handleAddClick = () => {
     const trimmedLink = videoLink.trim();
@@ -80,10 +79,10 @@ const VideoBlock = ({ blockId }) => {
 
   return (
     <div
-      className="position-relative bg-white rounded-2 shadow-sm p-1 overflow-hidden mx-auto"
+      className="position-relative bg-white shadow-sm p-1 overflow-hidden "
       style={{
         border: "1px solid #ddd",
-        maxWidth: "1400px",
+        maxWidth: "1800px",
         width: "100%",
       }}
     >

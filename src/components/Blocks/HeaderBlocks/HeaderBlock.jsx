@@ -113,6 +113,7 @@ const API_URL = import.meta.env.VITE_API_URL;
 
 const HeaderBlock = ({
   id,
+  parentId,
   layoutType = "left-panel",
   onSettingsChange = () => {},
   initialTitle = "Sales Proposal",
@@ -160,6 +161,8 @@ const HeaderBlock = ({
   const [headerId, setHeaderId] = useState(id || null);
   const dispatch = useDispatch();
   const containerRef = useRef(null);
+
+  console.log("i am parentId from header block", parentId);
 
   // Add useEffect to update state when props change
   useEffect(() => {
@@ -232,6 +235,7 @@ const HeaderBlock = ({
           },
           body: JSON.stringify({
             id,
+            parentId,
             layoutType: headerBlock.layoutType,
             title: headerBlock.title,
             subtitle: headerBlock.subtitle,
@@ -411,6 +415,7 @@ const HeaderBlock = ({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...headerBlock,
+          parentId,
           logoUrl: updatedLogoUrl, // Changed to match database field
           userId,
         }),
@@ -503,11 +508,11 @@ const HeaderBlock = ({
 
   return (
     <div
-      className={`container-fluid my-4 px-3 ${isPreview ? "p-0 my-0" : ""}`}
+      className={`container-fluid px-3 ${isPreview ? "p-0 my-0" : ""}`}
       style={wrapperStyle}
     >
       <div
-        className={`row rounded-3 overflow-hidden shadow ${container}`}
+        className={`row  overflow-hidden shadow ${container}`}
         ref={containerRef}
         style={{
           position: "relative",

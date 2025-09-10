@@ -59,7 +59,7 @@ const PricingAndServices = () => {
 
   return (
     <div
-      className="container my-5 p-6 bg-white shadow"
+      className="container p-6 bg-white shadow"
       style={{ maxWidth: "1800px" }}
     >
       {/* Editable Title */}

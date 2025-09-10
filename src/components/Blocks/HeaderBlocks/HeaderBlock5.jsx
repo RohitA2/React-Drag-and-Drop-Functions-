@@ -113,6 +113,7 @@ const API_URL = import.meta.env.VITE_API_URL;
 
 const HeaderBlock = ({
   id,
+  parentId,
   layoutType = "grid",
   onSettingsChange = () => {},
   initialTitle = "Sales Proposal",
@@ -232,6 +233,7 @@ const HeaderBlock = ({
           },
           body: JSON.stringify({
             id,
+            parentId,
             layoutType: headerBlock.layoutType,
             title: headerBlock.title,
             subtitle: headerBlock.subtitle,
@@ -400,6 +402,7 @@ const HeaderBlock = ({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...headerBlock,
+          parentId,
           logoUrl: updatedLogoUrl, // Changed to match database field
           userId,
         }),

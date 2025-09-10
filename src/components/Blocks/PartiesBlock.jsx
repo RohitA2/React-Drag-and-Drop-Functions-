@@ -16,7 +16,7 @@ import { toast } from "react-toastify";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-const Parties = () => {
+const Parties = ({ blockId, parentId }) => {
   const dispatch = useDispatch();
   const rawUserId = useSelector(selectedUserId);
   const userId = rawUserId && rawUserId !== "null" ? Number(rawUserId) : null;
@@ -34,6 +34,7 @@ const Parties = () => {
   const [filteredRecipients, setFilteredRecipients] = useState([]);
   const [selectedRecipient, setSelectedRecipient] = useState(null);
 
+  console.log("i am from parties +++++++++", blockId, parentId);
   const handleAddRecipient = (section) => {
     setCurrentSection(section);
     setShowModal(true);
@@ -119,6 +120,8 @@ const Parties = () => {
           userId,
           toParty: toParties,
           fromParty: fromParty,
+          blockId,
+          parentId,
         });
         console.log("parties saved", res.data);
         if (res.data.success) {
@@ -143,7 +146,7 @@ const Parties = () => {
 
   return (
     <div
-      className="container bg-white rounded shadow p-4 my-4"
+      className="container bg-white  shadow p-4"
       style={{ maxWidth: "1800px" }}
     >
       {/* TO Section */}

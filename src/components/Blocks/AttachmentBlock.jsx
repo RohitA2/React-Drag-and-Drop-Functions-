@@ -74,7 +74,7 @@ const AttachmentBlock = ({ blockId }) => {
 
   return (
     <div
-      className="card shadow-sm rounded-3 border-0 mx-auto"
+      className="card shadow-sm border-0 mx-auto"
       style={{ maxWidth: "1800px", width: "100%" }}
     >
       <div className="card-header bg-white border-0 d-flex justify-content-between">
