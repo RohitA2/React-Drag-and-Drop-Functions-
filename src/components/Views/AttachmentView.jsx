@@ -32,7 +32,7 @@ const AttachmentView = ({ attachments = [] }) => {
 
   return (
     <div
-      className="card shadow-sm rounded-3 border-0 mx-auto mb-3"
+      className="card shadow-sm  border-0 mx-auto"
       style={{
         maxWidth: "1400px",
         width: "100%",

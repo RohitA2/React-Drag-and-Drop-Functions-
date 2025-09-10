@@ -17,7 +17,7 @@ const HeaderBar = ({
   canvasRef,
   onAddBlock,
   hasSignatureBlock,
-  blocks
+  blocks,
 }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [showSaveOptions, setShowSaveOptions] = useState(false);
@@ -189,7 +189,10 @@ const HeaderBar = ({
       <div className="d-flex align-items-center gap-3">
         <button
           className="btn btn-sm btn-[#E8EAED] hover:bg-[#F4FBFA]"
-          onClick={() => navigate("/")}
+          onClick={() => {
+            localStorage.removeItem("parentId"); // 🔹 Remove parentId
+            navigate("/"); // 🔹 Navigate back home
+          }}
         >
           <X size={16} />
         </button>

@@ -8,6 +8,7 @@ import SignatureView from "./SignatureView";
 import PdfView from "./PdfView";
 import VideoView from "./VideoView";
 import AttachmentView from "./AttachmentView";
+import TermsView from "./TermsView";
 
 import axios from "axios";
 import TextView from "./TextView";
@@ -951,21 +952,13 @@ const ProposalLayout = React.memo(({ proposal }) => {
 
 // Main Component
 export default function ProposalViewer() {
-  const [party, setParty] = useState(null);
-  const [schedule, setSchedule] = useState(null);
-  const [signature, setSignature] = useState(null);
-  const [text, setText] = useState(null);
-  const [pdf, setPdf] = useState(null);
-  const [video, setVideo] = useState(null);
+  const [blocks, setBlocks] = useState([]);
   const [user, setUser] = useState(null);
-  const [attachments, setAttachments] = useState([]);
   const { headerId: idFromPath } = useParams();
   const [sp] = useSearchParams();
   const idsFromQuery = sp.get("ids");
   const parentIdFromQuery = sp.get("parentId");
   const proposalName = sp.get("name");
-
-  const [data, setData] = useState([]);
   const [status, setStatus] = useState({ loading: true, error: null });
 
   // When parentId is provided, fetch ordered block metadata, then fetch data per type
@@ -979,162 +972,138 @@ export default function ProposalViewer() {
     (async () => {
       try {
         setStatus({ loading: true, error: null });
+
         // 1) Get meta: [{ id:blockId, type, orderIndex }]
         const res = await fetch(
           `${API_BASE}/parents/${parentIdFromQuery}/blocks`
         );
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const json = await res.json();
+
         if (isMounted) {
-          setUser(json.user || null); // ⬅️ save user here
+          setUser(json.user || null);
         }
+
         const meta = Array.isArray(json?.blocks) ? json.blocks : [];
 
-        // 2) For now, handle header blocks via existing API
-        const headerMeta = meta
-          .filter(
-            (b) => typeof b?.type === "string" && b.type.startsWith("header")
-          )
-          .sort((a, b) => (a.orderIndex ?? 0) - (b.orderIndex ?? 0));
-
-        if (headerMeta.length === 0) {
-          if (isMounted) {
-            setData([]);
-            setStatus({ loading: false, error: null });
-          }
-          return;
-        }
-
-        const headerIdsOrdered = headerMeta.map((b) => b.blockId || b.id);
-        const resHeaders = await fetch(
-          `${API_BASE}/api/headerBlock?ids=${headerIdsOrdered.join(",")}`
+        // Sort blocks by orderIndex
+        const sortedMeta = [...meta].sort(
+          (a, b) => (a.orderIndex ?? 0) - (b.orderIndex ?? 0)
         );
-        if (!resHeaders.ok) throw new Error(`HTTP ${resHeaders.status}`);
-        const jsonHeaders = await resHeaders.json();
-        if (!jsonHeaders.success) throw new Error("Header API request failed");
-        const headerPayload = Array.isArray(jsonHeaders.data)
-          ? jsonHeaders.data
-          : [];
 
-        // 3) Preserve original order
-        const payloadById = new Map(
-          headerPayload.map((h) => [String(h.id), h])
+        // Fetch data for each block
+        const blocksWithData = await Promise.all(
+          sortedMeta.map(async (blockMeta) => {
+            const { type, blockId, id } = blockMeta;
+            const actualId = blockId || id;
+
+            try {
+              let data = null;
+
+              switch (type) {
+                case "header-1":
+                case "header-2":
+                case "header-3":
+                  // Handle headers differently since they use a different endpoint
+                  const resHeaders = await fetch(
+                    `${API_BASE}/api/headerBlock?ids=${actualId}`
+                  );
+                  if (resHeaders.ok) {
+                    const jsonHeaders = await resHeaders.json();
+                    if (
+                      jsonHeaders.success &&
+                      Array.isArray(jsonHeaders.data)
+                    ) {
+                      data = jsonHeaders.data[0] || null;
+                    }
+                  }
+                  break;
+
+                case "parties":
+                  const partyRes = await axios.get(
+                    `${API_BASE}/parties/block/${actualId}`
+                  );
+                  data = partyRes.data?.success ? partyRes.data.data : null;
+                  break;
+
+                case "calender":
+                  const scheduleRes = await axios.get(
+                    `${API_BASE}/schedules/sign/${actualId}`
+                  );
+                  data = scheduleRes.data?.success
+                    ? Array.isArray(scheduleRes.data.data)
+                      ? scheduleRes.data.data[0]
+                      : scheduleRes.data.data
+                    : null;
+                  break;
+
+                case "signature":
+                  const signatureRes = await axios.get(
+                    `${API_BASE}/signatures/sign/${actualId}`
+                  );
+                  data = signatureRes.data?.success
+                    ? signatureRes.data.data
+                    : null;
+                  break;
+
+                case "text":
+                  const textRes = await axios.get(
+                    `${API_BASE}/text/${actualId}/${parentIdFromQuery}`
+                  );
+                  data = textRes.data?.success ? textRes.data.data : null;
+                  break;
+
+                case "pdf":
+                  const pdfRes = await axios.get(
+                    `${API_BASE}/api/pdfblocks/${actualId}`
+                  );
+                  data = pdfRes.data?.data || null;
+                  break;
+
+                case "video":
+                  const videoRes = await axios.get(
+                    `${API_BASE}/video/${actualId}`
+                  );
+                  data = videoRes.data?.data || null;
+                  break;
+
+                case "link":
+                  const attachmentRes = await axios.get(
+                    `${API_BASE}/attachments/data/${actualId}`
+                  );
+                  data = attachmentRes.data?.success
+                    ? attachmentRes.data.data
+                    : null;
+                  break;
+
+                case "terms":
+                  const termsRes = await axios.get(
+                    `${API_BASE}/terms/get/${actualId}/${parentIdFromQuery}`
+                  );
+                  data = termsRes.data?.success ? termsRes.data.data : null;
+                  break;
+
+                default:
+                  console.warn(`Unknown block type: ${type}`);
+              }
+
+              return {
+                ...blockMeta,
+                data,
+              };
+            } catch (error) {
+              console.error(`Error fetching data for ${type} block:`, error);
+              return {
+                ...blockMeta,
+                data: null,
+                error: error.message,
+              };
+            }
+          })
         );
-        const ordered = headerIdsOrdered
-          .map((id) => payloadById.get(String(id)))
-          .filter(Boolean);
 
         if (isMounted) {
-          setData(ordered);
-        }
-
-        // Fetch other block types by their blockId using the meta response
-        const findBlockId = (t) => {
-          const entry = meta.find((m) => m.type === t);
-          return entry ? entry.blockId || entry.id : null;
-        };
-
-        const partyMetaId = findBlockId("parties");
-        const scheduleMetaId = findBlockId("calender");
-        const signatureMetaId = findBlockId("signature");
-        const pdfMetaId = findBlockId("pdf");
-        const videoMetaId = findBlockId("video");
-        const attachmentMetaId = findBlockId("link");
-        const textMetaId = findBlockId("text");
-        console.log("Text block meta ID:", textMetaId);
-
-        // console.log("secheduleMetaId", scheduleMetaId);
-
-        const requests = [];
-        if (partyMetaId) {
-          requests.push(
-            axios
-              .get(`${API_BASE}/parties/block/${partyMetaId}`)
-              .then(
-                (r) => r.data?.success && isMounted && setParty(r.data.data)
-              )
-              .catch(() => {})
-          );
-        }
-        if (scheduleMetaId) {
-          requests.push(
-            axios
-              .get(`${API_BASE}/schedules/sign/${scheduleMetaId}`)
-              .then((r) => {
-                // console.log("✅ Schedule API response:", r.data); // ← log full response
-                if (r.data?.success && isMounted) {
-                  const firstItem = Array.isArray(r.data.data)
-                    ? r.data.data[0]
-                    : r.data.data;
-                  setSchedule(firstItem);
-                }
-              })
-              .catch((err) => {
-                console.error("❌ Error fetching schedule:", err.message); // optional
-              })
-          );
-        }
-        if (signatureMetaId) {
-          requests.push(
-            axios
-              .get(`${API_BASE}/signatures/sign/${signatureMetaId}`)
-              .then(
-                (r) => r.data?.success && isMounted && setSignature(r.data.data)
-              )
-              .catch(() => {})
-          );
-        }
-        if (pdfMetaId) {
-          requests.push(
-            axios
-              .get(`${API_BASE}/api/pdfblocks/${pdfMetaId}`)
-              .then((r) => isMounted && setPdf(r.data?.data))
-              .catch(() => {})
-          );
-        }
-        if (videoMetaId) {
-          requests.push(
-            axios
-              .get(`${API_BASE}/video/${videoMetaId}`)
-              .then((r) => isMounted && setVideo(r.data?.data))
-              .catch(() => {})
-          );
-        }
-        if (attachmentMetaId) {
-          requests.push(
-            axios
-              .get(`${API_BASE}/attachments/data/${attachmentMetaId}`)
-              .then(
-                (r) =>
-                  r.data?.success &&
-                  isMounted &&
-                  setAttachments(r.data.data || [])
-              )
-              .catch(() => {})
-          );
-        }
-        if (textMetaId) {
-          console.log("Fetching text block with ID:", textMetaId);
-          requests.push(
-            axios
-              .get(`${API_BASE}/text/${textMetaId}/${parentIdFromQuery}`)
-              .then((r) => {
-                console.log("Text API response:", r.data);
-                if (r.data?.success && isMounted) {
-                  setText(r.data.data);
-                }
-              })
-              .catch((err) => {
-                console.error("Error fetching text:", err);
-              })
-          );
-        }
-
-        if (requests.length) {
-          await Promise.allSettled(requests);
-        }
-
-        if (isMounted) {
+          setBlocks(blocksWithData);
           setStatus({ loading: false, error: null });
         }
       } catch (e) {
@@ -1150,8 +1119,54 @@ export default function ProposalViewer() {
 
   if (status.loading) {
     return (
-      <div style={{ padding: 24, fontFamily: "Inter, Arial, sans-serif" }}>
-        Loading document…
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          minHeight: "70vh",
+          fontFamily: "Inter, Arial, sans-serif",
+          background: "#f5f7fa",
+        }}
+      >
+        <div
+          style={{
+            textAlign: "center",
+            padding: "40px",
+            backgroundColor: "white",
+            borderRadius: "12px",
+            boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
+            maxWidth: "500px",
+            width: "100%",
+          }}
+        >
+          <div
+            style={{
+              display: "inline-block",
+              width: "50px",
+              height: "50px",
+              border: "3px solid #f3f3f3",
+              borderTop: "3px solid #3498db",
+              borderRadius: "50%",
+              animation: "spin 1s linear infinite",
+              marginBottom: "20px",
+            }}
+          ></div>
+          <h3 style={{ margin: "0 0 10px 0", color: "#2c3e50" }}>
+            Loading Proposal
+          </h3>
+          <p style={{ margin: 0, color: "#7f8c8d" }}>
+            We're preparing your document, please wait...
+          </p>
+          <style>
+            {`
+            @keyframes spin {
+              0% { transform: rotate(0deg); }
+              100% { transform: rotate(360deg); }
+            }
+          `}
+          </style>
+        </div>
       </div>
     );
   }
@@ -1160,20 +1175,159 @@ export default function ProposalViewer() {
     return (
       <div
         style={{
-          padding: 24,
-          color: "crimson",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          minHeight: "70vh",
           fontFamily: "Inter, Arial, sans-serif",
+          background: "#f5f7fa",
         }}
       >
-        Failed to load: {status.error}
+        <div
+          style={{
+            textAlign: "center",
+            padding: "40px",
+            backgroundColor: "white",
+            borderRadius: "12px",
+            boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
+            maxWidth: "500px",
+            width: "100%",
+          }}
+        >
+          <div
+            style={{
+              width: "60px",
+              height: "60px",
+              borderRadius: "50%",
+              backgroundColor: "#ffebee",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              margin: "0 auto 20px",
+              fontSize: "30px",
+              color: "#f44336",
+            }}
+          >
+            ⚠️
+          </div>
+          <h3 style={{ margin: "0 0 10px 0", color: "#2c3e50" }}>
+            Failed to Load Document
+          </h3>
+          <p
+            style={{
+              margin: "0 0 20px 0",
+              color: "#7f8c8d",
+              padding: "10px",
+              backgroundColor: "#fff5f5",
+              borderRadius: "6px",
+              fontSize: "14px",
+            }}
+          >
+            {status.error}
+          </p>
+          <button
+            onClick={() => window.location.reload()}
+            style={{
+              padding: "10px 20px",
+              backgroundColor: "#3498db",
+              color: "white",
+              border: "none",
+              borderRadius: "6px",
+              cursor: "pointer",
+              fontSize: "14px",
+              fontWeight: "500",
+            }}
+          >
+            Try Again
+          </button>
+        </div>
       </div>
     );
   }
 
-  if (!data || data.length === 0) {
+  if (!blocks || blocks.length === 0) {
     return (
-      <div style={{ padding: 24, fontFamily: "Inter, Arial, sans-serif" }}>
-        No proposal data found.
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          minHeight: "70vh",
+          fontFamily: "Inter, Arial, sans-serif",
+          background: "#f5f7fa",
+        }}
+      >
+        <div
+          style={{
+            textAlign: "center",
+            padding: "40px",
+            backgroundColor: "white",
+            borderRadius: "12px",
+            boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
+            maxWidth: "500px",
+            width: "100%",
+          }}
+        >
+          <div
+            style={{
+              width: "80px",
+              height: "80px",
+              margin: "0 auto 20px",
+              opacity: "0.7",
+            }}
+          >
+            <svg
+              viewBox="0 0 24 24"
+              width="80"
+              height="80"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z"
+                stroke="#bdc3c7"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              <path
+                d="M14 2V8H20"
+                stroke="#bdc3c7"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              <path
+                d="M16 13H8"
+                stroke="#bdc3c7"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              <path
+                d="M16 17H8"
+                stroke="#bdc3c7"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              <path
+                d="M10 9H9H8"
+                stroke="#bdc3c7"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </div>
+          <h3 style={{ margin: "0 0 10px 0", color: "#2c3e50" }}>
+            No Proposal Found
+          </h3>
+          <p style={{ margin: 0, color: "#7f8c8d" }}>
+            The document you're looking for doesn't exist or hasn't been created
+            yet.
+          </p>
+        </div>
       </div>
     );
   }
@@ -1199,37 +1353,90 @@ export default function ProposalViewer() {
           flexDirection: "column",
         }}
       >
-        {/* 🔹 Render all proposals */}
-        {data.map((proposal) => (
-          <div
-            key={proposal.id}
-            style={{
-              backgroundColor: "#fff",
-              borderRadius: "0",
-              overflow: "hidden",
-              boxShadow: "none",
-            }}
-          >
-            <ProposalLayout proposal={proposal} />
-          </div>
-        ))}
+        {/* Render all blocks in the correct order */}
+        {blocks.map((block) => {
+          const { type, data, blockId } = block;
 
-        {/* 🔹 Shared blocks should be rendered ONCE */}
-        <PartiesView parties={party} />
-        <ScheduleView schedule={schedule} name={proposalName} />
-        <SignatureView
-          Signature={signature}
-          signatureId={signature?.blockId}
-          user={user}
-        />
-        <TextView
-          blockId={text?.blockId || text?.id}
-          title={text?.title}
-          content={text?.content}
-        />
-        {pdf && <PdfView fileUrl={`${API_BASE}${pdf.pdf}`} />}
-        {video && <VideoView videoUrl={video.video} />}
-        {attachments.length > 0 && <AttachmentView attachments={attachments} />}
+          switch (type) {
+            case "header-1":
+            case "header-2":
+            case "header-3":
+            case "header-4":
+            case "header-5":
+              return (
+                <div
+                  key={blockId || block.id}
+                  style={{
+                    backgroundColor: "#fff",
+                    borderRadius: "0",
+                    overflow: "hidden",
+                    boxShadow: "none",
+                  }}
+                >
+                  <ProposalLayout proposal={data} />
+                </div>
+              );
+
+            case "parties":
+              return <PartiesView key={blockId || block.id} parties={data} />;
+
+            case "calender":
+              return (
+                <ScheduleView
+                  key={blockId || block.id}
+                  schedule={data}
+                  name={proposalName}
+                />
+              );
+
+            case "signature":
+              return (
+                <SignatureView
+                  key={blockId || block.id}
+                  Signature={data}
+                  signatureId={data?.blockId}
+                  user={user}
+                />
+              );
+
+            case "text":
+              return (
+                <TextView
+                  key={blockId || block.id}
+                  blockId={data?.blockId || data?.id}
+                  title={data?.title}
+                  content={data?.content}
+                />
+              );
+
+            case "terms":
+              return <TermsView key={blockId || block.id} terms={data} />;
+
+            case "pdf":
+              return data ? (
+                <PdfView
+                  key={blockId || block.id}
+                  fileUrl={`${API_BASE}${data.pdf}`}
+                />
+              ) : null;
+
+            case "video":
+              return data ? (
+                <VideoView key={blockId || block.id} videoUrl={data.video} />
+              ) : null;
+
+            case "link":
+              return data ? (
+                <AttachmentView
+                  key={blockId || block.id}
+                  attachments={Array.isArray(data) ? data : [data]}
+                />
+              ) : null;
+
+            default:
+              return null;
+          }
+        })}
       </div>
     </div>
   );
