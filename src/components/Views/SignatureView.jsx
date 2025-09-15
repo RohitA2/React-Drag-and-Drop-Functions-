@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import SignatureCanvas from "react-signature-canvas";
 import {
   Modal,
@@ -7,108 +7,208 @@ import {
   ToggleButtonGroup,
   ToggleButton,
   Alert,
+  Spinner,
 } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
 import axios from "axios";
 const API_URL = import.meta.env.VITE_API_URL;
+import { toast } from "react-toastify";
 
-const SignatureView = ({ Signature, user, signatureId }) => {
+const SignatureView = ({ user, signatureId, parentId, recipient }) => {
   const sigCanvas = useRef();
   const [showSignModal, setShowSignModal] = useState(false);
   const [showDeclineModal, setShowDeclineModal] = useState(false);
   const [signMethod, setSignMethod] = useState("type");
   const [typedName, setTypedName] = useState("");
   const [comment, setComment] = useState("");
-  const [status, setStatus] = useState("pending"); // "pending" | "approved" | "declined"
-  const [loading, setLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [signatureData, setSignatureData] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const fullName = user?.firstName + " " + user?.lastName;
-  // Handlers
+  const fullName = `${user?.firstName || ""} ${user?.lastName || ""}`.trim();
+
+  console.log("recipient", recipient);
+
+  // ✅ Fetch signature status from backend
+  useEffect(() => {
+    const fetchSignature = async () => {
+      try {
+        const res = await axios.get(`${API_URL}/signatures/${signatureId}`);
+        const sig = res.data?.data;
+
+        if (sig) {
+          setSignatureData(sig);
+        }
+      } catch (err) {
+        console.error("❌ Fetch signature error:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (signatureId) {
+      fetchSignature();
+    } else {
+      setIsLoading(false);
+    }
+  }, [signatureId]);
+
+  // Clear canvas
   const clearSignature = () => {
     if (sigCanvas.current) sigCanvas.current.clear();
   };
 
+  // ✅ Accept handler
   const handleAccept = async () => {
-    if (signMethod === "draw" && sigCanvas.current.isEmpty()) {
-      alert("Please draw your signature first.");
-      return;
-    }
-    if (signMethod === "type" && !typedName.trim()) {
-      alert("Please type your name.");
+    if (signatureData?.status === true) {
+      toast.error("You have already responded to this document.");
       return;
     }
 
-    const signatureData =
+    if (signMethod === "draw" && sigCanvas.current.isEmpty()) {
+      toast.error("Please provide a signature first.");
+      return;
+    }
+    if (signMethod === "type" && !typedName.trim()) {
+      toast.error("Please type your name first.");
+      return;
+    }
+
+    const signatureValue =
       signMethod === "draw"
         ? sigCanvas.current.getCanvas().toDataURL("image/png")
         : typedName;
 
     try {
-      setLoading(true);
-
-      await axios.put(`${API_URL}/signatures/${signatureId}`, {
+      setIsSubmitting(true);
+      const response = await axios.put(`${API_URL}/signatures/${signatureId}`, {
         method: signMethod,
-        signature: signatureData,
+        signature: signatureValue,
+        status: true,
+        user_id: user.id,
+        parent_id: parentId,
+        recipient_id: recipient.recipientId,
+        recipient_name: recipient.recipientName,
+        recipient_email: recipient.recipientEmail,
       });
 
-      setStatus("approved");
+      // Update local state with the response data
+      setSignatureData(
+        response.data?.data || {
+          method: signMethod,
+          signature: signatureValue,
+          status: true,
+        }
+      );
+
       setShowSignModal(false);
+      toast.success("Document signed successfully!");
     } catch (err) {
       console.error("❌ Sign API error:", err);
-      alert("Failed to sign document. Try again.");
+      toast.error(err.response?.data?.error || "Failed to sign document.");
     } finally {
-      setLoading(false);
+      setIsSubmitting(false);
     }
   };
 
+  // ✅ Decline handler
   const handleDeclineConfirm = async () => {
-    try {
-      setLoading(true);
+    if (signatureData?.status === true) {
+      toast.error("You have already responded to this document.");
+      return;
+    }
 
-      await axios.put(`${API_URL}/signatures/${signatureId}`, {
+    try {
+      setIsSubmitting(true);
+      const response = await axios.put(`${API_URL}/signatures/${signatureId}`, {
         method: "decline",
-        status: "false",
         comment,
+        status: true, // Set status to true for declined as well
+        user_id: user.id,
+        parent_id: parentId,
+        recipient_id: recipient.recipientId,
+        recipient_name: recipient.recipientName,
+        recipient_email: recipient.recipientEmail,
       });
 
-      setStatus("declined");
+      // Update local state with the response data
+      setSignatureData(
+        response.data?.data || {
+          method: "decline",
+          comment,
+          status: true,
+        }
+      );
+
       setShowDeclineModal(false);
       setComment("");
+      toast.info("You declined the document.");
     } catch (err) {
       console.error("❌ Decline API error:", err);
-      alert("Failed to decline document. Try again.");
+      toast.error(err.response?.data?.error || "Failed to decline document.");
     } finally {
-      setLoading(false);
+      setIsSubmitting(false);
     }
   };
+
+  // Show buttons if signature hasn't been processed yet (status is not true)
+  const showActionButtons = !signatureData || signatureData.status !== true;
 
   return (
     <div className="position-relative bg-white shadow-sm p-0">
-      {/* ✅ Messages */}
-      {status === "approved" && (
-        <Alert
-          variant="success"
-          className="text-center mx-auto mt-3 shadow-sm"
-          style={{ maxWidth: "600px" }}
-        >
-          <strong>The document is approved!</strong>
-          <div>We have informed {fullName} the document is approved.</div>
-        </Alert>
-      )}
-      {status === "declined" && (
-        <Alert
-          variant="danger"
-          className="text-center mx-auto mt-3 shadow-sm"
-          style={{ maxWidth: "600px" }}
-        >
-          <strong>The document has been declined.</strong>
-          <div>{fullName} has been notified.</div>
-          {/* <div>{comment ? `Reason: ${comment}` : "No comment provided."}</div> */}
-        </Alert>
+      {/* --- Loading State --- */}
+      {isLoading && (
+        <div className="text-center my-3">
+          <Spinner animation="border" size="sm" /> Loading signature status...
+        </div>
       )}
 
-      {/* Top action buttons (only show if pending) */}
-      {status === "pending" && (
+      {/* --- Approved State (status is true and method is not decline) --- */}
+      {signatureData?.status === true &&
+        signatureData?.method !== "decline" && (
+          <Alert
+            variant="success"
+            className="text-center mx-auto mt-3 shadow-sm"
+            style={{ maxWidth: "600px" }}
+          >
+            <strong>The document is approved!</strong>
+            <div>{fullName} has signed this document.</div>
+            {signatureData.method === "draw" ? (
+              <div className="mt-2">
+                <img
+                  src={signatureData.signature}
+                  alt="Signature"
+                  style={{ maxWidth: "200px", maxHeight: "80px" }}
+                />
+              </div>
+            ) : (
+              <div className="mt-2 fw-bold fs-5 text-dark">
+                {signatureData.signature}
+              </div>
+            )}
+          </Alert>
+        )}
+
+      {/* --- Declined State (status is true and method is decline) --- */}
+      {signatureData?.status === true &&
+        signatureData?.method === "decline" && (
+          <Alert
+            variant="danger"
+            className="text-center mx-auto mt-3 shadow-sm"
+            style={{ maxWidth: "600px" }}
+          >
+            <strong>The document has been declined.</strong>
+            <div>{fullName} has declined this document.</div>
+            {signatureData.comment && (
+              <div className="mt-2">
+                <strong>Comment:</strong> {signatureData.comment}
+              </div>
+            )}
+          </Alert>
+        )}
+
+      {/* --- Show buttons when signature hasn't been processed (status is not true) --- */}
+      {showActionButtons && (
         <div className="d-flex justify-content-center gap-3 border-bottom p-3 bg-white">
           <button
             className="btn btn-outline-secondary"
@@ -116,7 +216,6 @@ const SignatureView = ({ Signature, user, signatureId }) => {
           >
             Decline
           </button>
-
           <button
             className="btn px-4 text-white"
             style={{
@@ -217,8 +316,9 @@ const SignatureView = ({ Signature, user, signatureId }) => {
           <Button
             style={{ backgroundColor: "#2CC01B", borderColor: "#2CC01B" }}
             onClick={handleAccept}
+            disabled={isSubmitting}
           >
-            Sign & Accept
+            {isSubmitting ? "Signing..." : "Sign & Accept"}
           </Button>
         </Modal.Footer>
       </Modal>
@@ -254,31 +354,19 @@ const SignatureView = ({ Signature, user, signatureId }) => {
           <Button
             style={{ backgroundColor: "#333", borderColor: "#333" }}
             onClick={handleDeclineConfirm}
+            disabled={isSubmitting}
           >
-            Decline
+            {isSubmitting ? "Declining..." : "Decline"}
           </Button>
         </Modal.Footer>
       </Modal>
 
       <style>{`
-      .modal-title {
-      font-weight: 600;
-      font-size: 1.25rem;
-    }
-
-      button {
-        transition: all 0.3s ease;
-      }
-
-    button:hover {
-      opacity: 0.9;
-    }
-      .toggle-group-modern {
-        display: inline-flex;
-        gap: 0.75rem;
-      }
-
-`}</style>
+        .modal-title { font-weight: 600; font-size: 1.25rem; }
+        button { transition: all 0.3s ease; }
+        button:hover { opacity: 0.9; }
+        .toggle-group-modern { display: inline-flex; gap: 0.75rem; }
+      `}</style>
     </div>
   );
 };

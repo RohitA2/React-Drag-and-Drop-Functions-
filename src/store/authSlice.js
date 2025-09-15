@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import { toast } from "react-toastify";
 import axios from "axios";
-
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -13,14 +13,16 @@ export const loginUser = createAsyncThunk(
         email,
         password,
       });
-
+      toast.success("Login successful.");
       return {
         token: data.token,
         user: data.user,
       };
     } catch (err) {
       return rejectWithValue(
-        err.response?.data?.message || "Login failed. Please try again."
+        toast.error(
+          err.response?.data?.message || "Login failed. Please try again."
+        )
       );
     }
   }
@@ -29,13 +31,22 @@ export const loginUser = createAsyncThunk(
 // 🔹 Update User Profile Thunk
 export const updateUserProfile = createAsyncThunk(
   "auth/updateProfile",
-  async (userData, { rejectWithValue }) => {
+  async (userData, { rejectWithValue, getState }) => {
     try {
-      const { data } = await axios.put(
-        `${API_URL}/api/users/${userData.id}`,
-        userData
+      const token = getState().auth.token || localStorage.getItem("token"); // fallback
+
+      const { data } = await axios.post(
+        `${API_URL}/api/auth/updateProfile`,
+        userData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
-      return data.user; // backend should return updated user object
+
+      toast.success("Profile updated successfully.");
+      return data.user;
     } catch (err) {
       return rejectWithValue(
         err.response?.data?.message || "Profile update failed."
@@ -135,14 +146,15 @@ export const selectSuccess = (state) => state.auth.success;
 
 // 🔹 Additional Selectors
 export const selectUserFullName = (state) =>
-  state.auth.user ? `${state.auth.user.firstName} ${state.auth.user.lastName}` : "";
+  state.auth.user
+    ? `${state.auth.user.firstName} ${state.auth.user.lastName}`
+    : "";
 
 export const selectUserEmail = (state) =>
   state.auth.user ? state.auth.user.email : "";
 
 export const selectedUserId = (state) =>
   state.auth.user ? state.auth.user.id : "";
-
 
 export const { logout, clearAuthMessages } = authSlice.actions;
 export default authSlice.reducer;

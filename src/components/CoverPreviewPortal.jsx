@@ -17,41 +17,75 @@ const previewBlocks = [
 const CoverPreviewPortal = ({ position, onSelect, onClose }) => {
   if (!position) return null;
 
+  // Stick preview to the very top (below header) and to the right of the sidebar
+  const headerOffset = 56; // header height
+  const sidebarWidth = 270;
+  const gutter = 12;
+  const leftOffset = sidebarWidth + gutter;
+
   return ReactDOM.createPortal(
     <div
-      className="bg-white rounded-md shadow-sm p-0 absolute flex flex-col"
+      className=" p-0 position-fixed d-flex flex-column border border-gray-200 rounded-md shadow-sm"
       style={{
-        top: position.top,
-        left: position.left,
-        zIndex: 9999,
-        width: "300px",
-        maxHeight: `min(620px, calc(100vh - ${position.top}px - 20px))`,
+        top: headerOffset,
+        left: leftOffset,
+        zIndex: 1050,
+        width: "200px",
+        height: `calc(100vh - ${headerOffset + 12}px)`,
+        borderRadius: "5px",
+        maxHeight: `calc(100vh - ${headerOffset + 12}px)`,
+        overflow: "hidden",
+        backgroundColor: "white",
       }}
       onMouseEnter={() => clearTimeout(window.__hoverTimeout)}
       onMouseLeave={onClose}
     >
-      <div 
-        className="overflow-y-auto thin-scrollbar pr-1 flex-grow"
-        style={{ 
-          maxHeight: "600px",
-          scrollBehavior: "smooth"
+      <div
+        className="flex-grow-1"
+        style={{
+          overflow: "auto",
+          scrollBehavior: "smooth",
+          msOverflowStyle: "none",
+          scrollbarWidth: "none",
         }}
       >
-        <div className="space-y-1"> {/* Changed from space-y-3 to space-y-1 */}
+        <div className="space-y-2">
           {previewBlocks.map(({ id, component: Component }) => (
             <div
               key={id}
-              className="rounded-lg overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
+              className=" overflow-hidden cursor-pointer bg-gray-50"
               onClick={() => {
                 onSelect(id);
                 onClose();
               }}
+              style={{
+                marginTop: "-40px",
+                padding: "40px",
+                height: "180px",
+                marginRight: "10px",
+                marginLeft: "-32px",
+              }}
             >
-              <Component isPreview />
+              {/* Scale down preview */}
+              <div
+                style={{
+                  transform: "scale(0.3)",
+                  transformOrigin: "top left",
+                  width: "500%",
+                  height: "200%",
+                }}
+              >
+                <Component isPreview />
+              </div>
             </div>
           ))}
         </div>
       </div>
+      <style>{`
+        .flex-grow-1::-webkit-scrollbar {
+          display: none;
+        }
+      `}</style>
     </div>,
     document.body
   );

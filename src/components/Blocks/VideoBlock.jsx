@@ -4,7 +4,7 @@ import { createVideoBlock } from "../../store/videoBlockSlice";
 import { selectedUserId } from "../../store/authSlice";
 import "bootstrap/dist/css/bootstrap.min.css";
 
-const VideoBlock = ({ blockId }) => {
+const VideoBlock = ({ blockId ,parentId}) => {
   const user_id = useSelector(selectedUserId);
   const [videoLink, setVideoLink] = useState("");
   const [embedUrl, setEmbedUrl] = useState("");
@@ -27,6 +27,7 @@ const VideoBlock = ({ blockId }) => {
           blockId: blockId,
           link: trimmedLink,
           user_id: user_id,
+          parentId: parentId
         })
       );
     } else {

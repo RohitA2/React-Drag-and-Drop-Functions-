@@ -58,7 +58,7 @@ export default function Dashboard() {
             <Nav.Item>
               <Nav.Link
                 as={Link}
-                to="/dashboard"
+                to="/"
                 className="px-4 rounded-pill fw-semibold text-dark"
                 activeclassname="active"
               >

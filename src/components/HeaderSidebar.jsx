@@ -11,13 +11,11 @@ import {
   selectedUserId,
 } from "../store/authSlice";
 import { selectHeaderIds } from "../store/headerSlice";
-import { selectLastUploadedPdfId } from "../store/pdfSlice";
 import {
-  selectLastAttachmentIds,
   selectLastBlockId,
+  selectLastAttachmentIds,
 } from "../store/attachmentSlice";
 
-const FRONT_API_URL = import.meta.env.FRONT_API_URL;
 const API_URL = import.meta.env.VITE_API_URL;
 
 const HeaderSidebar = ({
@@ -30,18 +28,6 @@ const HeaderSidebar = ({
 }) => {
   const { toParties, fromParty, partyId } = useSelector((state) => state.party);
   const signatures = useSelector((state) => state.signatures.items);
-  const scheduleId = useSelector((state) => state.schedule.scheduleId);
-  const lastVideoBlockId = useSelector(
-    (state) => state.videoBlocks.lastCreatedId
-  );
-
-  console.log("lastVideoBlockId", lastVideoBlockId);
-
-  console.log("scheduleId", scheduleId);
-  const pdfId = localStorage.getItem("lastUploadedPdfId");
-  console.log("PDF ID from localStorage:", pdfId);
-
-  // console.log("signatures", signatures[0]?.id);
 
   const fullName = useSelector(selectUserFullName);
   const email = useSelector(selectUserEmail);
@@ -51,41 +37,122 @@ const HeaderSidebar = ({
   const lastIds = useSelector(selectLastAttachmentIds);
   const blockId = useSelector(selectLastBlockId);
 
-  // console.log("headerIds:", headerIds);
-  const [name, setName] = useState("Sales Proposal");
+  const [name, setName] = useState("Proposal");
   const [showModal, setShowModal] = useState(false);
   const [expirationDate, setExpirationDate] = useState("");
   const [recipients, setRecipients] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredRecipients, setFilteredRecipients] = useState([]);
-  const [selectedRecipient, setSelectedRecipient] = useState(null);
+  const [selectedRecipients, setSelectedRecipients] = useState([]);
+  const [isSending, setIsSending] = useState(false);
 
-  // Send document handler
+  // Auto-select parties
+  useEffect(() => {
+    if (fromParty?.name) {
+      setName(fromParty.documentName || "Sales Proposal");
+    }
+
+    if (toParties && toParties.length > 0) {
+      setSelectedRecipients(toParties);
+    }
+  }, [fromParty, toParties, partyId]);
+
+  // Fetch recipients for search/add
+  useEffect(() => {
+    if (!userId) return;
+
+    const fetchRecipients = async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/recipients?user_id=${userId}`);
+        const data = await res.json();
+        if (data.success === false) {
+          setRecipients([]);
+        } else {
+          setRecipients(Array.isArray(data.data) ? data.data : data);
+        }
+      } catch (err) {
+        console.error("Error fetching recipients:", err);
+        setRecipients([]);
+      }
+    };
+
+    fetchRecipients();
+  }, [userId]);
+
+  // Search filter
+  useEffect(() => {
+    if (!searchTerm) {
+      setFilteredRecipients([]);
+      return;
+    }
+    const filtered = recipients.filter((r) =>
+      r.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    setFilteredRecipients(filtered);
+  }, [searchTerm, recipients]);
+
+  // Toggle recipient selection
+  const toggleRecipientSelection = (recipient) => {
+    setSelectedRecipients((prev) => {
+      const isSelected = prev.some((r) => r.id === recipient.id);
+      if (isSelected) {
+        return prev.filter((r) => r.id !== recipient.id);
+      } else {
+        return [...prev, recipient];
+      }
+    });
+    setSearchTerm("");
+    setFilteredRecipients([]);
+  };
+
+  // Remove recipient
+  const removeRecipient = (recipientId) => {
+    setSelectedRecipients((prev) => prev.filter((r) => r.id !== recipientId));
+  };
+
+  // Send document
   const handleSendDocument = async () => {
-    if (!selectedRecipient) {
-      toast.error("Please select a recipient.");
+    if (selectedRecipients.length === 0) {
+      toast.error("Please select at least one recipient.");
       return;
     }
 
-    // Build document link with parentId only
     const canvasParentId = localStorage.getItem("parentId");
     if (!canvasParentId) {
       toast.error("Missing document parent. Add a block to create it first.");
       return;
     }
+
+    setIsSending(true);
+
+    // Get the first header ID (assuming we want to use the first one)
+    const headerId = headerIds.length > 0 ? headerIds[0] : null;
+
+    // if (!headerId) {
+    //   toast.error(
+    //     "No document header found. Please add content to your document."
+    //   );
+    //   setIsSending(false);
+    //   return;
+    // }
+
     const origin = window.location?.origin || "http://localhost:5173";
     const documentLink = `${origin}/proposal?parentId=${canvasParentId}`;
 
     const payload = {
-      headerIds,
+      parentId: canvasParentId,
+      headerId,
       userId,
       name,
-      from: { fullName, email },
-      to: {
-        id: selectedRecipient.id,
-        name: selectedRecipient.name,
-        email: selectedRecipient.email,
+      from: {
+        fullName: fromParty?.name || fullName,
+        email: fromParty?.email || email,
       },
+      to: selectedRecipients.map((r) => ({
+        id: r.id,
+        name: r.name,
+        email: r.email,
+      })),
       expirationDate,
       link: documentLink,
     };
@@ -98,21 +165,23 @@ const HeaderSidebar = ({
       });
 
       const data = await res.json();
-      if (res.ok) {
-        toast.success("Document sent successfully!");
-        console.log("Mail API response:", data);
-        onClose();
-      } else {
+      if (!res.ok) {
         console.error("Failed to send document:", data);
-        toast.error("Failed to send document.");
+        toast.error(data.error || "Failed to send document");
+      } else {
+        toast.success(
+          `Document sent to ${selectedRecipients.length} recipient(s)!`
+        );
+        onClose();
       }
     } catch (err) {
       console.error("Error sending document:", err);
-      toast.error("Failed to send document.");
+      toast.error("Failed to send document");
+    } finally {
+      setIsSending(false);
     }
   };
 
-  // Signature-block button handler
   const handleAddSignatureBlock = () => {
     if (onAddBlock) {
       const newBlock = {
@@ -131,43 +200,8 @@ const HeaderSidebar = ({
   };
 
   const handleSave = () => {
-    // Save logic here
     onClose();
   };
-
-  useEffect(() => {
-    if (!userId) return;
-
-    const fetchRecipients = async () => {
-      try {
-        const res = await fetch(`${API_URL}/api/recipients?user_id=${userId}`);
-        const data = await res.json();
-
-        if (data.success === false) {
-          setRecipients([]);
-        } else {
-          setRecipients(Array.isArray(data.data) ? data.data : data);
-        }
-      } catch (err) {
-        console.error("Error fetching recipients:", err);
-        setRecipients([]);
-      }
-    };
-
-    fetchRecipients();
-  }, [userId]);
-
-  // Filter recipients based on search term
-  useEffect(() => {
-    if (!searchTerm) {
-      setFilteredRecipients([]);
-      return;
-    }
-    const filtered = recipients.filter((r) =>
-      r.name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-    setFilteredRecipients(filtered);
-  }, [searchTerm, recipients]);
 
   return (
     <>
@@ -198,7 +232,7 @@ const HeaderSidebar = ({
       >
         {/* Header */}
         <div className="d-flex justify-content-between align-items-center p-1 border-bottom bg-light">
-          <h5 className="m-1  text-black fs-8 fw-semibold small-text1">
+          <h5 className="m-1 text-black fs-8 fw-semibold small-text1">
             Send Document
           </h5>
           <button
@@ -218,7 +252,7 @@ const HeaderSidebar = ({
           <div className="mb-4">
             {/* Document Name */}
             <div className="mb-4">
-              <label className="form-label text-muted fw-semibold mb-1 d-block rounded p-2 small-text2 ">
+              <label className="form-label text-muted fw-semibold mb-1 d-block rounded p-2 small-text2">
                 Document name
               </label>
               <input
@@ -232,40 +266,73 @@ const HeaderSidebar = ({
               />
             </div>
 
-            {/* From Section */}
+            {/* From */}
             <div className="mb-4">
-              <label className="mb-1 form-label text-muted small-text fw-semibold mb-1 sm small-text1">
+              <label className="mb-1 form-label text-muted small-text fw-semibold small-text1">
                 From
               </label>
-              <div className="border rounded p-1 d-flex justify-content-between align-items-center">
-                <div>
-                  <p className="m-1  text-black fs-8  small-text1">
-                    {fullName}
-                  </p>
-                  <p className="m-1  text-black fs-8 small-text1">
-                    Sender. Needs to sign
-                  </p>
-                </div>
+              <div className="border rounded p-1">
+                <p className="m-1 text-black small-text1">
+                  {fromParty?.name || fullName}
+                </p>
+                <p className="m-1 text-black small-text1">
+                  {fromParty?.email || email}
+                </p>
               </div>
             </div>
 
-            {/* To Section */}
+            {/* To */}
             <div className="mb-4">
-              <p className="form-label text-muted small-text fw-semibold mb-1 sm small-text1">
+              <p className="form-label text-muted small-text fw-semibold small-text1">
                 To:
               </p>
 
-              <div className="border rounded p-2 d-flex justify-content-between align-items-center">
+              {/* Show selected recipients */}
+              {selectedRecipients.length > 0 && (
+                <div className="mb-2">
+                  {selectedRecipients.map((recipient) => (
+                    <div
+                      key={recipient.id}
+                      className="border rounded p-2 mb-2 d-flex align-items-center justify-content-between bg-light"
+                    >
+                      <div className="d-flex align-items-center">
+                        <input
+                          type="checkbox"
+                          className="form-check-input me-2"
+                          checked={true}
+                          readOnly
+                        />
+                        <div>
+                          <p className="m-0 fw-semibold small-text1">
+                            {recipient.name}
+                          </p>
+                          <p className="m-0 text-muted small-text3">
+                            {recipient.email}
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-link text-danger"
+                        onClick={() => removeRecipient(recipient.id)}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div className="border rounded p-2 d-flex justify-content-between align-items-center position-relative">
                 <div className="d-flex gap-2 w-100">
-                  {/* Add New Recipient Button */}
                   <button
-                    className="btn btn-primary btn-sm flex-grow- form-control justify-content-center align-items-center"
+                    className="btn btn-primary btn-sm flex-grow-0 form-control"
                     onClick={(e) => {
                       setShowModal(true);
                       e.currentTarget.blur();
                     }}
                   >
-                    <span className="mb-1 text-white fs-[10px] ">
+                    <span className="mb-1 text-white fs-[10px]">
                       + Add new recipient
                     </span>
                   </button>
@@ -274,76 +341,48 @@ const HeaderSidebar = ({
                     or
                   </p>
 
-                  {/* Existing recipient search */}
                   <input
                     type="text"
                     placeholder="Search an existing recipient"
                     className="form-control flex-grow-1"
-                    value={
-                      selectedRecipient ? selectedRecipient.name : searchTerm
-                    }
-                    onChange={(e) => {
-                      setSearchTerm(e.target.value);
-                      setSelectedRecipient(null);
-                    }}
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
                   />
-
-                  {/* Dropdown */}
-                  {filteredRecipients.length > 0 && !selectedRecipient && (
-                    <ul
-                      className="list-group position-absolute mt-1 w-100 shadow-sm"
-                      style={{ zIndex: 1060 }}
-                    >
-                      {filteredRecipients.map((r) => (
-                        <li
-                          key={r.id}
-                          className="list-group-item list-group-item-action small"
-                          onClick={() => {
-                            setSelectedRecipient(r);
-                            setSearchTerm("");
-                            setFilteredRecipients([]);
-                          }}
-                        >
-                          {r.name} - {r.email}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
                 </div>
+
+                {filteredRecipients.length > 0 && (
+                  <ul
+                    className="list-group position-absolute mt-1 w-100 shadow-sm"
+                    style={{ zIndex: 1060, top: "100%", left: 0 }}
+                  >
+                    {filteredRecipients.map((r) => (
+                      <li
+                        key={r.id}
+                        className="list-group-item list-group-item-action small"
+                        onClick={() => toggleRecipientSelection(r)}
+                        style={{ cursor: "pointer" }}
+                      >
+                        {r.name} - {r.email}
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
 
-              {/* Modal */}
               <CreateClientModal
                 show={showModal}
                 onHide={() => setShowModal(false)}
-                onCreated={(newRecipient) =>
-                  setRecipients((prev) => [...prev, newRecipient])
-                }
+                onCreated={(newRecipient) => {
+                  setRecipients((prev) => [...prev, newRecipient]);
+                  toggleRecipientSelection(newRecipient);
+                }}
               />
             </div>
 
             {/* Signature Block */}
             {!hasSignatureBlock && (
               <div className="border rounded p-3 mb-4 bg-danger bg-opacity-10 text-danger">
-                <div className="form-check d-flex align-items-center gap-2 mb-2">
-                  <input
-                    className="form-check-input"
-                    type="checkbox"
-                    id="signatureBlock"
-                    checked
-                    readOnly
-                  />
-                  <label
-                    className="form-check-label small font-weight-bold"
-                    htmlFor="signatureBlock"
-                  >
-                    Signature-block missing
-                  </label>
-                </div>
-                <p className="small mb-2">
-                  Add a Signature-block if you'd like for your recipient to
-                  sign.
-                </p>
+                <p className="small mb-2">Signature-block missing</p>
                 <button
                   className="btn btn-primary btn-sm"
                   onClick={handleAddSignatureBlock}
@@ -365,13 +404,6 @@ const HeaderSidebar = ({
                   onChange={(e) => setExpirationDate(e.target.value)}
                   className="form-control flex-grow-1"
                 />
-                <input
-                  type="text"
-                  placeholder="Send as"
-                  className="form-control flex-grow-1 bg-light"
-                  readOnly
-                  disabled
-                />
               </div>
             </div>
           </div>
@@ -381,21 +413,23 @@ const HeaderSidebar = ({
         <div className="position-absolute bottom-0 start-0 end-0 p-3 border-top bg-white">
           <div className="d-flex align-items-center gap-2">
             <button
-              className="btn btn-sm btn-light position-relative d-flex align-items-center justify-content-center"
+              className="btn btn-sm btn-light d-flex align-items-center justify-content-center"
               style={{ width: "32px", height: "32px" }}
               onClick={handleSave}
             >
               <Save size={16} />
             </button>
-
             <button
               className="btn btn-primary flex-grow-1 small-text1"
               onClick={handleSendDocument}
+              disabled={isSending || selectedRecipients.length === 0}
             >
-              Send document
+              {isSending
+                ? "Sending..."
+                : `Send document to ${selectedRecipients.length} recipient(s)`}
             </button>
           </div>
-          <div className="form-check m-0 d-flex align-items-center">
+          <div className="form-check m-0 d-flex align-items-center mt-2">
             <input
               className="form-check-input me-2"
               type="checkbox"
@@ -412,7 +446,8 @@ const HeaderSidebar = ({
 
         <style>{`
           .small-text1 {font-size: 0.9rem};
-          .small-text3 {font-size: 0.5rem};`}</style>
+          .small-text3 {font-size: 0.75rem};
+        `}</style>
       </div>
     </>
   );

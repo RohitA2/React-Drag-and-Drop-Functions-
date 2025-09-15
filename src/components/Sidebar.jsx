@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import HeaderPreviewPortal from "./HeaderPreviewPortal";
 import CoverPreviewPortal from "./CoverPreviewPortal";
+import PricingPreviewPortal from "./PricingPreviewPortal";
 
 const blockSections = [
   {
@@ -32,6 +33,7 @@ const Sidebar = () => {
   const [activeTab, setActiveTab] = useState("Block");
   const [previewPosition, setPreviewPosition] = useState(null);
   const [coverPreviewPosition, setCoverPreviewPosition] = useState(null);
+  const [pricingPreviewPosition, setPricingPreviewPosition] = useState(null);
 
   const handleDragStart = (e, blockType) => {
     e.dataTransfer.setData("blockType", blockType);
@@ -51,6 +53,13 @@ const Sidebar = () => {
   const closeCoverPreview = () => {
     window.__hoverTimeout = setTimeout(
       () => setCoverPreviewPosition(null),
+      200
+    );
+  };
+
+  const closePricingPreview = () => {
+    window.__hoverTimeout = setTimeout(
+      () => setPricingPreviewPosition(null),
       200
     );
   };
@@ -118,11 +127,17 @@ const Sidebar = () => {
                           top: rect.top,
                           left: rect.right + 10,
                         });
+                      } else if (block.type === "price") {
+                        setPricingPreviewPosition({
+                          top: rect.top,
+                          left: rect.right + 10,
+                        });
                       }
                     }}
                     onMouseLeave={() => {
                       if (block.type === "header") closePreview();
                       else if (block.type === "cover") closeCoverPreview();
+                      else if (block.type === "price") closePricingPreview();
                     }}
                     style={{
                       cursor: block.disabled ? "not-allowed" : "pointer",
@@ -160,6 +175,11 @@ const Sidebar = () => {
         position={coverPreviewPosition}
         onSelect={(type) => handleClick(type)}
         onClose={closeCoverPreview}
+      />
+      <PricingPreviewPortal
+        position={pricingPreviewPosition}
+        onSelect={(type) => handleClick(type)}
+        onClose={closePricingPreview}
       />
 
       {/* CSS */}
@@ -215,18 +235,14 @@ const Sidebar = () => {
         }
 
         .sidebar {
-          position: relative;
-          top: 0;
-          bottom: auto;
-          left: 0;
-          width: 100%;
-          max-width: none;
-          height: 100%;
+          width: 270px;
+          max-width: 270px;
           font-size: 0.85rem;
           border-right: 2px solid #dee2e6;
           background-color: #fff;
           border-radius: 6px;
           box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+          height: 100%;
         }
 
         .sidebar::-webkit-scrollbar {

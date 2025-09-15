@@ -6,18 +6,16 @@ import HeaderBar from "../Header";
 import BlockSettingsPanel from "../pages/dashboard/BlockSettingsPanel";
 import { v4 as uuidv4 } from "uuid";
 
-
 const API_URL = import.meta.env.VITE_API_URL;
 
 const TemplateBuilder = () => {
-  
   const [sidebarVisible, setSidebarVisible] = useState(true);
   const [blocks, setBlocks] = useState([]);
   const [activeBlock, setActiveBlock] = useState(null);
   const canvasRef = useRef(null);
 
   const handleAddBlock = useCallback((newBlock) => {
-    const blockId =uuidv4();
+    const blockId = uuidv4();
     setBlocks((prev) => [
       ...prev,
       {
@@ -105,16 +103,19 @@ const TemplateBuilder = () => {
       {/* Sidebar + Canvas */}
       <div className="d-flex flex-grow-1 overflow-hidden">
         {/* Sidebar */}
-        <div
-          className="h-100 bg-[#E8EAED] border-end shadow-sm thin-scrollbar"
-          style={{
-            width: sidebarVisible ? "20%" : "0",
-            transition: "width 0.3s ease",
-            overflow: "hidden",
-          }}
-        >
-          <Sidebar onAddBlock={handleAddBlock} />
-        </div>
+        {sidebarVisible && (
+          <div
+            className="h-100 bg-[#E8EAED] border-end shadow-sm thin-scrollbar"
+            style={{
+              width: "270px",
+              maxWidth: "270px",
+              transition: "width 0.3s ease",
+              overflow: "hidden",
+            }}
+          >
+            <Sidebar />
+          </div>
+        )}
 
         {/* Canvas */}
         <div className="flex-grow-1 overflow-auto p-0 bg-[#E8EAED] thin-scrollbar">

@@ -9,7 +9,7 @@ import scheduleReducer from "./scheduleSlice";
 import pdfReducer from "./pdfSlice";
 import videoBlockReducer from "./videoBlockSlice";
 import attachmentReducer from "./attachmentSlice";
-
+import pricingReducer from "./pricingSlice";
 
 export const store = configureStore({
   reducer: {
@@ -23,6 +23,7 @@ export const store = configureStore({
     pdfs: pdfReducer,
     videoBlocks: videoBlockReducer,
     attachments: attachmentReducer,
+    pricing: pricingReducer,
   },
 });
 

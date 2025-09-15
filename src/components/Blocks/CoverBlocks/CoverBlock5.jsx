@@ -1,8 +1,14 @@
 import { useState, useRef } from "react";
 import html2canvas from "html2canvas";
+import EditableQuill from "../HeaderBlocks/EditableQuill";
+
+const DEFAULT_HTML = `
+<h1>Process</h1>
+<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc posuere purus rhoncus pulvinar aliquam.</p>
+`;
 
 const CoverBlock = ({ isPreview = false }) => {
-  const [title, setTitle] = useState("Type something...");
+  const [content, setContent] = useState(DEFAULT_HTML);
   const coverRef = useRef(null);
 
   const exportAsImage = async () => {
@@ -19,11 +25,11 @@ const CoverBlock = ({ isPreview = false }) => {
 
   return (
     <div
-      className={`position-relative bg-white border rounded-4 shadow-sm p-4 mb-4 ${
+      className={`position-relative bg-white border shadow-sm p-4 ${
         isPreview ? "pointer-events-none" : ""
       }`}
       style={{
-        maxWidth: "1400px",
+        maxWidth: "1800px",
         width: "100%",
         minHeight: "400px",
         border: "1px solid #e3e6e8",
@@ -31,34 +37,62 @@ const CoverBlock = ({ isPreview = false }) => {
         transform: isPreview ? "scale(0.9)" : "none",
       }}
     >
-      {/* Cover Preview */}
       <div
         ref={coverRef}
-        className="position-relative rounded-4 overflow-hidden border border-2"
-        style={{ width: "100%", height: "400px" }}
+        className="position-relative overflow-hidden border border-0"
+        style={{
+          width: "100%",
+          minHeight: "650px",
+          padding: "48px 24px 240px 24px",
+        }}
       >
+        {/* Background image */}
         <img
-          src="images/cover/rose.jpg"
+          src="/images/cover/rose.jpg"
           alt="cover"
-          className="w-100 h-100 object-fit-cover"
-          style={{ objectPosition: "center" }}
+          className="position-absolute top-0 start-0 w-100 h-100"
+          style={{ objectFit: "cover", objectPosition: "center", zIndex: 0 }}
+        />
+        {/* Dark overlay for readability */}
+        <div
+          className="position-absolute top-0 start-0 w-100 h-100"
+          style={{ background: "rgba(0,0,0,0.25)", zIndex: 0 }}
         />
 
-        <div className="position-absolute top-50 start-50 translate-middle text-center px-3 w-100">
-          <input
-            type="text"
-            className="form-control border-0 bg-transparent text-center fw-bold"
-            placeholder="Type something..."
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            disabled={isPreview}
+        {/* Content card with EditableQuill */}
+        <div className="mx-auto position-relative" style={{ zIndex: 1, width: "72%", maxWidth: "980px" }}>
+          <div
+            className="rounded-3"
             style={{
-              fontSize: "3rem",
+              backgroundColor: "rgba(255,255,255,0.08)",
+              border: "1px solid rgba(255,255,255,0.12)",
+              padding: "18px 22px",
               color: "#ffffff",
-              textShadow: "2px 2px 5px rgba(0,0,0,0.6)",
+              backdropFilter: "blur(2px)",
             }}
-          />
+          >
+            <EditableQuill
+              id="cover5-content"
+              value={content}
+              onChange={setContent}
+              placeholder="Write heading and optional paragraph..."
+              isPreview={isPreview}
+              className="text-start"
+              style={{
+                color: "#ffffff",
+                textShadow: "1px 1px 3px rgba(0,0,0,0.5)",
+                fontSize: "1.1rem",
+                lineHeight: 1.5,
+              }}
+            />
+          </div>
         </div>
+
+        {/* Bottom white band */}
+        <div
+          className="position-absolute start-0 end-0"
+          style={{ bottom: 0, height: "220px", background: "#ffffff" }}
+        />
       </div>
     </div>
   );

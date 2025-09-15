@@ -8,12 +8,13 @@ const API_URL = import.meta.env.VITE_API_URL;
 // 🔹 Async thunk to create video block
 export const createVideoBlock = createAsyncThunk(
   "videoBlocks/create",
-  async ({ blockId, link, user_id }, { rejectWithValue }) => {
+  async ({ blockId, link, user_id, parentId }, { rejectWithValue }) => {
     try {
       const res = await axios.post(`${API_URL}/video/create`, {
         blockId,
         video: link,
         user_id,
+        parentId,
       });
       return res.data.data; // return {id, blockId, link, userId}
     } catch (err) {

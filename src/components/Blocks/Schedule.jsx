@@ -5,9 +5,10 @@ import { selectedUserId } from "../../store/authSlice";
 import { setScheduleId } from "../../store/scheduleSlice";
 import axios from "axios";
 import { CalendarClock, Clock, Calendar, CheckCircle } from "lucide-react";
+import { toast } from "react-toastify";
 const API_URL = import.meta.env.VITE_API_URL;
 
-const Schedule = ({blockId}) => {
+const Schedule = ({ blockId, parentId }) => {
   const dispatch = useDispatch();
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
@@ -18,7 +19,7 @@ const Schedule = ({blockId}) => {
 
   // get userId from Redux
   const userId = useSelector(selectedUserId);
-
+  console.log("parentId", parentId);
   // Combine date and time for display
   const dateTime = date && time ? `${date}T${time}` : "";
 
@@ -31,15 +32,18 @@ const Schedule = ({blockId}) => {
         date,
         time,
         userId, // send userId to backend
-        blockId
+        blockId,
+        parentId,
       });
       if (res.data.success) {
         // ✅ Save ID globally
         dispatch(setScheduleId(res.data.id));
+        toast.success("✅ Schedule saved successfully!");
       }
       setSaved(true);
     } catch (err) {
-      console.error("Error saving schedule:", err);
+      toast.error("❌ Failed to save schedule");
+      console.error("Error saving schedule:", err.message);
       setSaved(false);
     } finally {
       setLoading(false);
@@ -174,13 +178,6 @@ const Schedule = ({blockId}) => {
           >
             {loading ? "Saving..." : "Save Schedule"}
           </button>
-
-          {/* Success message */}
-          {saved && (
-            <p className="text-success mt-3 fw-bold">
-              ✅ Schedule saved successfully!
-            </p>
-          )}
         </div>
 
         <div className="mt-3">

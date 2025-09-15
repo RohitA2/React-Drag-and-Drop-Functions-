@@ -17,6 +17,8 @@ import CoverBlock4 from "../../Blocks/CoverBlocks/CoverBlock4";
 import CoverBlock5 from "../../Blocks/CoverBlocks/CoverBlock5";
 import Parties from "../../Blocks/PartiesBlock";
 import PricingAndServices from "../../Blocks/PricingAndServices";
+import PricingAndServices2 from "../../Blocks/PricingAndServices2";
+import PricingAndServices3 from "../../Blocks/PricingAndServices3";
 import HeaderBlock from "../../Blocks/HeaderBlocks/HeaderBlock";
 import HeaderBlock2 from "../../Blocks/HeaderBlocks/HeaderBlock2";
 import HeaderBlock3 from "../../Blocks/HeaderBlocks/HeaderBlock3";
@@ -40,13 +42,13 @@ const Canvas = forwardRef(
     ref
   ) => {
     const user_id = useSelector(selectedUserId);
-    const parentIdRef = useRef(localStorage.getItem("parentId") || null);
-    const [parentId, setParentId] = useState(parentIdRef.current);
+    const parentIdRef = useRef(null);
     const [isCreatingParent, setIsCreatingParent] = useState(false);
+    const [isParentReady, setIsParentReady] = useState(false);
 
     // Function to create a parent
     const createParent = useCallback(async () => {
-      if (isCreatingParent) return null;
+      if (isCreatingParent) return parentIdRef.current;
 
       setIsCreatingParent(true);
       try {
@@ -56,15 +58,14 @@ const Canvas = forwardRef(
           body: JSON.stringify({ user_id }),
         });
 
-        if (!res.ok) {
-          throw new Error(`HTTP error! status: ${res.status}`);
-        }
+        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
 
         const data = await res.json();
         if (data && data.id) {
+          // ✅ Use only the ref for consistency
           parentIdRef.current = data.id;
           localStorage.setItem("parentId", data.id);
-          setParentId(data.id);
+          setIsParentReady(true);
           return data.id;
         }
       } catch (error) {
@@ -75,19 +76,17 @@ const Canvas = forwardRef(
       return null;
     }, [user_id, isCreatingParent]);
 
-    // Function to verify if a parent exists
+    // Verify if a parent exists
     const verifyParentExists = useCallback(async (id) => {
       try {
-        const probe = await fetch(`${API_URL}/parents/${id}/block-ids`, {
-          method: "GET",
-        });
+        const probe = await fetch(`${API_URL}/parents/${id}/block-ids`, { method: "GET" });
         return probe.ok;
       } catch {
         return false;
       }
     }, []);
 
-    // Initialize parent on component mount
+    // Initialize parent on mount
     useEffect(() => {
       const initializeParent = async () => {
         const storedId = localStorage.getItem("parentId");
@@ -95,45 +94,43 @@ const Canvas = forwardRef(
         if (storedId) {
           const exists = await verifyParentExists(storedId);
           if (exists) {
+            // ✅ Use the valid storedId
             parentIdRef.current = storedId;
-            setParentId(storedId);
+            setIsParentReady(true);
             return;
           } else {
-            // ❌ Invalid parentId, clean it up
+            // ❌ invalid → clean up
             localStorage.removeItem("parentId");
-            parentIdRef.current = null;
-            setParentId(null);
           }
         }
 
-        // Create a new parent if none exists or old one is invalid
+        // ✅ always create a fresh one if none or invalid
         await createParent();
       };
 
       initializeParent();
     }, [verifyParentExists, createParent]);
 
-    // Ensure we have a parent before making any block-related API calls
+    // Ensure we have a valid parent before API calls
     const ensureParentExists = useCallback(async () => {
       if (parentIdRef.current) {
         const exists = await verifyParentExists(parentIdRef.current);
         if (exists) return parentIdRef.current;
       }
+      if (isCreatingParent) return parentIdRef.current;
 
       return await createParent();
-    }, [verifyParentExists, createParent]);
+    }, [verifyParentExists, createParent, isCreatingParent]);
 
     useEffect(() => {
       const listener = (e) => {
-        const newBlock = {
-          id: uuidv4(),
+        onAddBlock({
           type: e.detail,
           settings: {
             ...getDefaultSettings(e.detail),
-            textAlign: "left", // Explicit default
+            textAlign: "left",
           },
-        };
-        onAddBlock(newBlock);
+        });
       };
       window.addEventListener("sidebar-block-click", listener);
       return () => window.removeEventListener("sidebar-block-click", listener);
@@ -142,6 +139,7 @@ const Canvas = forwardRef(
     // Persist block order on render/change
     useEffect(() => {
       if (!Array.isArray(blocks) || blocks.length === 0) return;
+      if (!parentIdRef.current) return; // 👈 wait until parent is set
 
       const persistBlockOrder = async () => {
         const existingParentId = await ensureParentExists();
@@ -257,15 +255,13 @@ const Canvas = forwardRef(
       e.preventDefault();
       const blockType = e.dataTransfer.getData("blockType");
       if (blockType) {
-        const newBlock = {
-          id: uuidv4(),
+        onAddBlock({
           type: blockType,
           settings: {
             ...getDefaultSettings(blockType),
-            textAlign: "left", // Explicit default for new blocks
+            textAlign: "left",
           },
-        };
-        onAddBlock(newBlock);
+        });
       }
     };
 
@@ -522,6 +518,22 @@ const Canvas = forwardRef(
               parentId={parentIdRef.current}
             />
           );
+        case "price-2":
+          return (
+            <PricingAndServices2
+              {...commonProps}
+              blockId={block.id}
+              parentId={parentIdRef.current}
+            />
+          );
+        case "price-3":
+          return (
+            <PricingAndServices3
+              {...commonProps}
+              blockId={block.id}
+              parentId={parentIdRef.current}
+            />
+          );
         case "terms":
           return (
             <TermsBlock
@@ -542,6 +554,17 @@ const Canvas = forwardRef(
           return null;
       }
     };
+
+    // Don't render blocks until parentId is ready
+    if (!isParentReady) {
+      return (
+        <div className="flex-grow-1 bg-[#E8EAED] d-flex align-items-center justify-content-center">
+          <div className="spinner-border text-primary" role="status">
+            <span className="visually-hidden">Loading...</span>
+          </div>
+        </div>
+      );
+    }
 
     return (
       <div

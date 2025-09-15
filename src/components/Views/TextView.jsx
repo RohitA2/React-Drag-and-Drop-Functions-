@@ -1,5 +1,5 @@
 const TextView = ({ blockId, parentId, title, content }) => {
-  console.log("TextView", blockId, parentId, title, content);
+  // console.log("TextView", blockId, parentId, title, content);
 
   if (!title && !content) return null;
 

@@ -9,6 +9,7 @@ import PdfView from "./PdfView";
 import VideoView from "./VideoView";
 import AttachmentView from "./AttachmentView";
 import TermsView from "./TermsView";
+import PriceView from "./PriceView";
 
 import axios from "axios";
 import TextView from "./TextView";
@@ -959,9 +960,14 @@ export default function ProposalViewer() {
   const idsFromQuery = sp.get("ids");
   const parentIdFromQuery = sp.get("parentId");
   const proposalName = sp.get("name");
+  const [recipient, setRecipient] = useState(null);
+  const [tokenInfoLoaded, setTokenInfoLoaded] = useState(false);
+  const token = sp.get("token");
   const [status, setStatus] = useState({ loading: true, error: null });
+  // console.log("i am tokem from sp ", token);
 
   // When parentId is provided, fetch ordered block metadata, then fetch data per type
+  // STEP 1: Fetch parent (proposal) details, including recipients
   useEffect(() => {
     if (!parentIdFromQuery) {
       setStatus({ loading: false, error: "Missing parentId" });
@@ -973,7 +979,24 @@ export default function ProposalViewer() {
       try {
         setStatus({ loading: true, error: null });
 
-        // 1) Get meta: [{ id:blockId, type, orderIndex }]
+        const proposalRes = await axios.get(
+          `${API_BASE}/verify/view-by-token`,
+          {
+            params: { token },
+          }
+        );
+
+        if (!proposalRes.data?.success) throw new Error("Proposal not found");
+
+        const recipient = proposalRes.data.data; // already the matched recipient
+
+        console.log("recipient", recipient);
+
+        if (isMounted) {
+          setRecipient(recipient);
+        }
+
+        // STEP 2: Fetch blocks metadata
         const res = await fetch(
           `${API_BASE}/parents/${parentIdFromQuery}/blocks`
         );
@@ -985,13 +1008,11 @@ export default function ProposalViewer() {
         }
 
         const meta = Array.isArray(json?.blocks) ? json.blocks : [];
-
-        // Sort blocks by orderIndex
         const sortedMeta = [...meta].sort(
           (a, b) => (a.orderIndex ?? 0) - (b.orderIndex ?? 0)
         );
 
-        // Fetch data for each block
+        // STEP 3: Fetch block data
         const blocksWithData = await Promise.all(
           sortedMeta.map(async (blockMeta) => {
             const { type, blockId, id } = blockMeta;
@@ -1004,7 +1025,6 @@ export default function ProposalViewer() {
                 case "header-1":
                 case "header-2":
                 case "header-3":
-                  // Handle headers differently since they use a different endpoint
                   const resHeaders = await fetch(
                     `${API_BASE}/api/headerBlock?ids=${actualId}`
                   );
@@ -1083,6 +1103,13 @@ export default function ProposalViewer() {
                   data = termsRes.data?.success ? termsRes.data.data : null;
                   break;
 
+                case "price":
+                  const priceRes = await axios.get(
+                    `${API_BASE}/pricing/${actualId}`
+                  );
+                  data = priceRes.data?.success ? priceRes.data.data : null;
+                  break;
+
                 default:
                   console.warn(`Unknown block type: ${type}`);
               }
@@ -1115,7 +1142,7 @@ export default function ProposalViewer() {
     return () => {
       isMounted = false;
     };
-  }, [parentIdFromQuery]);
+  }, [parentIdFromQuery, token]);
 
   if (status.loading) {
     return (
@@ -1396,6 +1423,10 @@ export default function ProposalViewer() {
                   Signature={data}
                   signatureId={data?.blockId}
                   user={user}
+                  proposalName={proposalName}
+                  blockId={blockId}
+                  parentId={parentIdFromQuery}
+                  recipient={recipient}
                 />
               );
 
@@ -1432,6 +1463,12 @@ export default function ProposalViewer() {
                   attachments={Array.isArray(data) ? data : [data]}
                 />
               ) : null;
+
+            case "price": {
+              return data ? (
+                <PriceView key={blockId || block.id} price={data} />
+              ) : null;
+            }
 
             default:
               return null;

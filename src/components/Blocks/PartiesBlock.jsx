@@ -5,7 +5,7 @@ import CreateClientModal from "../Forms/CreateClientModal";
 import EditFromModal from "../Blocks/HeaderBlocks/EditFromModal";
 import Dropdown from "react-bootstrap/Dropdown";
 import { useSelector, useDispatch } from "react-redux";
-import { setPartyId } from "../../store/partySlice";
+import { setPartyId, setParties } from "../../store/partySlice";
 import axios from "axios";
 import {
   selectedUserId,
@@ -34,7 +34,7 @@ const Parties = ({ blockId, parentId }) => {
   const [filteredRecipients, setFilteredRecipients] = useState([]);
   const [selectedRecipient, setSelectedRecipient] = useState(null);
 
-  console.log("i am from parties +++++++++", blockId, parentId);
+  // console.log("i am from parties +++++++++", blockId, parentId);
   const handleAddRecipient = (section) => {
     setCurrentSection(section);
     setShowModal(true);
@@ -42,12 +42,15 @@ const Parties = ({ blockId, parentId }) => {
 
   const handleRemoveRecipient = (section, index) => {
     if (section === "to") {
-      // ✅ remove from list
-      setToParties((prev) => prev.filter((_, i) => i !== index));
+      const updated = toParties.filter((_, i) => i !== index);
+      setToParties(updated);
+      dispatch(setParties({ toParties: updated, fromParty }));
     } else {
       setFromParty(null);
+      dispatch(setParties({ toParties, fromParty: null }));
     }
   };
+
   const handleSave = (data) => {
     if (currentSection === "to") {
       setToParties((prev) => [...prev, data]); // ✅ append to list
@@ -99,8 +102,12 @@ const Parties = ({ blockId, parentId }) => {
       try {
         const res = await axios.get(`${API_URL}/parties/${userId}`);
         if (res.data.success && res.data.data) {
-          setToParties(res.data.data.toParty || []);
-          setFromParty(res.data.data.fromParty || null);
+          const to = res.data.data.toParty || [];
+          const from = res.data.data.fromParty || null;
+          setToParties(to);
+          setFromParty(from);
+
+          dispatch(setParties({ toParties: to, fromParty: from }));
         }
       } catch (err) {
         console.error("❌ Error fetching parties:", err);
@@ -125,10 +132,8 @@ const Parties = ({ blockId, parentId }) => {
         });
         console.log("parties saved", res.data);
         if (res.data.success) {
-          toast.success(res.data.message);
-          console.log("parties saved and id", res.data.data.id);
-
           dispatch(setPartyId(res.data.data.id));
+          dispatch(setParties({ toParties, fromParty }));
         }
       } catch (err) {
         console.error("❌ Error saving parties:", err.message);
@@ -137,7 +142,7 @@ const Parties = ({ blockId, parentId }) => {
     };
 
     saveParties();
-  }, [userId, toParties, fromParty, userId]);
+  }, [userId, toParties, fromParty]);
 
   const handleEditRecipient = (recipient) => {
     setSelectedRecipient(recipient);
@@ -393,14 +398,17 @@ const Parties = ({ blockId, parentId }) => {
         recipient={selectedRecipient} // ✅ pass selected recipient here
         onCreated={(newRecipient) => {
           if (selectedRecipient) {
-            // Editing
-            setToParties((prev) =>
-              prev.map((p) => (p.id === newRecipient.id ? newRecipient : p))
+            const updated = toParties.map((p) =>
+              p.id === newRecipient.id ? newRecipient : p
             );
+            setToParties(updated);
+            dispatch(setParties({ toParties: updated, fromParty }));
           } else {
-            // Adding new
             setRecipients((prev) => [...prev, newRecipient]);
-            handleSave(newRecipient);
+            handleSave(newRecipient); // already sets state
+            dispatch(
+              setParties({ toParties: [...toParties, newRecipient], fromParty })
+            );
           }
           setSelectedRecipient(null);
         }}

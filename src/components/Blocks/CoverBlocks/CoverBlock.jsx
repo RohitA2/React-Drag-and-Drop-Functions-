@@ -1,8 +1,15 @@
 import { useState, useRef } from "react";
 import html2canvas from "html2canvas";
+import EditableQuill from "../HeaderBlocks/EditableQuill";
+
+const DEFAULT_HTML = `
+<p>Include a testimonial from a happy client here. The key is to have your client talk about why they enjoyed working with you.</p>
+<p><br></p>
+<p>- Client Name</p>
+`;
 
 const CoverBlock = ({ isPreview = false }) => {
-  const [title, setTitle] = useState("Type something...");
+  const [content, setContent] = useState(DEFAULT_HTML);
   const coverRef = useRef(null);
 
   const exportAsImage = async () => {
@@ -31,34 +38,59 @@ const CoverBlock = ({ isPreview = false }) => {
         transform: isPreview ? "scale(0.9)" : "none",
       }}
     >
-      {/* Cover Preview */}
+      {/* Cover area */}
       <div
         ref={coverRef}
-        className="position-relative rounded-4 overflow-hidden border border-2"
-        style={{ width: "100%", height: "400px" }}
+        className="position-relative rounded-4 overflow-hidden border border-0"
+        style={{
+          width: "100%",
+          minHeight: "400px",
+          backgroundColor: "#401C47",
+          padding: "48px 24px 220px 24px",
+        }}
       >
-        <img
-          src="images/butterfly.jfif"
-          alt="cover"
-          className="w-100 h-100 object-fit-cover"
-          style={{ objectPosition: "center" }}
-        />
-
-        <div className="position-absolute top-50 start-50 translate-middle text-center px-3 w-100">
-          <input
-            type="text"
-            className="form-control border-0 bg-transparent text-center fw-bold"
-            placeholder="Type something..."
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            disabled={isPreview}
+        {/* Quote card - now in normal flow so the block grows with content */}
+        <div
+          className="mx-auto"
+          style={{
+            width: "72%",
+            maxWidth: "980px",
+          }}
+        >
+          <div
+            className="rounded-3"
             style={{
-              fontSize: "3rem",
-              color: "#ffffff",
-              textShadow: "2px 2px 5px rgba(0,0,0,0.6)",
+              backgroundColor: "rgba(255,255,255,0.06)",
+              border: "1px solid rgba(255,255,255,0.08)",
+              padding: "18px 22px",
+              color: "#f3c6ff",
+              backdropFilter: "blur(2px)",
             }}
-          />
+          >
+            <div
+              style={{
+                borderLeft: "4px solid rgba(255,255,255,0.25)",
+                paddingLeft: "16px",
+              }}
+            >
+              <EditableQuill
+                id="cover-quote"
+                value={content}
+                onChange={setContent}
+                placeholder="Write quote..."
+                isPreview={isPreview}
+                className="text-start"
+                style={{ color: "#f3c6ff" }}
+              />
+            </div>
+          </div>
         </div>
+
+        {/* Bottom white band like screenshot */}
+        <div
+          className="position-absolute start-0 end-0"
+          style={{ bottom: 0, height: "180px", background: "#ffffff" }}
+        />
       </div>
     </div>
   );

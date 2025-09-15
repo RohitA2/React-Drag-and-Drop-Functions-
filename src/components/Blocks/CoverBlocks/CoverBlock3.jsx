@@ -1,8 +1,11 @@
 import { useState, useRef } from "react";
 import html2canvas from "html2canvas";
+import EditableQuill from "../HeaderBlocks/EditableQuill";
+
+const DEFAULT_HTML = `<h1>Our Work</h1>`;
 
 const CoverBlock = ({ isPreview = false }) => {
-  const [title, setTitle] = useState("Type something...");
+  const [content, setContent] = useState(DEFAULT_HTML);
   const coverRef = useRef(null);
 
   const exportAsImage = async () => {
@@ -19,11 +22,11 @@ const CoverBlock = ({ isPreview = false }) => {
 
   return (
     <div
-      className={`position-relative bg-white border rounded-4 shadow-sm p-4 mb-4 ${
+      className={`position-relative bg-white border shadow-sm p-4 ${
         isPreview ? "pointer-events-none" : ""
       }`}
       style={{
-        maxWidth: "1400px",
+        maxWidth: "1800px",
         width: "100%",
         minHeight: "400px",
         border: "1px solid #e3e6e8",
@@ -31,34 +34,66 @@ const CoverBlock = ({ isPreview = false }) => {
         transform: isPreview ? "scale(0.9)" : "none",
       }}
     >
-      {/* Cover Preview */}
+      {/* Cover area with video background */}
       <div
         ref={coverRef}
-        className="position-relative rounded-4 overflow-hidden border border-2"
-        style={{ width: "100%", height: "400px" }}
+        className="position-relative overflow-hidden border border-0"
+        style={{
+          width: "100%",
+          minHeight: "400px",
+          padding: "48px 24px 240px 24px",
+        }}
       >
-        <img
-          src="images/sky.webp"
-          alt="cover"
-          className="w-100 h-100 object-fit-cover"
-          style={{ objectPosition: "center" }}
-        />
+        <video
+          className="position-absolute top-0 start-0 w-100 h-100"
+          style={{ objectFit: "cover", zIndex: 0 }}
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload="auto"
+          crossOrigin="anonymous"
+          onError={(e) => console.warn("Video failed to load:", e)}
+        >
+          <source
+            src="/images/cover/sky.webm"
+            type="video/webm"
+            crossOrigin="anonymous"
+          />
+          <source
+            src="/images/cover/video.mp4"
+            type="video/mp4"
+            crossOrigin="anonymous"
+          />
+        </video>
 
-        <div className="position-absolute top-50 start-50 translate-middle text-center px-3 w-100">
-          <input
-            type="text"
-            className="form-control border-0 bg-transparent text-center fw-bold"
-            placeholder="Type something..."
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            disabled={isPreview}
+        {/* Title - normal flow so area grows with content */}
+        <div
+          className="px-3 position-relative"
+          style={{ zIndex: 1, width: "72%", maxWidth: "980px" }}
+        >
+          <EditableQuill
+            id="cover3-title"
+            value={content}
+            onChange={setContent}
+            placeholder="Write title..."
+            isPreview={isPreview}
+            className="text-start"
             style={{
-              fontSize: "3rem",
               color: "#ffffff",
-              textShadow: "2px 2px 5px rgba(0,0,0,0.6)",
+              textShadow: "2px 2px 6px rgba(0,0,0,0.55)",
+              fontSize: "4rem",
+              lineHeight: 1.1,
+              fontWeight: 700,
             }}
           />
         </div>
+
+        {/* Bottom white band */}
+        <div
+          className="position-absolute start-0 end-0"
+          style={{ bottom: 0, height: "220px", background: "#ffffff" }}
+        />
       </div>
     </div>
   );
