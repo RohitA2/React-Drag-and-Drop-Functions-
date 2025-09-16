@@ -31,7 +31,7 @@ const CoverBlock = ({ isPreview = false }) => {
       style={{
         maxWidth: "1800px",
         width: "100%",
-        minHeight: "400px",
+        minHeight: "600px",
         border: "1px solid #e3e6e8",
         opacity: isPreview ? 0.6 : 1,
         transform: isPreview ? "scale(0.9)" : "none",
@@ -60,7 +60,10 @@ const CoverBlock = ({ isPreview = false }) => {
         />
 
         {/* Content card with EditableQuill */}
-        <div className="mx-auto position-relative" style={{ zIndex: 1, width: "72%", maxWidth: "980px" }}>
+        <div
+          className="mx-auto position-relative"
+          style={{ zIndex: 1, width: "72%", maxWidth: "980px" }}
+        >
           <div
             className="rounded-3"
             style={{

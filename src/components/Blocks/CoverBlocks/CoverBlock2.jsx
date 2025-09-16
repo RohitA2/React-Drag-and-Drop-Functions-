@@ -40,7 +40,7 @@ const CoverBlock = ({ isPreview = false }) => {
         className="position-relative  overflow-hidden border border-0"
         style={{
           width: "100%",
-          minHeight: "400px",
+          minHeight: "600px",
           padding: "48px 24px 240px 24px",
         }}
       >

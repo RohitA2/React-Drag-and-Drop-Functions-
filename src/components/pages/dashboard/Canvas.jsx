@@ -79,7 +79,9 @@ const Canvas = forwardRef(
     // Verify if a parent exists
     const verifyParentExists = useCallback(async (id) => {
       try {
-        const probe = await fetch(`${API_URL}/parents/${id}/block-ids`, { method: "GET" });
+        const probe = await fetch(`${API_URL}/parents/${id}/block-ids`, {
+          method: "GET",
+        });
         return probe.ok;
       } catch {
         return false;
@@ -232,13 +234,41 @@ const Canvas = forwardRef(
           logo: null,
           textAlign: "center",
         },
-        // Cover blocks
-        cover: {
-          backgroundColor: "#f8f9fa",
-          textColor: "#333333",
-          title: "Project Proposal",
-          subtitle: "Prepared for",
-          companyName: "Client Company",
+        "cover-1": {
+          "cover-1": {
+            backgroundColor: "#f8f9fa", // 👈 initially color
+            backgroundImage: null, // 👈 explicitly null
+            backgroundVideo: null,
+            backgroundGradient: null,
+            overlay: true,
+            textColor: "#ffffff",
+            textAlign: "center",
+            blur: 0,
+            filter: "none",
+          },
+        },
+        "cover-2": {
+          backgroundImage: `${API_URL}/uploads/1756884733919.avif`,
+          textColor: "#222222",
+          textAlign: "left",
+        },
+        "cover-3": {
+          backgroundVideo: `${API_URL}/uploads/sample-video.mp4`,
+          overlay: true,
+          textColor: "#ffffff",
+          textAlign: "center",
+        },
+        "cover-4": {
+          backgroundGradient:
+            "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
+          textColor: "#222222",
+          textAlign: "left",
+        },
+        "cover-5": {
+          backgroundImage: `${API_URL}/uploads/cover5.avif`,
+          backgroundColor: "#EDEDED",
+          textColor: "#111111",
+          textAlign: "center",
         },
         // Other blocks
         text: {
@@ -301,7 +331,8 @@ const Canvas = forwardRef(
         onSettingsChange: (newSettings) =>
           onSettingsChange(block.id, newSettings),
         parentId: parentIdRef.current,
-        ...block.settings,
+        settings: block.settings, // Add settings here
+        ...block.settings, // Keep this for backward compatibility
         textAlign: block.settings?.textAlign || "left",
       };
 
@@ -451,15 +482,26 @@ const Canvas = forwardRef(
         // Cover blocks
         case "cover":
         case "cover-1":
-          return <CoverBlock {...commonProps} />;
+          return (
+            <CoverBlock
+              key={block.id}
+              settings={block.settings}
+              parentId={parentIdRef.current}
+              blockId={block.id}
+            />
+          );
+
         case "cover-2":
-          return <CoverBlock2 {...commonProps} />;
+          return <CoverBlock2 key={block.id} cover={block.settings} />;
+
         case "cover-3":
-          return <CoverBlock3 {...commonProps} />;
+          return <CoverBlock3 key={block.id} cover={block.settings} />;
+
         case "cover-4":
-          return <CoverBlock4 {...commonProps} />;
+          return <CoverBlock4 key={block.id} cover={block.settings} />;
+
         case "cover-5":
-          return <CoverBlock5 {...commonProps} />;
+          return <CoverBlock5 key={block.id} cover={block.settings} />;
 
         // Other blocks
         case "text":
@@ -683,6 +725,12 @@ const Canvas = forwardRef(
                         "header-3",
                         "header-4",
                         "header-5",
+                        "cover",
+                        "cover-1",
+                        "cover-2",
+                        "cover-3",
+                        "cover-4",
+                        "cover-5",
                       ].includes(block.type) && (
                         <Button
                           variant="light"

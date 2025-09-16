@@ -27,7 +27,7 @@ const SignatureView = ({ user, signatureId, parentId, recipient }) => {
 
   const fullName = `${user?.firstName || ""} ${user?.lastName || ""}`.trim();
 
-  console.log("recipient", recipient);
+  // console.log("recipient", recipient);
 
   // ✅ Fetch signature status from backend
   useEffect(() => {

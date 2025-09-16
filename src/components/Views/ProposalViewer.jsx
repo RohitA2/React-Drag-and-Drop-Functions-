@@ -10,6 +10,7 @@ import VideoView from "./VideoView";
 import AttachmentView from "./AttachmentView";
 import TermsView from "./TermsView";
 import PriceView from "./PriceView";
+import CoverPreview from "./coverPreview";
 
 import axios from "axios";
 import TextView from "./TextView";
@@ -990,7 +991,7 @@ export default function ProposalViewer() {
 
         const recipient = proposalRes.data.data; // already the matched recipient
 
-        console.log("recipient", recipient);
+        // console.log("recipient", recipient);
 
         if (isMounted) {
           setRecipient(recipient);
@@ -1109,6 +1110,21 @@ export default function ProposalViewer() {
                   );
                   data = priceRes.data?.success ? priceRes.data.data : null;
                   break;
+
+                case "cover":
+                case "cover-1":
+                case "cover-2":
+                case "cover-3":
+                case "cover-4":
+                case "cover-5": {
+                  const coverRes = await axios.get(
+                    `${API_BASE}/cover/coverBlock/${actualId}`
+                  );
+                  // console.log("coverRes", coverRes.data);
+
+                  data = coverRes.data?.success ? coverRes.data.data : null;
+                  break;
+                }
 
                 default:
                   console.warn(`Unknown block type: ${type}`);
@@ -1467,6 +1483,17 @@ export default function ProposalViewer() {
             case "price": {
               return data ? (
                 <PriceView key={blockId || block.id} price={data} />
+              ) : null;
+            }
+
+            case "cover":
+            case "cover-1":
+            case "cover-2":
+            case "cover-3":
+            case "cover-4":
+            case "cover-5": {
+              return data ? (
+                <CoverPreview key={blockId || block.id} cover={data} />
               ) : null;
             }
 

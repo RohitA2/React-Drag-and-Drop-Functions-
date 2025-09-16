@@ -34,7 +34,7 @@ const CoverBlock = ({ isPreview = false }) => {
       style={{
         maxWidth: "1800px",
         width: "100%",
-        minHeight: "400px",
+        minHeight: "600px",
         border: "1px solid #e3e6e8",
         opacity: isPreview ? 0.6 : 1,
         transform: isPreview ? "scale(0.9)" : "none",
@@ -45,7 +45,7 @@ const CoverBlock = ({ isPreview = false }) => {
         className="position-relative overflow-hidden border border-0"
         style={{
           width: "100%",
-          minHeight: "400px",
+          minHeight: "600px",
           padding: "48px 24px 240px 24px",
         }}
       >
