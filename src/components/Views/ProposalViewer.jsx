@@ -980,18 +980,20 @@ export default function ProposalViewer() {
       try {
         setStatus({ loading: true, error: null });
 
-        const proposalRes = await axios.get(
-          `${API_BASE}/verify/view-by-token`,
-          {
-            params: { token },
-          }
-        );
+        let recipient = null;
 
-        if (!proposalRes.data?.success) throw new Error("Proposal not found");
+        // ✅ Only call verify-by-token if token is provided
+        if (token) {
+          const proposalRes = await axios.get(
+            `${API_BASE}/verify/view-by-token`,
+            {
+              params: { token },
+            }
+          );
 
-        const recipient = proposalRes.data.data; // already the matched recipient
-
-        // console.log("recipient", recipient);
+          if (!proposalRes.data?.success) throw new Error("Proposal not found");
+          recipient = proposalRes.data.data; // already the matched recipient
+        }
 
         if (isMounted) {
           setRecipient(recipient);
@@ -1026,6 +1028,8 @@ export default function ProposalViewer() {
                 case "header-1":
                 case "header-2":
                 case "header-3":
+                case "header-4":
+                case "header-5":
                   const resHeaders = await fetch(
                     `${API_BASE}/api/headerBlock?ids=${actualId}`
                   );
@@ -1120,8 +1124,6 @@ export default function ProposalViewer() {
                   const coverRes = await axios.get(
                     `${API_BASE}/cover/coverBlock/${actualId}`
                   );
-                  // console.log("coverRes", coverRes.data);
-
                   data = coverRes.data?.success ? coverRes.data.data : null;
                   break;
                 }
@@ -1130,17 +1132,10 @@ export default function ProposalViewer() {
                   console.warn(`Unknown block type: ${type}`);
               }
 
-              return {
-                ...blockMeta,
-                data,
-              };
+              return { ...blockMeta, data };
             } catch (error) {
               console.error(`Error fetching data for ${type} block:`, error);
-              return {
-                ...blockMeta,
-                data: null,
-                error: error.message,
-              };
+              return { ...blockMeta, data: null, error: error.message };
             }
           })
         );

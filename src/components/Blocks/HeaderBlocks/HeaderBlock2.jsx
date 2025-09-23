@@ -495,11 +495,11 @@ const HeaderBlock = ({
 
   return (
     <div
-      className={`container-fluid my-4 px-3 ${isPreview ? "p-0 my-0" : ""}`}
+      className={`container-fluid px-3 ${isPreview ? "p-0 my-0" : ""}`}
       style={wrapperStyle}
     >
       <div
-        className={`row rounded-3 overflow-hidden shadow ${container}`}
+        className={`row overflow-hidden shadow ${container}`}
         ref={containerRef}
         style={{
           position: "relative",

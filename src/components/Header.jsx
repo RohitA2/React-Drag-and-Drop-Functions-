@@ -184,110 +184,93 @@ const HeaderBar = ({
   };
 
   return (
-    <div className="d-flex justify-content-between align-items-center px-3 py-2 bg-[#E8EAED] border-bottom w-100 shadow-sm position-relative">
+    <div className="modern-header">
       {/* Left section */}
-      <div className="d-flex align-items-center gap-3">
+      <div className="header-left">
         <button
-          className="btn btn-sm btn-[#E8EAED] hover:bg-[#F4FBFA]"
+          className="header-btn close-btn"
           onClick={() => {
-            localStorage.removeItem("parentId"); // 🔹 Remove parentId
-            navigate("/"); // 🔹 Navigate back home
+            localStorage.removeItem("parentId");
+            navigate("/");
           }}
+          title="Close"
         >
-          <X size={16} />
+          <X size={18} />
         </button>
         <button
-          className="btn btn-sm btn-[#E8EAED] hover:bg-[#F4FBFA]"
+          className="header-btn sidebar-btn"
           onClick={toggleSidebar}
+          title="Toggle Sidebar"
         >
-          <LayoutDashboard size={16} />
+          <LayoutDashboard size={18} />
         </button>
       </div>
 
       {/* Center section */}
       {hasElementsOnCanvas && (
-        <div className="btn-group btn-group-sm btn-group-toggle font-size-12 font-weight-bold px-2">
-          <button
-            type="button"
-            className="btn btn-sm btn-outline-secondary active"
-          >
-            Edit
-          </button>
-          <button type="button" className="btn btn-sm btn-outline-secondary">
-            Preview
-          </button>
+        <div className="header-center">
+          <div className="mode-toggle">
+            <button
+              type="button"
+              className="mode-btn active"
+            >
+              Edit
+            </button>
+            <button type="button" className="mode-btn">
+              Preview
+            </button>
+          </div>
         </div>
       )}
 
       {/* Right section */}
-      <div className="d-flex align-items-center gap-4">
+      <div className="header-right">
         {/* Save Button with Dropdown */}
-        <div className="position-relative" ref={dropdownRef}>
+        <div className="save-container" ref={dropdownRef}>
           <button
-            className="btn btn-sm position-relative"
-            style={{
-              width: "32px",
-              height: "32px",
-              backgroundColor: hasElementsOnCanvas ? "#E8EAED" : "#d1d5db", // gray when disabled
-              cursor: hasElementsOnCanvas ? "pointer" : "not-allowed",
-            }}
+            className={`save-btn ${hasElementsOnCanvas ? 'enabled' : 'disabled'}`}
             onClick={handleSaveClick}
             onMouseEnter={() => hasElementsOnCanvas && setShowSaveOptions(true)}
-            // disabled={!hasElementsOnCanvas}
+            title="Save Options"
           >
-            <Save
-              size={16}
-              className={hasElementsOnCanvas ? "text-black" : "text-gray-400"}
-            />
+            <Save size={18} />
           </button>
 
           {showSaveOptions && (
             <div
-              className="position-absolute end-0 mt-1 bg-white rounded shadow-sm border"
-              style={{ width: "180px", zIndex: 1000 }}
+              className="save-dropdown"
               onMouseLeave={() => setShowSaveOptions(false)}
             >
               <button
-                className="btn btn-sm btn-light w-100 text-start d-flex align-items-center gap-2 border-0 hover:bg-[#F4FBFA] transition-all"
+                className="dropdown-item"
                 onClick={() => handleSaveAction("save-pdf")}
               >
-                <Download size={14} className="text-muted" />
+                <Download size={16} />
                 <span>Save & Download PDF</span>
               </button>
               <button
-                className="btn btn-sm btn-light w-100 text-start d-flex align-items-center gap-2 border-0 hover:bg-[#F4FBFA] transition-all"
+                className="dropdown-item"
                 onClick={() => handleSaveAction("generate-link")}
               >
-                <LinkIcon size={14} className="text-muted" />
+                <LinkIcon size={16} />
                 <span>Generate Link</span>
               </button>
             </div>
           )}
         </div>
 
-        {/* Remaining right section elements */}
-        <div className="d-flex flex-column align-items-end font-size-12 font-weight-bold">
-          <small className="text-muted mb-1">11 days left</small>
-          <div
-            className="progress"
-            style={{ width: "80px", height: "4px", backgroundColor: "#438EA0" }}
-          >
-            <div
-              className="progress-bar bg-color[#438EA0]"
-              role="progressbar"
-              style={{ width: "60%" }}
-            ></div>
+        {/* Trial info */}
+        {/* <div className="trial-info">
+          <span className="trial-text">11 days left</span>
+          <div className="trial-progress">
+            <div className="trial-progress-bar"></div>
           </div>
-        </div>
+        </div> */}
 
         <button
-          className="btn btn-sm text-white"
-          style={{
-            backgroundColor: hasElementsOnCanvas ? "#438EA0" : "#a0c4c9", // lighter blue when disabled
-            cursor: hasElementsOnCanvas ? "pointer" : "not-allowed",
-          }}
+          className={`review-btn ${hasElementsOnCanvas ? 'enabled' : 'disabled'}`}
           onClick={handleReviewSend}
-          // disabled={!hasElementsOnCanvas}
+          title="Review & Send"
         >
           Review & Send
         </button>
@@ -304,20 +287,239 @@ const HeaderBar = ({
       </div>
 
       <style>{`
-        .d-flex.gap-3 {
-          gap: 0.75rem !important;
+        .modern-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 12px 24px;
+          background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+          border-bottom: 1px solid #e2e8f0;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+          position: relative;
+          min-height: 64px;
         }
-        .btn-sm {
-          padding: 0.25rem 0.5rem;
+
+        .header-left {
+          display: flex;
+          align-items: center;
+          gap: 8px;
         }
-        .progress-bar {
+
+        .header-btn {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 40px;
+          height: 40px;
+          border: none;
+          border-radius: 8px;
+          background: #f1f5f9;
+          color: #64748b;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+
+        .header-btn:hover {
+          background: #e2e8f0;
+          color: #475569;
+          transform: translateY(-1px);
+          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .close-btn:hover {
+          background: #fef2f2;
+          color: #dc2626;
+        }
+
+        .sidebar-btn:hover {
+          background: #f0f9ff;
+          color: #0284c7;
+        }
+
+        .header-center {
+          display: flex;
+          align-items: center;
+        }
+
+        .mode-toggle {
+          display: flex;
+          background: #f1f5f9;
+          border-radius: 10px;
+          padding: 4px;
+          box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+
+        .mode-btn {
+          padding: 8px 16px;
+          border: none;
+          border-radius: 6px;
+          background: transparent;
+          color: #64748b;
+          font-size: 14px;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+
+        .mode-btn.active {
+          background: #ffffff;
+          color: #1e293b;
+          box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        .mode-btn:hover:not(.active) {
+          color: #475569;
+        }
+
+        .header-right {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+        }
+
+        .save-container {
+          position: relative;
+        }
+
+        .save-btn {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 40px;
+          height: 40px;
+          border: none;
+          border-radius: 8px;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+
+        .save-btn.enabled {
+          background: #f1f5f9;
+          color: #475569;
+        }
+
+        .save-btn.enabled:hover {
+          background: #e2e8f0;
+          transform: translateY(-1px);
+          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .save-btn.disabled {
+          background: #f8fafc;
+          color: #cbd5e1;
+          cursor: not-allowed;
+        }
+
+        .save-dropdown {
+          position: absolute;
+          top: 100%;
+          right: 0;
+          margin-top: 8px;
+          background: #ffffff;
+          border-radius: 12px;
+          box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15), 0 4px 6px rgba(0, 0, 0, 0.1);
+          border: 1px solid #e2e8f0;
+          width: 200px;
+          z-index: 1000;
+          overflow: hidden;
+        }
+
+        .dropdown-item {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          width: 100%;
+          padding: 12px 16px;
+          border: none;
+          background: transparent;
+          color: #374151;
+          font-size: 14px;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          text-align: left;
+        }
+
+        .dropdown-item:hover {
+          background: #f8fafc;
+          color: #1e293b;
+        }
+
+        .dropdown-item:first-child {
+          border-bottom: 1px solid #f1f5f9;
+        }
+
+        .trial-info {
+          display: flex;
+          flex-direction: column;
+          align-items: flex-end;
+          gap: 4px;
+        }
+
+        .trial-text {
+          font-size: 12px;
+          font-weight: 500;
+          color: #64748b;
+        }
+
+        .trial-progress {
+          width: 80px;
+          height: 4px;
+          background: #e2e8f0;
+          border-radius: 2px;
+          overflow: hidden;
+        }
+
+        .trial-progress-bar {
+          height: 100%;
+          width: 60%;
+          background: linear-gradient(90deg, #3b82f6, #1d4ed8);
+          border-radius: 2px;
           transition: width 0.6s ease;
         }
-        .hover\:bg-\[\#F4FBFA\]:hover {
-          background-color: #f4fbfa;
-        }
-        .transition-all {
+
+        .review-btn {
+          padding: 10px 20px;
+          border: none;
+          border-radius: 8px;
+          font-size: 14px;
+          font-weight: 600;
+          cursor: pointer;
           transition: all 0.2s ease;
+          box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+
+        .review-btn.enabled {
+          background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+          color: #ffffff;
+        }
+
+        .review-btn.enabled:hover {
+          background: linear-gradient(135deg, #2563eb, #1e40af);
+          transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+        }
+
+        .review-btn.disabled {
+          background: #e2e8f0;
+          color: #94a3b8;
+          cursor: not-allowed;
+        }
+
+        @media (max-width: 768px) {
+          .modern-header {
+            padding: 8px 16px;
+            gap: 8px;
+          }
+          
+          .header-right {
+            gap: 8px;
+          }
+          
+          .trial-info {
+            display: none;
+          }
         }
       `}</style>
     </div>

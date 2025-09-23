@@ -136,7 +136,7 @@ const HeaderSidebar = ({
     //   return;
     // }
 
-    const origin = window.location?.origin || "http://localhost:5173";
+    const origin = window.location?.origin || "http://13.204.3.50";
     const documentLink = `${origin}/proposal?parentId=${canvasParentId}`;
 
     const payload = {

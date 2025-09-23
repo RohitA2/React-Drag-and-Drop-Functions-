@@ -1,36 +1,35 @@
 import React, { useState, useMemo, useEffect, useCallback } from "react";
-import { AgGridReact } from "ag-grid-react";
-import { ModuleRegistry, AllCommunityModule } from "ag-grid-community";
-import "ag-grid-community/styles/ag-grid.css";
-import "ag-grid-community/styles/ag-theme-alpine.css";
 import {
   Button,
   Badge,
   Modal,
   Form,
-  Spinner,
   Alert,
   Card,
   InputGroup,
+  Table,
+  Pagination,
+  Dropdown,
 } from "react-bootstrap";
 import {
   Eye,
   Edit,
   Trash2,
-  Filter,
   Search,
   RefreshCw,
   Plus,
   User,
   Building,
   Download,
+  MoreVertical,
+  ChevronDown,
+  ChevronUp,
+  Filter,
 } from "lucide-react";
 import { useSelector } from "react-redux";
 import { selectedUserId } from "../../../store/authSlice";
 import CreateClientModal from "../../Forms/CreateClientModal";
-
-// Register AG Grid modules
-ModuleRegistry.registerModules([AllCommunityModule]);
+import Loader from "../../Forms/Loader";
 
 const ClientGrid = () => {
   const userId = useSelector(selectedUserId);
@@ -42,6 +41,10 @@ const ClientGrid = () => {
   const [selectedClient, setSelectedClient] = useState(null);
   const [activeFilter, setActiveFilter] = useState("all");
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [sortField, setSortField] = useState("id");
+  const [sortDirection, setSortDirection] = useState("desc");
   const API_URL = import.meta.env.VITE_API_URL;
 
   // Fetch clients data
@@ -79,176 +82,19 @@ const ClientGrid = () => {
     fetchClients();
   }, [fetchClients]);
 
-  // Column Definitions
-  const columnDefs = [
-    {
-      headerName: "ID",
-      field: "id",
-      width: 80,
-      filter: "agNumberColumnFilter",
-      sort: "desc",
-      cellStyle: { fontFamily: "monospace" },
-    },
-    {
-      headerName: "TYPE",
-      field: "type",
-      width: 120,
-      cellRenderer: (params) => (
-        <Badge
-          bg={params.value === "company" ? "primary" : "secondary"}
-          className="text-uppercase d-flex align-items-center justify-content-center px-2 py-1"
-          style={{
-            width: "90px",
-            fontSize: "0.75rem",
-            backgroundColor: params.value === "company" ? "#6366f1" : "#8b5cf6",
-          }}
-        >
-          {params.value === "company" ? (
-            <Building size={10} className="me-1" />
-          ) : (
-            <User size={10} className="me-1" />
-          )}
-          {params.value}
-        </Badge>
-      ),
-    },
-    {
-      headerName: "NAME",
-      field: "name",
-      width: 180,
-      filter: "agTextColumnFilter",
-      cellStyle: { fontWeight: "500" },
-    },
-    {
-      headerName: "EMAIL",
-      field: "email",
-      width: 200,
-      filter: "agTextColumnFilter",
-    },
-    {
-      headerName: "PHONE",
-      field: "phone",
-      width: 150,
-      filter: "agTextColumnFilter",
-    },
-    {
-      headerName: "COMPANY",
-      field: "companyName",
-      width: 180,
-      filter: "agTextColumnFilter",
-      cellRenderer: (params) => params.value || "-",
-    },
-    {
-      headerName: "STATUS",
-      field: "status",
-      width: 120,
-      cellRenderer: (params) => (
-        <Badge
-          className="text-uppercase d-flex align-items-center justify-content-center px-2 py-1"
-          style={{
-            width: "80px",
-            fontSize: "0.75rem",
-            backgroundColor: params.value === "Active" ? "#10b981" : "#ef4444",
-          }}
-        >
-          {params.value}
-        </Badge>
-      ),
-    },
-    {
-      headerName: "CREATED",
-      field: "createdAt",
-      width: 150,
-      filter: "agDateColumnFilter",
-      valueFormatter: (params) => new Date(params.value).toLocaleDateString(),
-    },
-    {
-      headerName: "ACTIONS",
-      width: 140,
-      cellRenderer: (params) => (
-        <div className="d-flex justify-content-center align-items-center gap-2">
-          <button
-            className="icon-btn"
-            onClick={() => handleViewClient(params.data)}
-            title="View"
-          >
-            <Eye size={16} />
-          </button>
-          <button
-            className="icon-btn"
-            onClick={() => handleEditClient(params.data)}
-            title="Edit"
-          >
-            <Edit size={16} />
-          </button>
-          <button
-            className="icon-btn"
-            onClick={() => handleDeleteClient(params.data)}
-            title="Delete"
-          >
-            <Trash2 size={16} />
-          </button>
-        </div>
-      ),
-      sortable: false,
-      filter: false,
-    },
-  ];
-
-  // Default Column Definitions
-  const defaultColDef = useMemo(
-    () => ({
-      sortable: true,
-      filter: true,
-      resizable: true,
-      floatingFilter: true,
-      suppressMenu: true,
-    }),
-    []
-  );
-
-  // Handle view client details
-  const handleViewClient = (client) => {
-    setSelectedClient(client);
-    setShowModal(true);
-  };
-
-  // Handle edit client
-  const handleEditClient = (client) => {
-    console.log("Edit client:", client);
-    // Implement edit functionality
-    alert(`Edit functionality for ${client.name} would be implemented here`);
-  };
-
-  // Handle delete client
-  const handleDeleteClient = async (client) => {
-    if (window.confirm(`Are you sure you want to delete ${client.name}?`)) {
-      try {
-        const response = await fetch(`${API_URL}/api/recipients/${client.id}`, {
-          method: "DELETE",
-        });
-
-        if (response.ok) {
-          // Remove from local state
-          setRowData((prev) => prev.filter((c) => c.id !== client.id));
-          alert("Client deleted successfully");
-        } else {
-          throw new Error("Failed to delete client");
-        }
-      } catch (err) {
-        alert("Error deleting client: " + err.message);
-      }
+  // Handle sorting
+  const handleSort = (field) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortDirection("asc");
     }
   };
 
-  // Handle refresh
-  const handleRefresh = () => {
-    fetchClients();
-  };
-
-  // Filter data
+  // Filter and sort data
   const filteredData = useMemo(() => {
-    let data = rowData;
+    let data = [...rowData];
 
     // Apply status filter
     if (activeFilter !== "all") {
@@ -266,8 +112,30 @@ const ClientGrid = () => {
       );
     }
 
+    // Apply sorting
+    data.sort((a, b) => {
+      let aValue = a[sortField];
+      let bValue = b[sortField];
+
+      if (sortField === "createdAt") {
+        aValue = new Date(aValue).getTime();
+        bValue = new Date(bValue).getTime();
+      }
+
+      if (aValue < bValue) return sortDirection === "asc" ? -1 : 1;
+      if (aValue > bValue) return sortDirection === "asc" ? 1 : -1;
+      return 0;
+    });
+
     return data;
-  }, [rowData, filterText, activeFilter]);
+  }, [rowData, filterText, activeFilter, sortField, sortDirection]);
+
+  // Pagination
+  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+  const paginatedData = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredData.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredData, currentPage, itemsPerPage]);
 
   // Stats for the header
   const stats = useMemo(() => {
@@ -284,27 +152,58 @@ const ClientGrid = () => {
     return { activeClients, companyClients, individualClients };
   }, [rowData]);
 
+  // Handle view client details
+  const handleViewClient = (client) => {
+    setSelectedClient(client);
+    setShowModal(true);
+  };
+
+  // Handle edit client
+  const handleEditClient = (client) => {
+    console.log("Edit client:", client);
+    alert(`Edit functionality for ${client.name} would be implemented here`);
+  };
+
+  // Handle delete client
+  const handleDeleteClient = async (client) => {
+    if (window.confirm(`Are you sure you want to delete ${client.name}?`)) {
+      try {
+        const response = await fetch(`${API_URL}/api/recipients/${client.id}`, {
+          method: "DELETE",
+        });
+
+        if (response.ok) {
+          setRowData((prev) => prev.filter((c) => c.id !== client.id));
+          alert("Client deleted successfully");
+        } else {
+          throw new Error("Failed to delete client");
+        }
+      } catch (err) {
+        alert("Error deleting client: " + err.message);
+      }
+    }
+  };
+
+  // Handle refresh
+  const handleRefresh = () => {
+    fetchClients();
+    setCurrentPage(1);
+  };
+
+  // Sort indicator component
+  const SortIndicator = ({ field }) => {
+    if (sortField !== field)
+      return <ChevronDown size={14} className="opacity-30" />;
+    return sortDirection === "asc" ? (
+      <ChevronUp size={14} />
+    ) : (
+      <ChevronDown size={14} />
+    );
+  };
+
   // Loading state
   if (loading) {
-    return (
-      <div className="container-fluid p-4">
-        <div
-          className="d-flex justify-content-center align-items-center"
-          style={{ height: "400px" }}
-        >
-          <Spinner
-            animation="border"
-            role="status"
-            variant="primary"
-            className="me-3"
-            style={{ color: "#6366f1" }}
-          >
-            <span className="visually-hidden">Loading...</span>
-          </Spinner>
-          <span className="fs-5 text-muted">Loading clients...</span>
-        </div>
-      </div>
-    );
+    return <Loader />;
   }
 
   // Error state
@@ -348,14 +247,14 @@ const ClientGrid = () => {
         </div>
 
         <div className="d-flex gap-3">
-          <Button
+          {/* <Button
             variant="outline-primary"
             className="d-flex align-items-center rounded-pill px-4 border-2"
             style={{ fontWeight: 500 }}
           >
             <Download size={18} className="me-2" />
             Export
-          </Button>
+          </Button> */}
           <Button
             variant="primary"
             className="d-flex align-items-center rounded-pill px-4"
@@ -376,7 +275,7 @@ const ClientGrid = () => {
       <div className="row mb-6">
         <div className="col-md-3">
           <Card
-            className="border-0 rounded-xl shadow-sm"
+            className="border-0 rounded-xl shadow-sm hover-lift"
             style={{ backgroundColor: "#eff6ff" }}
           >
             <Card.Body className="p-4">
@@ -399,7 +298,7 @@ const ClientGrid = () => {
         </div>
         <div className="col-md-3">
           <Card
-            className="border-0 rounded-xl shadow-sm"
+            className="border-0 rounded-xl shadow-sm hover-lift"
             style={{ backgroundColor: "#ecfdf5" }}
           >
             <Card.Body className="p-4">
@@ -422,7 +321,7 @@ const ClientGrid = () => {
         </div>
         <div className="col-md-3">
           <Card
-            className="border-0 rounded-xl shadow-sm"
+            className="border-0 rounded-xl shadow-sm hover-lift"
             style={{ backgroundColor: "#eff6ff" }}
           >
             <Card.Body className="p-4">
@@ -445,7 +344,7 @@ const ClientGrid = () => {
         </div>
         <div className="col-md-3">
           <Card
-            className="border-0 rounded-xl shadow-sm"
+            className="border-0 rounded-xl shadow-sm hover-lift"
             style={{ backgroundColor: "#fef3c7" }}
           >
             <Card.Body className="p-4">
@@ -549,13 +448,50 @@ const ClientGrid = () => {
         </Card.Body>
       </Card>
 
-      {/* Results count */}
+      {/* Results count and pagination controls */}
       <div className="d-flex justify-content-between align-items-center mb-4">
         <p className="text-muted mb-0 fw-medium">
           Showing{" "}
-          <strong className="text-gray-800">{filteredData.length}</strong> of{" "}
-          <strong className="text-gray-800">{rowData.length}</strong> clients
+          <strong className="text-gray-800">
+            {paginatedData.length > 0
+              ? (currentPage - 1) * itemsPerPage + 1
+              : 0}
+          </strong>{" "}
+          to{" "}
+          <strong className="text-gray-800">
+            {(currentPage - 1) * itemsPerPage + paginatedData.length}
+          </strong>{" "}
+          of <strong className="text-gray-800">{filteredData.length}</strong>{" "}
+          clients
         </p>
+
+        <div className="d-flex align-items-center gap-3">
+          <span className="text-muted small">Show:</span>
+          <Dropdown>
+            <Dropdown.Toggle
+              variant="outline-secondary"
+              size="sm"
+              className="d-flex align-items-center rounded-pill px-3"
+              style={{ border: "2px solid #e5e7eb" }}
+            >
+              {itemsPerPage} per page
+            </Dropdown.Toggle>
+            <Dropdown.Menu className="rounded-xl shadow-sm border-0">
+              {[5, 10, 20, 50].map((size) => (
+                <Dropdown.Item
+                  key={size}
+                  onClick={() => {
+                    setItemsPerPage(size);
+                    setCurrentPage(1);
+                  }}
+                  className="py-2"
+                >
+                  {size} per page
+                </Dropdown.Item>
+              ))}
+            </Dropdown.Menu>
+          </Dropdown>
+        </div>
       </div>
 
       {/* Empty state */}
@@ -571,12 +507,12 @@ const ClientGrid = () => {
             </p>
             <Button
               variant="primary"
-              onClick={fetchClients}
+              onClick={() => setShowCreateModal(true)}
               className="d-flex align-items-center mx-auto rounded-pill px-4"
               style={{ backgroundColor: "#6366f1", border: "none" }}
             >
-              <RefreshCw size={16} className="me-2" />
-              Refresh
+              <Plus size={16} className="me-2" />
+              Add First Client
             </Button>
           </Card.Body>
         </Card>
@@ -604,35 +540,247 @@ const ClientGrid = () => {
           </Card.Body>
         </Card>
       ) : (
-        /* AG Grid */
-        <div
-          className="ag-theme-alpine shadow-sm rounded-xl"
-          style={{
-            height: "600px",
-            width: "100%",
-            overflow: "hidden",
-          }}
-        >
-          <AgGridReact
-            rowData={filteredData}
-            columnDefs={columnDefs}
-            defaultColDef={defaultColDef}
-            pagination={true}
-            paginationPageSize={20}
-            suppressRowClickSelection={true}
-            animateRows={true}
-            rowSelection="multiple"
-            domLayout="normal"
-            enableCellTextSelection={true}
-            ensureDomOrder={true}
-            onGridReady={(params) => {
-              params.api.sizeColumnsToFit();
-            }}
-            onFirstDataRendered={(params) => {
-              params.api.sizeColumnsToFit();
-            }}
-          />
-        </div>
+        /* Modern DataTable */
+        <Card className="border-0 rounded-xl shadow-sm overflow-hidden">
+          <div className="table-responsive">
+            <Table hover className="mb-0">
+              <thead style={{ backgroundColor: "#f8f9fa" }}>
+                <tr>
+                  <th
+                    className="cursor-pointer py-3 px-4 border-0 fw-semibold text-uppercase small text-muted"
+                    onClick={() => handleSort("id")}
+                    style={{ width: "80px" }}
+                  >
+                    <div className="d-flex align-items-center gap-1">
+                      ID
+                      <SortIndicator field="id" />
+                    </div>
+                  </th>
+                  <th
+                    className="cursor-pointer py-3 px-4 border-0 fw-semibold text-uppercase small text-muted"
+                    onClick={() => handleSort("type")}
+                    style={{ width: "120px" }}
+                  >
+                    <div className="d-flex align-items-center gap-1">
+                      Type
+                      <SortIndicator field="type" />
+                    </div>
+                  </th>
+                  <th
+                    className="cursor-pointer py-3 px-4 border-0 fw-semibold text-uppercase small text-muted"
+                    onClick={() => handleSort("name")}
+                  >
+                    <div className="d-flex align-items-center gap-1">
+                      Name
+                      <SortIndicator field="name" />
+                    </div>
+                  </th>
+                  <th
+                    className="cursor-pointer py-3 px-4 border-0 fw-semibold text-uppercase small text-muted"
+                    onClick={() => handleSort("email")}
+                  >
+                    <div className="d-flex align-items-center gap-1">
+                      Email
+                      <SortIndicator field="email" />
+                    </div>
+                  </th>
+                  <th
+                    className="py-3 px-4 border-0 fw-semibold text-uppercase small text-muted"
+                    style={{ width: "150px" }}
+                  >
+                    Phone
+                  </th>
+                  <th
+                    className="cursor-pointer py-3 px-4 border-0 fw-semibold text-uppercase small text-muted"
+                    onClick={() => handleSort("companyName")}
+                  >
+                    <div className="d-flex align-items-center gap-1">
+                      Company
+                      <SortIndicator field="companyName" />
+                    </div>
+                  </th>
+                  <th
+                    className="cursor-pointer py-3 px-4 border-0 fw-semibold text-uppercase small text-muted"
+                    onClick={() => handleSort("status")}
+                    style={{ width: "120px" }}
+                  >
+                    <div className="d-flex align-items-center gap-1">
+                      Status
+                      <SortIndicator field="status" />
+                    </div>
+                  </th>
+                  <th
+                    className="cursor-pointer py-3 px-4 border-0 fw-semibold text-uppercase small text-muted"
+                    onClick={() => handleSort("createdAt")}
+                    style={{ width: "150px" }}
+                  >
+                    <div className="d-flex align-items-center gap-1">
+                      Created
+                      <SortIndicator field="createdAt" />
+                    </div>
+                  </th>
+                  <th
+                    className="py-3 px-4 border-0 fw-semibold text-uppercase small text-muted text-center"
+                    style={{ width: "100px" }}
+                  >
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {paginatedData.map((client) => (
+                  <tr key={client.id} className="align-middle">
+                    <td className="py-3 px-4 border-0 font-monospace">
+                      {client.id}
+                    </td>
+                    <td className="py-3 px-4 border-0">
+                      <Badge
+                        bg={client.type === "company" ? "primary" : "secondary"}
+                        className="text-uppercase d-flex align-items-center justify-content-center px-2 py-1"
+                        style={{
+                          width: "90px",
+                          fontSize: "0.75rem",
+                          backgroundColor:
+                            client.type === "company" ? "#6366f1" : "#8b5cf6",
+                        }}
+                      >
+                        {client.type === "company" ? (
+                          <Building size={10} className="me-1" />
+                        ) : (
+                          <User size={10} className="me-1" />
+                        )}
+                        {client.type}
+                      </Badge>
+                    </td>
+                    <td className="py-3 px-4 border-0 fw-medium text-gray-800">
+                      {client.name}
+                    </td>
+                    <td className="py-3 px-4 border-0">{client.email}</td>
+                    <td className="py-3 px-4 border-0">{client.phone}</td>
+                    <td className="py-3 px-4 border-0">
+                      {client.companyName || "-"}
+                    </td>
+                    <td className="py-3 px-4 border-0">
+                      <Badge
+                        className="text-uppercase d-flex align-items-center justify-content-center px-2 py-1"
+                        style={{
+                          width: "80px",
+                          fontSize: "0.75rem",
+                          backgroundColor:
+                            client.status === "Active" ? "#10b981" : "#ef4444",
+                        }}
+                      >
+                        {client.status}
+                      </Badge>
+                    </td>
+                    <td className="py-3 px-4 border-0 text-muted small">
+                      {new Date(client.createdAt).toLocaleDateString()}
+                    </td>
+                    <td className="py-3 px-4 border-0 text-center">
+                      <Dropdown>
+                        <Dropdown.Toggle
+                          variant="outline-light"
+                          size="sm"
+                          className="border-0 bg-transparent p-1"
+                          id={`dropdown-${client.id}`}
+                        >
+                          <MoreVertical size={16} className="text-muted" />
+                        </Dropdown.Toggle>
+                        <Dropdown.Menu className="rounded-xl shadow-sm border-0">
+                          <Dropdown.Item
+                            onClick={() => handleViewClient(client)}
+                            className="d-flex align-items-center gap-2 py-2"
+                          >
+                            <Eye size={16} />
+                            View Details
+                          </Dropdown.Item>
+                          <Dropdown.Item
+                            onClick={() => handleEditClient(client)}
+                            className="d-flex align-items-center gap-2 py-2"
+                          >
+                            <Edit size={16} />
+                            Edit
+                          </Dropdown.Item>
+                          <Dropdown.Divider />
+                          <Dropdown.Item
+                            onClick={() => handleDeleteClient(client)}
+                            className="d-flex align-items-center gap-2 py-2 text-danger"
+                          >
+                            <Trash2 size={16} />
+                            Delete
+                          </Dropdown.Item>
+                        </Dropdown.Menu>
+                      </Dropdown>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
+          </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <Card.Footer className="border-0 bg-transparent">
+              <div className="d-flex justify-content-between align-items-center">
+                <span className="text-muted small">
+                  Page {currentPage} of {totalPages}
+                </span>
+                <Pagination className="mb-0">
+                  <Pagination.Prev
+                    disabled={currentPage === 1}
+                    onClick={() => setCurrentPage(currentPage - 1)}
+                    className="rounded-pill mx-1"
+                  >
+                    Previous
+                  </Pagination.Prev>
+
+                  {[...Array(totalPages)].map((_, index) => {
+                    const page = index + 1;
+                    if (
+                      page === 1 ||
+                      page === totalPages ||
+                      (page >= currentPage - 1 && page <= currentPage + 1)
+                    ) {
+                      return (
+                        <Pagination.Item
+                          key={page}
+                          active={page === currentPage}
+                          onClick={() => setCurrentPage(page)}
+                          className="rounded-circle mx-1"
+                          style={{
+                            width: "40px",
+                            height: "40px",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                          }}
+                        >
+                          {page}
+                        </Pagination.Item>
+                      );
+                    } else if (
+                      page === currentPage - 2 ||
+                      page === currentPage + 2
+                    ) {
+                      return (
+                        <Pagination.Ellipsis key={page} className="mx-1" />
+                      );
+                    }
+                    return null;
+                  })}
+
+                  <Pagination.Next
+                    disabled={currentPage === totalPages}
+                    onClick={() => setCurrentPage(currentPage + 1)}
+                    className="rounded-pill mx-1"
+                  >
+                    Next
+                  </Pagination.Next>
+                </Pagination>
+              </div>
+            </Card.Footer>
+          )}
+        </Card>
       )}
 
       {/* Client Details Modal */}
@@ -790,6 +938,7 @@ const ClientGrid = () => {
           </Button>
         </Modal.Footer>
       </Modal>
+
       <CreateClientModal
         show={showCreateModal}
         onHide={() => setShowCreateModal(false)}
@@ -797,45 +946,44 @@ const ClientGrid = () => {
       />
 
       <style>{`
-        .ag-theme-alpine {
-          --ag-header-background-color: #f8f9fa;
-          --ag-header-foreground-color: #374151;
-          --ag-border-color: #e5e7eb;
-          --ag-row-hover-color: #f3f4f6;
-          --ag-font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-          --ag-borders: none;
-          --ag-border-radius: 12px;
-          --ag-header-column-separator-display: none;
-          --ag-row-border-style: solid;
-          --ag-row-border-width: 1px;
-          --ag-row-border-color: #f3f4f6;
+        .hover-lift {
+          transition: all 0.2s ease;
+          box-shadow: 0 4px 20px -5px rgba(0, 0, 0, 0.1);
+          opacity: 1;
         }
+        
+        .hover-lift:hover {
+          transform: translateY(-4px);
+          box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+        
+        .cursor-pointer {
+          cursor: pointer;
+        }
+        
+        .table tbody tr {
+          transition: all 0.2s ease;
+          border-bottom: 1px solid #f3f4f6;
+        }
+        
+        .table tbody tr:hover {
+          background-color: #f9fafb;
 
-        .ag-header-cell {
+        }
+        
+        .table th {
+          border-bottom: 2px solid #e5e7eb;
           font-weight: 600;
           font-size: 0.75rem;
           text-transform: uppercase;
           letter-spacing: 0.5px;
         }
-
-        .ag-cell {
-          display: flex;
-          align-items: center;
+        
+        .table td {
+          border-bottom: 1px solid #f3f4f6;
+          vertical-align: middle;
           font-size: 0.875rem;
           color: #374151;
-          font-weight: 400;
-        }
-        
-        .ag-row {
-          border-bottom: 1px solid #f3f4f6;
-        }
-        
-        .ag-row:hover {
-          background-color: #f9fafb;
-        }
-        
-        .ag-pinned-left-header {
-          border-right: none;
         }
         
         .btn-sm {
@@ -845,33 +993,6 @@ const ClientGrid = () => {
         
         .card {
           border-radius: 16px;
-          transition: all 0.2s ease;
-        }
-        
-        .card:hover {
-          transform: translateY(-4px);
-          box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
-        }
-        
-        .icon-btn {
-          background: none;
-          border: none;
-          padding: 6px;
-          margin: 0;
-          color: #6b7280;
-          cursor: pointer;
-          transition: all 0.2s ease;
-          border-radius: 8px;
-        }
-
-        .icon-btn:hover {
-          color: #6366f1;
-          background-color: #f3f4f6;
-        }
-
-        .icon-btn:focus {
-          outline: none;
-          box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
         }
         
         .mb-6 {
@@ -884,6 +1005,23 @@ const ClientGrid = () => {
         
         .text-gray-800 {
           color: #1f2937;
+        }
+        
+        .pagination .page-item .page-link {
+          border: none;
+          border-radius: 50%;
+          margin: 0 2px;
+          color: #6b7280;
+        }
+        
+        .pagination .page-item.active .page-link {
+          background-color: #6366f1;
+          color: white;
+        }
+        
+        .pagination .page-item:not(.active) .page-link:hover {
+          background-color: #f3f4f6;
+          color: #374151;
         }
       `}</style>
     </div>

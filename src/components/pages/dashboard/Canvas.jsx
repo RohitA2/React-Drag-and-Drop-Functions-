@@ -235,40 +235,60 @@ const Canvas = forwardRef(
           textAlign: "center",
         },
         "cover-1": {
-          "cover-1": {
-            backgroundColor: "#f8f9fa", // 👈 initially color
-            backgroundImage: null, // 👈 explicitly null
-            backgroundVideo: null,
-            backgroundGradient: null,
-            overlay: true,
-            textColor: "#ffffff",
-            textAlign: "center",
-            blur: 0,
-            filter: "none",
-          },
-        },
-        "cover-2": {
-          backgroundImage: `${API_URL}/uploads/1756884733919.avif`,
-          textColor: "#222222",
-          textAlign: "left",
-        },
-        "cover-3": {
-          backgroundVideo: `${API_URL}/uploads/sample-video.mp4`,
+          backgroundColor: "#401C47", // 👈 initially color
+          backgroundImage: null, // 👈 explicitly null
+          backgroundVideo: null,
+          backgroundGradient: null,
           overlay: true,
           textColor: "#ffffff",
           textAlign: "center",
+          blur: 0,
+          filter: "none",
+        },
+        "cover-2": {
+          backgroundImage: `${API_URL}/uploads/1758093224957.avif`,
+          backgroundColor: null, // 👈 initially color
+          backgroundVideo: null,
+          backgroundGradient: null,
+          overlay: true,
+          textColor: "#ffffff",
+          textAlign: "center",
+          blur: 0,
+          filter: "none",
+        },
+        "cover-3": {
+          backgroundVideo: `${API_URL}/uploads/1758093032123.mp4`,
+          backgroundColor: null,
+          backgroundImage: null, // 👈 explicitly null
+          backgroundGradient: null,
+          overlay: true,
+          textColor: "#ffffff",
+          textAlign: "center",
+          blur: 0,
+          filter: "none",
         },
         "cover-4": {
           backgroundGradient:
             "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
-          textColor: "#222222",
-          textAlign: "left",
+          backgroundColor: "#f8f9fa", // 👈 initially color
+          backgroundImage: null, // 👈 explicitly null
+          backgroundVideo: null,
+          overlay: true,
+          textColor: "#ffffff",
+          textAlign: "center",
+          blur: 0,
+          filter: "none",
         },
         "cover-5": {
-          backgroundImage: `${API_URL}/uploads/cover5.avif`,
-          backgroundColor: "#EDEDED",
-          textColor: "#111111",
+          backgroundImage: null,
+          backgroundColor: "#153510",
+          backgroundVideo: null,
+          backgroundGradient: null,
+          overlay: true,
+          textColor: "#ffffff",
           textAlign: "center",
+          blur: 0,
+          filter: "none",
         },
         // Other blocks
         text: {
@@ -492,16 +512,44 @@ const Canvas = forwardRef(
           );
 
         case "cover-2":
-          return <CoverBlock2 key={block.id} cover={block.settings} />;
+          return (
+            <CoverBlock2
+              key={block.id}
+              settings={block.settings}
+              parentId={parentIdRef.current}
+              blockId={block.id}
+            />
+          );
 
         case "cover-3":
-          return <CoverBlock3 key={block.id} cover={block.settings} />;
+          return (
+            <CoverBlock3
+              key={block.id}
+              settings={block.settings}
+              parentId={parentIdRef.current}
+              blockId={block.id}
+            />
+          );
 
         case "cover-4":
-          return <CoverBlock4 key={block.id} cover={block.settings} />;
+          return (
+            <CoverBlock4
+              key={block.id}
+              settings={block.settings}
+              parentId={parentIdRef.current}
+              blockId={block.id}
+            />
+          );
 
         case "cover-5":
-          return <CoverBlock5 key={block.id} cover={block.settings} />;
+          return (
+            <CoverBlock5
+              key={block.id}
+              settings={block.settings}
+              parentId={parentIdRef.current}
+              blockId={block.id}
+            />
+          );
 
         // Other blocks
         case "text":

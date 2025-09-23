@@ -102,7 +102,7 @@ const SignUpForm = () => {
           </div>
 
           <div className="input-group">
-            <label htmlFor="password">Password</label>
+            <label htmlFor="password">Password </label>
             <div className="password-input">
               <input
                 type={showPassword ? "text" : "password"}

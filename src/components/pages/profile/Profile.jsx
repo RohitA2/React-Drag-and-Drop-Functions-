@@ -17,6 +17,8 @@ import {
   Edit,
 } from "lucide-react";
 import { updateUserProfile } from "../../../store/authSlice";
+import axios from "axios";
+const API_URL = import.meta.env.VITE_API_URL;
 
 const ProfilePage = () => {
   const dispatch = useDispatch();
@@ -69,14 +71,43 @@ const ProfilePage = () => {
     }));
   };
 
-  const handleImageChange = (e) => {
+  const handleImageChange = async (e) => {
     const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setProfileImage(e.target.result);
-      };
-      reader.readAsDataURL(file);
+    if (!file) return;
+
+    // ✅ Preview locally first
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setProfileImage(e.target.result);
+    };
+    reader.readAsDataURL(file);
+
+    try {
+      // ✅ Upload file to backend
+      const formData = new FormData();
+      formData.append("image", file);
+
+      const uploadRes = await axios.post(`${API_URL}/upload/img`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      // assuming backend returns { url: "https://server.com/uploads/xyz.png" }
+      const uploadedUrl = uploadRes.data.url;
+      console.log("uploadedUrl", uploadedUrl);
+
+      // ✅ Update Redux + backend profile with uploaded URL
+      dispatch(
+        updateUserProfile({
+          ...userData,
+          id: user.id,
+          profileImage: uploadedUrl,
+        })
+      );
+
+      // update preview with real URL
+      setProfileImage(uploadedUrl);
+    } catch (err) {
+      console.error("Image upload failed:", err);
     }
   };
 

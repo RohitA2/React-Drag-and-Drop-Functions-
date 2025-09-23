@@ -2,6 +2,7 @@ import { useState, useRef } from "react";
 import html2canvas from "html2canvas";
 import EditableQuill from "../HeaderBlocks/EditableQuill";
 import axios from "axios";
+import { toast } from "react-toastify";
 
 const DEFAULT_HTML = `
 <p>Include a testimonial from a happy client here. The key is to have your client talk about why they enjoyed working with you.</p>
@@ -32,9 +33,12 @@ const CoverBlock = ({
     overlay: false,
   };
 
+  const incomingTopLevel = settings || {};
+  const nestedCoverSettings = incomingTopLevel["cover-1"] || {};
   const mergedSettings = {
     ...defaultSettings,
-    ...settings,
+    ...incomingTopLevel,
+    ...nestedCoverSettings,
   };
 
   // Save API Call
@@ -52,8 +56,8 @@ const CoverBlock = ({
         payload
       );
 
-      console.log("Saved successfully:", res.data);
-      alert("Cover Block saved!");
+      // console.log("Saved successfully:", res.data);
+      toast.success("Cover Block saved!");
     } catch (err) {
       console.error("Error saving cover block:", err);
       alert("Failed to save cover block.");

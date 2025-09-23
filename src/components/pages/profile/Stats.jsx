@@ -1,481 +1,870 @@
 import React, { useState, useEffect } from "react";
+import {
+  PieChart,
+  Pie,
+  Cell,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
 import { useSelector } from "react-redux";
 import { selectedUserId } from "../../../store/authSlice";
-const API_URL = import.meta.env.VITE_API_URL;
 
-const Stats = () => {
+const API_URL = import.meta.env.VITE_API_URL;
+const ProposalStatsDashboard = () => {
+  // Use the API URL provided by the user
   const userId = useSelector(selectedUserId);
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const URL = `${API_URL}/schedules/manage/${userId}`;
+  // console.log("URL", URL);
+
+  const [stats, setStats] = useState({
+    totalProposals: 0,
+    signed: 0,
+    denied: 0,
+    sent: 0,
+    scheduled: 0,
+    statusPercentages: {},
+    recipientStats: [],
+    timelineData: [],
+    loading: true,
+    error: null,
+  });
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        // In a real application, you would replace this with your actual API endpoint
-        const response = await fetch(`${API_URL}/schedules/manage/${userId}`);
-
-        if (!response.ok) {
-          throw new Error("Failed to fetch data");
-        }
-
-        const result = await response.json();
-        setData(result);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchData();
   }, []);
 
-  if (loading) {
-    return (
-      <div className="stats-container">
-        <div className="loading-spinner">
-          <div className="spinner"></div>
-          <p>Loading proposal data...</p>
-        </div>
-      </div>
-    );
-  }
+  // Fetching data from the actual API endpoint
+  const fetchData = async () => {
+    try {
+      setStats((prev) => ({ ...prev, loading: true, error: null }));
 
-  if (error) {
-    return (
-      <div className="stats-container">
-        <div className="error-message">
-          <i className="fas fa-exclamation-triangle"></i>
-          <h3>Error Loading Data</h3>
-          <p>{error}</p>
-          <button onClick={() => window.location.reload()}>Try Again</button>
-        </div>
-      </div>
-    );
-  }
+      const response = await fetch(URL);
+      // console.log("response from api", response);
 
-  // Calculate statistics
-  const totalProposals = data.groupedProposals.length;
-  const totalRecipients = data.groupedProposals.reduce(
-    (acc, group) => acc + group.recipients.length,
-    0
-  );
-  const sentProposals = data.groupedProposals.filter((group) =>
-    group.recipients.some((recipient) => recipient.status === "sent")
-  ).length;
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const apiData = await response.json();
+      // console.log("apiData", apiData);
 
-  const signedProposals = data.groupedProposals.filter(
-    (group) =>
-      group.signatures && group.signatures.some((sig) => sig.status === true)
-  ).length;
-
-  const scheduledMeetings = data.userSchedules ? data.userSchedules.length : 0;
-
-  // Get recent proposals (last 5)
-  const recentProposals = [...data.groupedProposals]
-    .sort((a, b) => {
-      const dateA = new Date(a.proposals[0]?.createdAt || 0);
-      const dateB = new Date(b.proposals[0]?.createdAt || 0);
-      return dateB - dateA;
-    })
-    .slice(0, 5);
-
-  // Format date function
-  const formatDate = (dateString) => {
-    if (!dateString) return "N/A";
-    const options = { year: "numeric", month: "short", day: "numeric" };
-    return new Date(dateString).toLocaleDateString(undefined, options);
+      if (apiData.success) {
+        calculateStats(apiData);
+      } else {
+        throw new Error("API returned an unsuccessful response");
+      }
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      setStats((prev) => ({
+        ...prev,
+        loading: false,
+        error: error.message,
+      }));
+    }
   };
 
+  const calculateStats = (apiData) => {
+    const { groupedProposals } = apiData;
+    // console.log("groupedProposals", groupedProposals);
+
+    // Add null/undefined check
+    if (!groupedProposals || !Array.isArray(groupedProposals)) {
+      console.warn("groupedProposals is null or not an array");
+      setStats({
+        totalProposals: 0,
+        signed: 0,
+        denied: 0,
+        sent: 0,
+        scheduled: 0,
+        pending: 0,
+        statusPercentages: {
+          signed: 0,
+          denied: 0,
+          sent: 0,
+          scheduled: 0,
+          pending: 0,
+        },
+        recipientStats: [],
+        timelineData: [],
+        loading: false,
+        error: null,
+      });
+      return;
+    }
+
+    let totalProposals = 0;
+    let signedCount = 0;
+    let deniedCount = 0;
+    let sentCount = 0;
+    let scheduledCount = 0;
+
+    const recipientMap = new Map();
+    const timelineData = [];
+
+    // Rest of your existing code remains the same...
+    groupedProposals.forEach((group) => {
+      totalProposals += group.proposals?.length || 0;
+      scheduledCount += group.schedules?.length || 0;
+
+      const groupSigned = (
+        group.signatures?.filter((sig) => sig.status === true) || []
+      ).length;
+
+      const groupDenied = (
+        group.signatures?.filter((sig) => sig.status === false) || []
+      ).length;
+
+      signedCount += groupSigned;
+      deniedCount += groupDenied;
+
+      sentCount += group.recipients?.length || 0;
+
+      // Continue with the rest of your function...
+      (group.recipients || []).forEach((recipient) => {
+        if (recipientMap.has(recipient.recipientEmail)) {
+          recipientMap.set(
+            recipient.recipientEmail,
+            recipientMap.get(recipient.recipientEmail) + 1
+          );
+        } else {
+          recipientMap.set(recipient.recipientEmail, 1);
+        }
+      });
+
+      (group.proposals || []).forEach((proposal) => {
+        let status = "Pending";
+
+        if (group.signatures?.length > 0) {
+          const hasSigned = group.signatures.some((sig) => sig.status === true);
+          const hasDenied = group.signatures.some(
+            (sig) => sig.status === false
+          );
+          if (hasSigned) {
+            status = "Signed";
+          } else if (hasDenied) {
+            status = "Denied";
+          }
+        }
+
+        timelineData.push({
+          name: proposal.proposalName,
+          date: new Date(proposal.expirationDate).toLocaleDateString(),
+          fullDate: proposal.expirationDate,
+          status: status,
+          link: proposal.link,
+        });
+      });
+    });
+
+    const statusPercentages = {
+      signed:
+        totalProposals > 0
+          ? Math.round((signedCount / totalProposals) * 100)
+          : 0,
+      denied:
+        totalProposals > 0
+          ? Math.round((deniedCount / totalProposals) * 100)
+          : 0,
+      sent:
+        totalProposals > 0 ? Math.round((sentCount / totalProposals) * 100) : 0,
+      scheduled:
+        totalProposals > 0
+          ? Math.round((scheduledCount / totalProposals) * 100)
+          : 0,
+      pending:
+        totalProposals > 0
+          ? Math.round(
+              ((totalProposals - signedCount - deniedCount) / totalProposals) *
+                100
+            )
+          : 0,
+    };
+
+    const recipientStats = Array.from(recipientMap, ([email, count]) => {
+      const safeEmail = email || "Unknown";
+      return {
+        email:
+          safeEmail.length > 20
+            ? safeEmail.substring(0, 20) + "..."
+            : safeEmail,
+        fullEmail: safeEmail,
+        count,
+      };
+    })
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+
+    timelineData.sort((a, b) => new Date(b.fullDate) - new Date(a.fullDate));
+
+    setStats({
+      totalProposals,
+      signed: signedCount,
+      denied: deniedCount,
+      sent: sentCount,
+      scheduled: scheduledCount,
+      pending: totalProposals - signedCount - deniedCount,
+      statusPercentages,
+      recipientStats,
+      timelineData: timelineData.slice(0, 10),
+      loading: false,
+      error: null,
+    });
+  };
+
+  const statusData = [
+    {
+      name: "Signed",
+      value: stats.statusPercentages.signed,
+      color: "#10b981",
+      count: stats.signed,
+    },
+    {
+      name: "Sent",
+      value: stats.statusPercentages.sent,
+      color: "#3b82f6",
+      count: stats.sent,
+    },
+    {
+      name: "Pending",
+      value: stats.statusPercentages.pending,
+      color: "#f59e0b",
+      count: stats.pending,
+    },
+    {
+      name: "Scheduled",
+      value: stats.statusPercentages.scheduled,
+      color: "#8b5cf6",
+      count: stats.scheduled,
+    },
+    {
+      name: "Denied",
+      value: stats.statusPercentages.denied,
+      color: "#ef4444",
+      count: stats.denied,
+    },
+  ].filter((item) => item.value > 0);
+
+  const StatCard = ({ title, value, percentage, color, icon, description }) => (
+    <div className="stat-card">
+      <div className="stat-content">
+        <div className="stat-text">
+          <p className="stat-title">{title}</p>
+          <p className="stat-value">{value}</p>
+          <div className="stat-details">
+            <span className="stat-percentage" style={{ color: color }}>
+              {percentage}%
+            </span>
+            <span className="stat-description">{description}</span>
+          </div>
+        </div>
+        <div
+          className="stat-icon"
+          style={{
+            backgroundColor: color
+              .replace("text-", "bg-")
+              .replace("-600", "-100"),
+          }}
+        >
+          <span className="stat-icon-text">{icon}</span>
+        </div>
+      </div>
+    </div>
+  );
+
+  const LoadingSpinner = () => (
+    <div className="loading-container">
+      <div className="spinner"></div>
+    </div>
+  );
+
+  const ErrorMessage = () => (
+    <div className="error-container">
+      <div className="error-content">
+        <div className="error-icon">⚠️</div>
+        <h2 className="error-title">Failed to load data</h2>
+        <p className="error-message">{stats.error}</p>
+        <button onClick={fetchData} className="retry-button">
+          Retry
+        </button>
+      </div>
+    </div>
+  );
+
+  if (stats.loading) return <LoadingSpinner />;
+  if (stats.error) return <ErrorMessage />;
+
   return (
-    <div className="stats-container">
-      <div className="stats-header">
-        {/* <h1>Proposal Dashboard</h1> */}
-        <p>
-          Welcome back, {data.user.firstName}! Here's your Proposals Dashboard.
-        </p>
-      </div>
+    <div className="dashboard-container">
+      <div className="dashboard-content">
+        {/* Stats Grid */}
+        <div className="stats-grid">
+          <StatCard
+            title="Total Proposals"
+            value={stats.totalProposals}
+            percentage={100}
+            color="#3b82f6"
+            icon="📊"
+            description="total"
+          />
+          <StatCard
+            title="Signed"
+            value={stats.signed}
+            percentage={stats.statusPercentages.signed}
+            color="#10b981"
+            icon="✅"
+            description="signed"
+          />
+          <StatCard
+            title="Pending"
+            value={stats.pending}
+            percentage={stats.statusPercentages.pending}
+            color="#f59e0b"
+            icon="⏳"
+            description="pending"
+          />
+          <StatCard
+            title="Scheduled"
+            value={stats.scheduled}
+            percentage={stats.statusPercentages.scheduled}
+            color="#8b5cf6"
+            icon="📅"
+            description="scheduled"
+          />
+        </div>
 
-      {/* Stats Cards */}
-      <div className="stats-grid">
-        <div className="stat-card">
-          <div className="stat-icon proposal-icon">
-            <i className="fas fa-file-contract"></i>
+        {/* Charts Section */}
+        <div className="charts-section">
+          {/* Pie Chart */}
+          <div className="chart-card">
+            <h3 className="chart-title">Status Distribution</h3>
+            <div className="chart-container">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={statusData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={70}
+                    outerRadius={100}
+                    paddingAngle={3}
+                    dataKey="value"
+                    labelLine={false}
+                    label={({ name, percent }) =>
+                      `${name}: ${(percent * 100).toFixed(0)}%`
+                    }
+                  >
+                    {statusData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(value) => [`${value}%`, "Percentage"]} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
           </div>
-          <div className="stat-content">
-            <h3>{totalProposals}</h3>
-            <p>Total Proposals</p>
+
+          {/* Bar Chart */}
+          <div className="chart-card">
+            <h3 className="chart-title">Top Recipients</h3>
+            <div className="chart-container">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={stats.recipientStats}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis
+                    dataKey="email"
+                    angle={-45}
+                    textAnchor="end"
+                    height={80}
+                    tick={{ fontSize: 12, fill: "#6b7280" }}
+                  />
+                  <YAxis tick={{ fill: "#6b7280" }} />
+                  <Tooltip
+                    formatter={(value) => [value, "Proposals"]}
+                    labelFormatter={(label) =>
+                      `Email: ${
+                        stats.recipientStats.find((r) => r.email === label)
+                          ?.fullEmail || label
+                      }`
+                    }
+                  />
+                  <Bar
+                    dataKey="count"
+                    fill="#3b82f6"
+                    radius={[8, 8, 0, 0]}
+                    name="Proposals"
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           </div>
         </div>
 
-        <div className="stat-card">
-          <div className="stat-icon recipient-icon">
-            <i className="fas fa-users"></i>
-          </div>
-          <div className="stat-content">
-            <h3>{totalRecipients}</h3>
-            <p>Recipients</p>
-          </div>
-        </div>
-
-        <div className="stat-card">
-          <div className="stat-icon sent-icon">
-            <i className="fas fa-paper-plane"></i>
-          </div>
-          <div className="stat-content">
-            <h3>{sentProposals}</h3>
-            <p>Sent</p>
-          </div>
-        </div>
-
-        <div className="stat-card">
-          <div className="stat-icon signed-icon">
-            <i className="fas fa-signature"></i>
-          </div>
-          <div className="stat-content">
-            <h3>{signedProposals}</h3>
-            <p>Signed</p>
-          </div>
-        </div>
-
-        <div className="stat-card">
-          <div className="stat-icon schedule-icon">
-            <i className="fas fa-calendar-alt"></i>
-          </div>
-          <div className="stat-content">
-            <h3>{scheduledMeetings}</h3>
-            <p>Scheduled Meetings</p>
-          </div>
-        </div>
-      </div>
-
-      <div className="recent-section">
-        <h2>Recent Proposals</h2>
-        <div className="proposals-list">
-          {recentProposals.map((group, index) => (
-            <div key={index} className="proposal-item">
-              <div className="proposal-info">
-                <h4>
-                  {group.proposals[0]?.proposalName || "Unnamed Proposal"}
-                </h4>
-                <p>Expires: {formatDate(group.proposals[0]?.expirationDate)}</p>
-
-                {/* Show all recipients */}
-                <div className="recipients-list">
-                  {group.recipients.map((recipient) => (
-                    <div key={recipient.id} className="recipient-item">
-                      <p>
-                        <strong>{recipient.recipientName}</strong> (
-                        {recipient.recipientEmail}) -{" "}
-                        <span
-                          className={`recipient-status ${
-                            recipient.status === "sent"
-                              ? "status-sent"
-                              : recipient.status === "signed"
-                              ? "status-signed"
-                              : "status-pending"
-                          }`}
-                        >
-                          {recipient.status}
-                        </span>
-                      </p>
-                    </div>
-                  ))}
+        {/* Progress Bars */}
+        <div className="progress-section">
+          <h3 className="progress-title">Detailed Status Breakdown</h3>
+          <div className="progress-bars-container">
+            {statusData.map((status, index) => (
+              <div key={index} className="progress-bar-item">
+                <div className="progress-bar-info">
+                  <span className="progress-label">
+                    <span
+                      className="progress-color-dot"
+                      style={{ backgroundColor: status.color }}
+                    ></span>
+                    {status.name} ({status.count})
+                  </span>
+                  <span className="progress-percentage">{status.value}%</span>
+                </div>
+                <div className="progress-bar-background">
+                  <div
+                    className="progress-bar-fill"
+                    style={{
+                      width: `${status.value}%`,
+                      backgroundColor: status.color,
+                    }}
+                  ></div>
                 </div>
               </div>
-              <div className="proposal-status">
-                {group.signatures &&
-                group.signatures.some((sig) => sig.status) ? (
-                  <span className="status-badge signed">Signed</span>
-                ) : (
-                  <span className="status-badge pending">Pending</span>
-                )}
-              </div>
-            </div>
-          ))}
+            ))}
+          </div>
+        </div>
+
+        {/* Recent Proposals Table */}
+        <div className="table-section">
+          <div className="table-header">
+            <h3 className="table-title">Recent Proposals</h3>
+            <span className="table-summary">
+              Showing {Math.min(stats.timelineData.length, 10)} of{" "}
+              {stats.totalProposals}
+            </span>
+          </div>
+          <div className="table-container">
+            <table className="proposal-table">
+              <thead>
+                <tr>
+                  <th className="table-cell">Proposal Name</th>
+                  <th className="table-cell">Expiration Date</th>
+                  <th className="table-cell">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {stats.timelineData.map((item, index) => (
+                  <tr key={index} className="table-row">
+                    <td className="table-cell">
+                      <a
+                        href={item.link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="proposal-link"
+                      >
+                        {item.name}
+                      </a>
+                    </td>
+                    <td className="table-cell table-text-color">{item.date}</td>
+                    <td className="table-cell">
+                      <span
+                        className={`status-badge status-${item.status.toLowerCase()}`}
+                      >
+                        {item.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
-
-      <style jsx>{`
-        .stats-container {
-          padding: 24px;
-          font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-          color: #333;
-          max-width: 1200px;
-          margin: 0 auto;
-          background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-          min-height: 100vh;
+      <style>{`
+        /* General Styles */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #f3f4f6;
+            margin: 0;
+        }
+        
+        .dashboard-container {
+            min-height: 100vh;
+            background-color: #f3f4f6;
+            padding: 2rem;
         }
 
-        .stats-header {
-          margin-bottom: 32px;
-          text-align: center;
-          padding: 20px;
-          background: white;
-          border-radius: 12px;
-          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        .dashboard-content {
+            max-width: 80rem;
+            margin: auto;
         }
 
-        .stats-header h1 {
-          font-size: 2.2rem;
-          margin-bottom: 8px;
-          color: #2c3e50;
+        /* Header */
+        .dashboard-header {
+            margin-bottom: 2.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
-        .stats-header p {
-          color: #7f8c8d;
-          font-size: 1.1rem;
+        .header-title {
+            font-size: 2.25rem;
+            font-weight: 800;
+            color: #111827;
         }
 
+        .header-subtitle {
+            color: #6b7280;
+            margin-top: 0.5rem;
+        }
+
+        .refresh-button {
+            background-color: #ffffff;
+            color: #4b5563;
+            padding: 0.5rem 1.25rem;
+            border-radius: 0.75rem;
+            border: 1px solid #d1d5db;
+            transition: background-color 0.2s, box-shadow 0.2s;
+            display: flex;
+            align-items: center;
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        }
+
+        .refresh-button:hover {
+            background-color: #f9fafb;
+        }
+
+        .refresh-icon {
+            margin-right: 0.5rem;
+        }
+        
+        /* Stat Cards */
         .stats-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-          gap: 20px;
-          margin-bottom: 40px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2.5rem;
         }
-
+        
         .stat-card {
-          background: white;
-          border-radius: 12px;
-          padding: 20px;
-          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-          display: flex;
-          align-items: center;
-          transition: transform 0.3s ease, box-shadow 0.3s ease;
+            background-color: #ffffff;
+            border-radius: 1rem;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+            padding: 1.5rem;
+            border: 1px solid #f3f4f6;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
-
+        
         .stat-card:hover {
-          transform: translateY(-5px);
-          box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
         }
 
+        .stat-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .stat-text {
+            flex: 1;
+        }
+
+        .stat-title {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #6b7280;
+        }
+
+        .stat-value {
+            font-size: 1.875rem;
+            font-weight: 700;
+            color: #111827;
+            margin-top: 0.5rem;
+        }
+        
+        .stat-details {
+            display: flex;
+            align-items: center;
+            margin-top: 0.5rem;
+        }
+        
+        .stat-percentage {
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        .stat-description {
+            font-size: 0.875rem;
+            color: #9ca3af;
+            margin-left: 0.25rem;
+        }
+        
         .stat-icon {
-          width: 60px;
-          height: 60px;
-          border-radius: 12px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          margin-right: 15px;
-          font-size: 24px;
-          color: white;
+            padding: 0.75rem;
+            border-radius: 9999px;
+            margin-left: 1rem;
         }
 
-        .proposal-icon {
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        .stat-icon-text {
+            font-size: 1.5rem;
         }
 
-        .recipient-icon {
-          background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        /* Charts Section */
+        .charts-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2.5rem;
         }
 
-        .sent-icon {
-          background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        .chart-card {
+            background-color: #ffffff;
+            border-radius: 1rem;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+            padding: 1.5rem;
+            border: 1px solid #f3f4f6;
+        }
+        
+        .chart-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #111827;
+            margin-bottom: 1rem;
         }
 
-        .signed-icon {
-          background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+        .chart-container {
+            height: 20rem;
+        }
+        
+        /* Progress Bars */
+        .progress-section {
+            background-color: #ffffff;
+            border-radius: 1rem;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+            padding: 1.5rem;
+            margin-bottom: 2.5rem;
+            border: 1px solid #f3f4f6;
         }
 
-        .schedule-icon {
-          background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+        .progress-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #111827;
+            margin-bottom: 1.5rem;
         }
 
-        .stat-content h3 {
-          font-size: 2rem;
-          margin: 0 0 5px 0;
-          color: #2c3e50;
+        .progress-bars-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
         }
 
-        .stat-content p {
-          margin: 0;
-          color: #7f8c8d;
-          font-size: 0.9rem;
+        .progress-bar-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
         }
 
-        .recent-section {
-          background: white;
-          border-radius: 12px;
-          padding: 24px;
-          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        .progress-bar-info {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.875rem;
         }
 
-        .recent-section h2 {
-          margin-top: 0;
-          color: #2c3e50;
-          padding-bottom: 16px;
-          border-bottom: 1px solid #ecf0f1;
+        .progress-label {
+            font-weight: 500;
+            color: #4b5563;
+            display: flex;
+            align-items: center;
         }
 
-        .proposals-list {
-          display: flex;
-          flex-direction: column;
-          gap: 16px;
+        .progress-color-dot {
+            width: 0.75rem;
+            height: 0.75rem;
+            border-radius: 9999px;
+            margin-right: 0.5rem;
         }
 
-        .proposal-item {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          padding: 16px;
-          border-radius: 8px;
-          background: #f8f9fa;
-          transition: background-color 0.2s ease;
+        .progress-percentage {
+            color: #4b5563;
+            font-weight: 600;
         }
 
-        .proposal-item:hover {
-          background: #e9ecef;
+        .progress-bar-background {
+            width: 100%;
+            background-color: #e5e7eb;
+            border-radius: 9999px;
+            height: 0.5rem;
         }
 
-        .proposal-info h4 {
-          margin: 0 0 8px 0;
-          color: #2c3e50;
+        .progress-bar-fill {
+  height: 0.5rem;
+  border-radius: 9999px;
+  transition: width 0.5s ease-out;
+  max-width: 100%; /* Add this line to prevent overflow */
+}
+
+        /* Table */
+        .table-section {
+            background-color: #ffffff;
+            border-radius: 1rem;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+            padding: 1.5rem;
+            border: 1px solid #f3f4f6;
         }
 
-        .proposal-info p {
-          margin: 4px 0;
-          color: #7f8c8d;
-          font-size: 0.9rem;
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
         }
 
+        .table-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #111827;
+        }
+
+        .table-summary {
+            font-size: 0.875rem;
+            color: #6b7280;
+        }
+        
+        .table-container {
+            overflow-x: auto;
+            border-radius: 0.5rem;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .proposal-table {
+            min-width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+        }
+        
+        .proposal-table thead {
+            background-color: #f9fafb;
+        }
+
+        .proposal-table th {
+            text-align: left;
+            padding: 0.75rem 1.5rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .proposal-table tbody {
+            background-color: #ffffff;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .table-row {
+            transition: background-color 0.2s;
+        }
+        
+        .table-row:hover {
+            background-color: #f9fafb;
+        }
+
+        .table-cell {
+            padding: 1rem 1.5rem;
+            font-size: 0.875rem;
+        }
+
+        .proposal-link {
+            color: #3b82f6;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .proposal-link:hover {
+            text-decoration: underline;
+            color: #2563eb;
+        }
+
+        .table-text-color {
+            color: #4b5563;
+        }
+        
         .status-badge {
-          padding: 6px 12px;
-          border-radius: 20px;
-          font-size: 0.8rem;
-          font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 500;
         }
 
-        .status-badge.signed {
-          background: #e8f5e9;
-          color: #2e7d32;
+        .status-signed {
+            background-color: #d1fae5;
+            color: #065f46;
         }
-
-        .status-badge.pending {
-          background: #ffecb3;
-          color: #f57c00;
+        .status-denied {
+            background-color: #fee2e2;
+            color: #991b1b;
         }
-
-        .loading-spinner {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          height: 50vh;
+        .status-pending {
+            background-color: #fffbeb;
+            color: #92400e;
+        }
+        
+        /* Loading & Error */
+        .loading-container, .error-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
         }
 
         .spinner {
-          border: 4px solid rgba(0, 0, 0, 0.1);
-          border-left-color: #667eea;
-          border-radius: 50%;
-          width: 40px;
-          height: 40px;
-          animation: spin 1s linear infinite;
-          margin-bottom: 16px;
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left-color: #3b82f6;
+            border-radius: 50%;
+            width: 3rem;
+            height: 3rem;
+            animation: spin 1s linear infinite;
+        }
+        
+        .error-content {
+            text-align: center;
         }
 
-        @keyframes spin {
-          to {
-            transform: rotate(360deg);
-          }
+        .error-icon {
+            font-size: 3rem;
+            color: #ef4444;
+            margin-bottom: 1rem;
+        }
+
+        .error-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #111827;
+            margin-bottom: 0.5rem;
         }
 
         .error-message {
-          text-align: center;
-          padding: 40px;
-          background: white;
-          border-radius: 12px;
-          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            color: #4b5563;
+            margin-bottom: 1rem;
+        }
+        
+        .retry-button {
+            background-color: #3b82f6;
+            color: #ffffff;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            transition: background-color 0.2s;
         }
 
-        .error-message i {
-          font-size: 3rem;
-          color: #e74c3c;
-          margin-bottom: 16px;
-        }
-
-        .error-message h3 {
-          color: #2c3e50;
-          margin-bottom: 8px;
-        }
-
-        .error-message p {
-          color: #7f8c8d;
-          margin-bottom: 20px;
-        }
-
-        .error-message button {
-          background: #667eea;
-          color: white;
-          border: none;
-          padding: 10px 20px;
-          border-radius: 6px;
-          cursor: pointer;
-          font-size: 1rem;
-          transition: background 0.3s ease;
-        }
-
-        .error-message button:hover {
-          background: #5a6fd5;
-        }
-
-        /* Responsive adjustments */
-        @media (max-width: 768px) {
-          .stats-grid {
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-          }
-
-          .stat-card {
-            flex-direction: column;
-            text-align: center;
-          }
-
-          .stat-icon {
-            margin-right: 0;
-            margin-bottom: 10px;
-          }
-
-          .proposal-item {
-            flex-direction: column;
-            text-align: center;
-            gap: 12px;
-          }
-          .recipients-list {
-            margin-top: 8px;
-          }
-
-          .recipient-item {
-            font-size: 0.85rem;
-            color: #555;
-            margin: 2px 0;
-          }
-
-          .recipient-status {
-            font-weight: 600;
-            text-transform: capitalize;
-          }
-
-          .status-sent {
-            color: #007bff;
-          }
-
-          .status-signed {
-            color: #28a745;
-          }
-
-          .status-pending {
-            color: #f57c00;
-          }
+        .retry-button:hover {
+            background-color: #2563eb;
         }
       `}</style>
-
-      {/* Add Font Awesome for icons */}
-      <link
-        rel="stylesheet"
-        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
-      />
     </div>
   );
 };
 
-export default Stats;
+export default ProposalStatsDashboard;

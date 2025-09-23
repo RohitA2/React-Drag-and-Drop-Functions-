@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Card, Button, Container, Row, Col, Badge } from "react-bootstrap";
+import { Card, Button, Container, Row, Col, Badge, Modal } from "react-bootstrap";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 import { useSelector } from "react-redux";
@@ -21,6 +21,8 @@ export default function OverView() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [viewMode, setViewMode] = useState("month"); // day | week | month
+  const [showEventModal, setShowEventModal] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState(null);
 
   // Fetch schedule data from API
   useEffect(() => {
@@ -116,8 +118,8 @@ export default function OverView() {
       })`;
     }
     return `${start.getDate()} ${startMonth} - ${end.getDate()} ${endMonth}, ${start.getFullYear()} (Week ${
-      currentWeek.weekNumber
-    })`;
+        currentWeek.weekNumber
+      })`;
   };
 
   // Get events for specific date
@@ -201,6 +203,91 @@ export default function OverView() {
   // Get event badge color
   const getEventBadgeColor = (event) => {
     return event.proposalEmail ? "success" : "primary";
+  };
+
+  // Handle event click to show details
+  const handleEventClick = (event, cellDate) => {
+    setSelectedEvent({ ...event, fullDate: cellDate });
+    setShowEventModal(true);
+  };
+
+  // Event Detail Modal Component
+  const EventDetailModal = () => {
+    if (!selectedEvent) return null;
+
+    return (
+      <Modal show={showEventModal} onHide={() => setShowEventModal(false)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Event Details</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <div className="mb-3">
+            <strong>Date: </strong>
+            {selectedEvent.fullDate.toLocaleDateString('en-US', { 
+              weekday: 'long', 
+              year: 'numeric', 
+              month: 'long', 
+              day: 'numeric' 
+            })}
+          </div>
+          <div className="mb-3">
+            <strong>Time: </strong>
+            {formatTime(selectedEvent.time)}
+          </div>
+          <div className="mb-3">
+            <strong>Type: </strong>
+            <Badge bg={getEventBadgeColor(selectedEvent)} className="ms-2">
+              {selectedEvent.proposalEmail ? "Proposal" : "Event"}
+            </Badge>
+          </div>
+          <div className="mb-3">
+            <strong>Title: </strong>
+            {getEventDisplayText(selectedEvent)}
+          </div>
+          
+          {selectedEvent.proposalEmail && (
+            <>
+              {selectedEvent.proposalEmail.fromName && (
+                <div className="mb-2">
+                  <strong>From: </strong>
+                  {selectedEvent.proposalEmail.fromName}
+                </div>
+              )}
+              {selectedEvent.proposalEmail.link && (
+                <div className="mb-2">
+                  <strong>Link: </strong>
+                  <a 
+                    href={selectedEvent.proposalEmail.link} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-decoration-none"
+                  >
+                    {selectedEvent.proposalEmail.link}
+                  </a>
+                </div>
+              )}
+              {selectedEvent.proposalEmail.expirationDate && (
+                <div className="mb-2">
+                  <strong>Expiration Date: </strong>
+                  {new Date(selectedEvent.proposalEmail.expirationDate).toLocaleDateString()}
+                </div>
+              )}
+              {selectedEvent.proposalEmail.description && (
+                <div className="mb-2">
+                  <strong>Description: </strong>
+                  {selectedEvent.proposalEmail.description}
+                </div>
+              )}
+            </>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowEventModal(false)}>
+            Close
+          </Button>
+        </Modal.Footer>
+      </Modal>
+    );
   };
 
   return (
@@ -328,9 +415,8 @@ export default function OverView() {
                                         className={`event-item bg-${getEventBadgeColor(
                                           event
                                         )} text-white rounded p-1 mb-1 small`}
-                                        title={`${formatTime(
-                                          event.time
-                                        )} - ${getEventDisplayText(event)}`}
+                                        onClick={() => handleEventClick(event, cell.date)}
+                                        style={{ cursor: 'pointer' }}
                                       >
                                         <div className="event-time">
                                           {formatTime(event.time)}
@@ -342,7 +428,19 @@ export default function OverView() {
                                     ))}
 
                                   {cell.events.length > 3 && (
-                                    <div className="more-events text-center small text-muted">
+                                    <div 
+                                      className="more-events text-center small text-muted"
+                                      onClick={() => {
+                                        // Show all events for this day in modal
+                                        setSelectedEvent({ 
+                                          multipleEvents: true,
+                                          events: cell.events,
+                                          fullDate: cell.date
+                                        });
+                                        setShowEventModal(true);
+                                      }}
+                                      style={{ cursor: 'pointer' }}
+                                    >
                                       +{cell.events.length - 3} more
                                     </div>
                                   )}
@@ -399,9 +497,8 @@ export default function OverView() {
                                       className={`event-item bg-${getEventBadgeColor(
                                         event
                                       )} text-white p-1 rounded small`}
-                                      title={`${formatTime(
-                                        event.time
-                                      )} - ${getEventDisplayText(event)}`}
+                                      onClick={() => handleEventClick(event, day)}
+                                      style={{ cursor: 'pointer' }}
                                     >
                                       {formatTime(event.time)}
                                     </div>
@@ -434,6 +531,8 @@ export default function OverView() {
                           <div
                             key={index}
                             className="event-card p-3 mb-3 bg-light rounded border"
+                            onClick={() => handleEventClick(event, new Date(event.date))}
+                            style={{ cursor: 'pointer' }}
                           >
                             <div className="d-flex justify-content-between align-items-start">
                               <div>
@@ -481,6 +580,9 @@ export default function OverView() {
           )}
         </Col>
       </Row>
+
+      {/* Event Detail Modal */}
+      <EventDetailModal />
 
       {/* Styles */}
       <style>{`
@@ -533,7 +635,6 @@ export default function OverView() {
         
         .event-item {
           font-size: 0.75rem;
-          cursor: pointer;
           transition: all 0.2s;
         }
         

@@ -68,6 +68,16 @@ export default function Dashboard() {
             <Nav.Item>
               <Nav.Link
                 as={Link}
+                to="/schedule"
+                className="px-4 rounded-pill fw-semibold text-dark"
+                activeclassname="active"
+              >
+                Schedules
+              </Nav.Link>
+            </Nav.Item>
+            <Nav.Item>
+              <Nav.Link
+                as={Link}
                 to="/clients"
                 className="px-4 rounded-pill text-dark fw-semibold"
                 activeclassname="active"
