@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { toast } from "react-toastify";
 
 const SignUpForm = () => {
   const navigate = useNavigate();
@@ -37,12 +38,14 @@ const SignUpForm = () => {
 
     try {
       const res = await axios.post(`${API_URL}/api/auth/register`, formData);
+      console.log(res.data);
 
       if (res.status === 200 || res.status === 201) {
-        alert("Account created successfully!");
+        toast.success("Account created successfully.");
         navigate("/login"); // ✅ Redirect after success
       } else {
-        alert("Failed to create account. Please try again.");
+        const message = res?.data?.message || "Something went wrong.";
+        alert(`Error: ${message}`);
       }
     } catch (error) {
       console.error("Registration error:", error);

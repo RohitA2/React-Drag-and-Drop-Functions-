@@ -1,4 +1,3 @@
-// src/ProposalViewer.jsx
 import React, { useEffect, useMemo, useState, useCallback } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import "react-quill/dist/quill.snow.css";
@@ -11,7 +10,6 @@ import AttachmentView from "./AttachmentView";
 import TermsView from "./TermsView";
 import PriceView from "./PriceView";
 import CoverPreview from "./coverPreview";
-
 import axios from "axios";
 import TextView from "./TextView";
 
@@ -111,7 +109,7 @@ const LAYOUTS = {
   },
 };
 
-// Add only the necessary Quill CSS classes that appear in your API response
+// Add only the necessary Quill CSS classes
 const quillStyles = `
   .ql-align-center { text-align: center; }
   .ql-align-right { text-align: right; }
@@ -129,31 +127,20 @@ const quillStyles = `
   .ql-editor h6 { font-size: 1rem; }
 `;
 
-// Utility function to check if URL is likely an image
 const isImageUrl = (url) => {
   if (!url) return false;
   const imageExtensions = [".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg"];
   return imageExtensions.some((ext) => url.toLowerCase().includes(ext));
 };
 
-// Utility function to resolve image URLs
 const resolveUrl = (url) => {
   if (!url) return null;
-
-  // If it's already an absolute URL, return as-is
-  if (
-    url.startsWith("http://") ||
-    url.startsWith("https://") ||
-    url.startsWith("data:")
-  ) {
+  if (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("data:")) {
     return url;
   }
-
-  // If it's a relative path, prepend the API base URL
   return `${API_BASE}${url.startsWith("/") ? url : "/" + url}`;
 };
 
-// Safe image component to use in your render methods
 const SafeImage = ({ src, alt, style, ...props }) => {
   const [hasError, setHasError] = useState(false);
   const resolvedUrl = resolveUrl(src);
@@ -190,7 +177,6 @@ const SafeImage = ({ src, alt, style, ...props }) => {
 
 const merge = (a, b) => ({ ...(a || {}), ...(b || {}) });
 
-// Proposal Layout Component
 const ProposalLayout = React.memo(({ proposal }) => {
   const view = useMemo(() => {
     if (!proposal) return null;
@@ -268,7 +254,6 @@ const ProposalLayout = React.memo(({ proposal }) => {
   const renderContent = useCallback((subtitleHtml, titleHtml) => {
     return (
       <>
-        {/* Subtitle */}
         {subtitleHtml && (
           <div
             className="ql-editor"
@@ -283,8 +268,6 @@ const ProposalLayout = React.memo(({ proposal }) => {
             dangerouslySetInnerHTML={{ __html: subtitleHtml }}
           />
         )}
-
-        {/* Title */}
         {titleHtml && (
           <div
             className="ql-editor"
@@ -355,7 +338,6 @@ const ProposalLayout = React.memo(({ proposal }) => {
             flexDirection: isLeftPanel ? "row" : "row-reverse",
           }}
         >
-          {/* Image panel */}
           <div
             style={{
               width: `${isLeftPanel ? leftPct : rightPct}%`,
@@ -377,8 +359,6 @@ const ProposalLayout = React.memo(({ proposal }) => {
               />
             )}
           </div>
-
-          {/* Content panel */}
           <div
             style={{
               width: `${isLeftPanel ? rightPct : leftPct}%`,
@@ -420,7 +400,6 @@ const ProposalLayout = React.memo(({ proposal }) => {
         <div
           style={{ display: "flex", flexDirection: "column", width: "100%" }}
         >
-          {/* Image panel */}
           <div
             style={{
               width: "100%",
@@ -442,8 +421,6 @@ const ProposalLayout = React.memo(({ proposal }) => {
               />
             )}
           </div>
-
-          {/* Content panel */}
           <div
             style={{
               width: "100%",
@@ -489,7 +466,6 @@ const ProposalLayout = React.memo(({ proposal }) => {
             minHeight: "600px",
           }}
         >
-          {/* Image panel (at the bottom due to column-reverse) */}
           <div
             style={{
               width: "100%",
@@ -512,8 +488,6 @@ const ProposalLayout = React.memo(({ proposal }) => {
               />
             )}
           </div>
-
-          {/* Content panel (at the top due to column-reverse) */}
           <div
             style={{
               width: "100%",
@@ -559,7 +533,6 @@ const ProposalLayout = React.memo(({ proposal }) => {
             minHeight: "600px",
           }}
         >
-          {/* Background image */}
           <div
             style={{
               position: "absolute",
@@ -585,8 +558,6 @@ const ProposalLayout = React.memo(({ proposal }) => {
               />
             )}
           </div>
-
-          {/* Content overlay */}
           <div
             style={{
               position: "relative",
@@ -627,7 +598,6 @@ const ProposalLayout = React.memo(({ proposal }) => {
       clientNameHtml,
       senderNameHtml,
     }) => {
-      // Check if background is white to adjust text color for this layout
       const isWhiteBg = (backgroundColor || "").toLowerCase() === "#ffffff";
       const textColorForLayout = isWhiteBg ? "#333" : textColor;
 
@@ -639,7 +609,6 @@ const ProposalLayout = React.memo(({ proposal }) => {
             minHeight: "600px",
           }}
         >
-          {/* Background image */}
           <div
             style={{
               width: "100%",
@@ -660,8 +629,6 @@ const ProposalLayout = React.memo(({ proposal }) => {
               />
             )}
           </div>
-
-          {/* Content overlay */}
           <div
             style={{
               position: "absolute",
@@ -679,7 +646,6 @@ const ProposalLayout = React.memo(({ proposal }) => {
               ...(layoutStyles.contentStyle || {}),
             }}
           >
-            {/* Title box */}
             <div
               style={{
                 backgroundColor: "#f8f9fa",
@@ -692,7 +658,6 @@ const ProposalLayout = React.memo(({ proposal }) => {
                 ...(layoutStyles.titleBox || {}),
               }}
             >
-              {/* Logo */}
               <div
                 style={{
                   display: "flex",
@@ -724,8 +689,6 @@ const ProposalLayout = React.memo(({ proposal }) => {
                   </div>
                 )}
               </div>
-
-              {/* Title */}
               {titleHtml && (
                 <div
                   className="ql-editor"
@@ -742,8 +705,6 @@ const ProposalLayout = React.memo(({ proposal }) => {
                 />
               )}
             </div>
-
-            {/* Price section */}
             {price && (
               <div
                 style={{
@@ -789,8 +750,6 @@ const ProposalLayout = React.memo(({ proposal }) => {
                 </div>
               </div>
             )}
-
-            {/* Footer */}
             <div
               style={{
                 display: "grid",
@@ -840,15 +799,11 @@ const ProposalLayout = React.memo(({ proposal }) => {
     ui,
   } = view;
 
-  // layout widths for left/right panels
   const leftPct = Math.max(0, Math.min(100, Number(ui.leftWidth ?? 50)));
   const rightPct = 100 - leftPct;
-
-  // Check if background is white to adjust text color
   const isWhiteBackground = (backgroundColor || "").toLowerCase() === "#ffffff";
   const dynamicTextColor = isWhiteBackground ? "#333" : textColor;
 
-  // Render different layouts based on layoutType
   switch (layoutType) {
     case "left-panel":
       return renderSidePanelLayout({
@@ -952,7 +907,6 @@ const ProposalLayout = React.memo(({ proposal }) => {
   }
 });
 
-// Main Component
 export default function ProposalViewer() {
   const [blocks, setBlocks] = useState([]);
   const [user, setUser] = useState(null);
@@ -965,10 +919,7 @@ export default function ProposalViewer() {
   const [tokenInfoLoaded, setTokenInfoLoaded] = useState(false);
   const token = sp.get("token");
   const [status, setStatus] = useState({ loading: true, error: null });
-  // console.log("i am tokem from sp ", token);
 
-  // When parentId is provided, fetch ordered block metadata, then fetch data per type
-  // STEP 1: Fetch parent (proposal) details, including recipients
   useEffect(() => {
     if (!parentIdFromQuery) {
       setStatus({ loading: false, error: "Missing parentId" });
@@ -982,27 +933,19 @@ export default function ProposalViewer() {
 
         let recipient = null;
 
-        // ✅ Only call verify-by-token if token is provided
         if (token) {
-          const proposalRes = await axios.get(
-            `${API_BASE}/verify/view-by-token`,
-            {
-              params: { token },
-            }
-          );
-
+          const proposalRes = await axios.get(`${API_BASE}/verify/view-by-token`, {
+            params: { token },
+          });
           if (!proposalRes.data?.success) throw new Error("Proposal not found");
-          recipient = proposalRes.data.data; // already the matched recipient
+          recipient = proposalRes.data.data;
         }
 
         if (isMounted) {
           setRecipient(recipient);
         }
 
-        // STEP 2: Fetch blocks metadata
-        const res = await fetch(
-          `${API_BASE}/parents/${parentIdFromQuery}/blocks`
-        );
+        const res = await fetch(`${API_BASE}/parents/${parentIdFromQuery}/blocks`);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const json = await res.json();
 
@@ -1015,7 +958,6 @@ export default function ProposalViewer() {
           (a, b) => (a.orderIndex ?? 0) - (b.orderIndex ?? 0)
         );
 
-        // STEP 3: Fetch block data
         const blocksWithData = await Promise.all(
           sortedMeta.map(async (blockMeta) => {
             const { type, blockId, id } = blockMeta;
@@ -1030,31 +972,22 @@ export default function ProposalViewer() {
                 case "header-3":
                 case "header-4":
                 case "header-5":
-                  const resHeaders = await fetch(
-                    `${API_BASE}/api/headerBlock?ids=${actualId}`
-                  );
+                  const resHeaders = await fetch(`${API_BASE}/api/headerBlock?ids=${actualId}`);
                   if (resHeaders.ok) {
                     const jsonHeaders = await resHeaders.json();
-                    if (
-                      jsonHeaders.success &&
-                      Array.isArray(jsonHeaders.data)
-                    ) {
+                    if (jsonHeaders.success && Array.isArray(jsonHeaders.data)) {
                       data = jsonHeaders.data[0] || null;
                     }
                   }
                   break;
 
                 case "parties":
-                  const partyRes = await axios.get(
-                    `${API_BASE}/parties/block/${actualId}`
-                  );
+                  const partyRes = await axios.get(`${API_BASE}/parties/block/${actualId}`);
                   data = partyRes.data?.success ? partyRes.data.data : null;
                   break;
 
                 case "calender":
-                  const scheduleRes = await axios.get(
-                    `${API_BASE}/schedules/sign/${actualId}`
-                  );
+                  const scheduleRes = await axios.get(`${API_BASE}/schedules/sign/${actualId}`);
                   data = scheduleRes.data?.success
                     ? Array.isArray(scheduleRes.data.data)
                       ? scheduleRes.data.data[0]
@@ -1063,55 +996,39 @@ export default function ProposalViewer() {
                   break;
 
                 case "signature":
-                  const signatureRes = await axios.get(
-                    `${API_BASE}/signatures/sign/${actualId}`
-                  );
-                  data = signatureRes.data?.success
-                    ? signatureRes.data.data
-                    : null;
+                  const signatureRes = await axios.get(`${API_BASE}/signatures/sign/${actualId}`);
+                  data = signatureRes.data?.success ? signatureRes.data.data : null;
                   break;
 
                 case "text":
-                  const textRes = await axios.get(
-                    `${API_BASE}/text/${actualId}/${parentIdFromQuery}`
-                  );
+                  const textRes = await axios.get(`${API_BASE}/text/${actualId}/${parentIdFromQuery}`);
                   data = textRes.data?.success ? textRes.data.data : null;
                   break;
 
                 case "pdf":
-                  const pdfRes = await axios.get(
-                    `${API_BASE}/api/pdfblocks/${actualId}`
-                  );
+                  const pdfRes = await axios.get(`${API_BASE}/api/pdfblocks/${actualId}`);
                   data = pdfRes.data?.data || null;
                   break;
 
                 case "video":
-                  const videoRes = await axios.get(
-                    `${API_BASE}/video/${actualId}`
-                  );
+                  const videoRes = await axios.get(`${API_BASE}/video/${actualId}`);
                   data = videoRes.data?.data || null;
                   break;
 
                 case "link":
-                  const attachmentRes = await axios.get(
-                    `${API_BASE}/attachments/data/${actualId}`
-                  );
-                  data = attachmentRes.data?.success
-                    ? attachmentRes.data.data
-                    : null;
+                  const attachmentRes = await axios.get(`${API_BASE}/attachments/data/${actualId}`);
+                  data = attachmentRes.data?.success ? attachmentRes.data.data : null;
                   break;
 
                 case "terms":
-                  const termsRes = await axios.get(
-                    `${API_BASE}/terms/get/${actualId}/${parentIdFromQuery}`
-                  );
+                  const termsRes = await axios.get(`${API_BASE}/terms/get/${actualId}/${parentIdFromQuery}`);
                   data = termsRes.data?.success ? termsRes.data.data : null;
                   break;
 
                 case "price":
-                  const priceRes = await axios.get(
-                    `${API_BASE}/pricing/${actualId}`
-                  );
+                case "price-2":
+                case "price-3": // Added price-2 and price-3 to handle all price types
+                  const priceRes = await axios.get(`${API_BASE}/pricing/${actualId}`);
                   data = priceRes.data?.success ? priceRes.data.data : null;
                   break;
 
@@ -1120,13 +1037,10 @@ export default function ProposalViewer() {
                 case "cover-2":
                 case "cover-3":
                 case "cover-4":
-                case "cover-5": {
-                  const coverRes = await axios.get(
-                    `${API_BASE}/cover/coverBlock/${actualId}`
-                  );
+                case "cover-5":
+                  const coverRes = await axios.get(`${API_BASE}/cover/coverBlock/${actualId}`);
                   data = coverRes.data?.success ? coverRes.data.data : null;
                   break;
-                }
 
                 default:
                   console.warn(`Unknown block type: ${type}`);
@@ -1145,8 +1059,7 @@ export default function ProposalViewer() {
           setStatus({ loading: false, error: null });
         }
       } catch (e) {
-        if (isMounted)
-          setStatus({ loading: false, error: e.message || "Error" });
+        if (isMounted) setStatus({ loading: false, error: e.message || "Error" });
       }
     })();
 
@@ -1391,7 +1304,6 @@ export default function ProposalViewer() {
           flexDirection: "column",
         }}
       >
-        {/* Render all blocks in the correct order */}
         {blocks.map((block) => {
           const { type, data, blockId } = block;
 
@@ -1475,22 +1387,22 @@ export default function ProposalViewer() {
                 />
               ) : null;
 
-            case "price": {
+            case "price":
+            case "price-2":
+            case "price-3": // Handle all price variants
               return data ? (
                 <PriceView key={blockId || block.id} price={data} />
               ) : null;
-            }
 
             case "cover":
             case "cover-1":
             case "cover-2":
             case "cover-3":
             case "cover-4":
-            case "cover-5": {
+            case "cover-5":
               return data ? (
                 <CoverPreview key={blockId || block.id} cover={data} />
               ) : null;
-            }
 
             default:
               return null;

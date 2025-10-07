@@ -20,7 +20,6 @@ import {
   Plus,
   User,
   Building,
-  Download,
   MoreVertical,
   ChevronDown,
   ChevronUp,
@@ -41,6 +40,9 @@ const ClientGrid = () => {
   const [selectedClient, setSelectedClient] = useState(null);
   const [activeFilter, setActiveFilter] = useState("all");
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [selectedClientToDelete, setSelectedClientToDelete] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [sortField, setSortField] = useState("id");
@@ -160,27 +162,69 @@ const ClientGrid = () => {
 
   // Handle edit client
   const handleEditClient = (client) => {
-    console.log("Edit client:", client);
-    alert(`Edit functionality for ${client.name} would be implemented here`);
+    setSelectedClient(client);
+    setShowEditModal(true);
   };
 
   // Handle delete client
   const handleDeleteClient = async (client) => {
-    if (window.confirm(`Are you sure you want to delete ${client.name}?`)) {
+    setSelectedClientToDelete(client);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = async () => {
+    if (selectedClientToDelete) {
       try {
-        const response = await fetch(`${API_URL}/api/recipients/${client.id}`, {
+        const response = await fetch(`${API_URL}/api/recipients/${selectedClientToDelete.id}`, {
           method: "DELETE",
         });
 
         if (response.ok) {
-          setRowData((prev) => prev.filter((c) => c.id !== client.id));
+          setRowData((prev) => prev.filter((c) => c.id !== selectedClientToDelete.id));
           alert("Client deleted successfully");
         } else {
           throw new Error("Failed to delete client");
         }
       } catch (err) {
         alert("Error deleting client: " + err.message);
+      } finally {
+        setShowDeleteModal(false);
+        setSelectedClientToDelete(null);
       }
+    }
+  };
+
+  // Handle update client
+  const handleUpdateClient = async (updatedClient) => {
+    try {
+      setLoading(true);
+      const response = await fetch(`${API_URL}/api/recipients/${selectedClient.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updatedClient),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      if (data.success) {
+        setRowData((prev) =>
+          prev.map((client) =>
+            client.id === selectedClient.id ? data.data : client
+          )
+        );
+        setShowEditModal(false);
+        alert("Client updated successfully");
+      } else {
+        throw new Error(data.message || "Failed to update client");
+      }
+    } catch (err) {
+      setError(err.message);
+      console.error("Error updating client:", err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -238,7 +282,7 @@ const ClientGrid = () => {
       style={{ backgroundColor: "#f9fafb", minHeight: "100vh" }}
     >
       {/* Header */}
-      <div className="d-flex justify-content-between align-items-center mb-6">
+      <div className="d-flex justify-content-between align-items-center mb-4">
         <div>
           <h2 className="fw-bold mb-1 text-gray-800">Client Management</h2>
           <p className="text-muted mb-0">
@@ -247,14 +291,6 @@ const ClientGrid = () => {
         </div>
 
         <div className="d-flex gap-3">
-          {/* <Button
-            variant="outline-primary"
-            className="d-flex align-items-center rounded-pill px-4 border-2"
-            style={{ fontWeight: 500 }}
-          >
-            <Download size={18} className="me-2" />
-            Export
-          </Button> */}
           <Button
             variant="primary"
             className="d-flex align-items-center rounded-pill px-4"
@@ -272,7 +308,7 @@ const ClientGrid = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="row mb-6">
+      <div className="row mb-4">
         <div className="col-md-3">
           <Card
             className="border-0 rounded-xl shadow-sm hover-lift"
@@ -368,7 +404,7 @@ const ClientGrid = () => {
       </div>
 
       {/* Filters and Search */}
-      <Card className="border-0 rounded-xl shadow-sm mb-6">
+      <Card className="border-0 rounded-xl shadow-sm mb-4">
         <Card.Body className="p-4">
           <div className="d-flex justify-content-between align-items-center flex-wrap gap-3">
             <div className="d-flex gap-2 align-items-center flex-wrap">
@@ -939,11 +975,61 @@ const ClientGrid = () => {
         </Modal.Footer>
       </Modal>
 
+      {/* Create Client Modal */}
       <CreateClientModal
         show={showCreateModal}
         onHide={() => setShowCreateModal(false)}
         onSuccess={fetchClients}
+        mode="create"
       />
+
+      {/* Edit Client Modal */}
+      <CreateClientModal
+        show={showEditModal}
+        onHide={() => setShowEditModal(false)}
+        onSuccess={fetchClients}
+        mode="edit"
+        client={selectedClient}
+        onUpdate={handleUpdateClient}
+      />
+
+      {/* Delete Confirm Modal */}
+      <Modal
+        show={showDeleteModal}
+        onHide={() => setShowDeleteModal(false)}
+        centered
+        contentClassName="rounded-xl"
+      >
+        <Modal.Header closeButton className="border-0 pb-0 px-4 pt-4">
+          <Modal.Title className="fw-bold text-gray-800">
+            Confirm Deletion
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body className="pt-0 px-4 pb-4">
+          <p className="text-muted">
+            Are you sure you want to delete <strong>{selectedClientToDelete?.name}</strong>?
+            This action cannot be undone.
+          </p>
+        </Modal.Body>
+        <Modal.Footer className="border-0 px-4 pb-4">
+          <Button
+            variant="outline-secondary"
+            onClick={() => setShowDeleteModal(false)}
+            className="rounded-pill px-4"
+            style={{ border: "2px solid #9ca3af", color: "#4b5563" }}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="danger"
+            onClick={confirmDelete}
+            className="rounded-pill px-4"
+            style={{ backgroundColor: "#ef4444", border: "none" }}
+          >
+            Delete
+          </Button>
+        </Modal.Footer>
+      </Modal>
 
       <style>{`
         .hover-lift {
@@ -968,7 +1054,6 @@ const ClientGrid = () => {
         
         .table tbody tr:hover {
           background-color: #f9fafb;
-
         }
         
         .table th {

@@ -113,7 +113,7 @@ export default function Dashboard() {
               </Nav.Link>
             </Nav.Item>
 
-            <NavDropdown
+            {/* <NavDropdown
               title="More"
               id="more-dropdown"
               className="nav-dropdown"
@@ -136,7 +136,7 @@ export default function Dashboard() {
               <NavDropdown.Item as={Link} to="/billing">
                 Billing
               </NavDropdown.Item>
-            </NavDropdown>
+            </NavDropdown> */}
           </Nav>
         </div>
 
@@ -205,7 +205,7 @@ export default function Dashboard() {
               }}
             >
               <img
-                src={user?.profile_image || "/images/bird.jpg"}
+                src={user?.image || "/images/bird.jpg"}
                 alt="Profile"
                 className="rounded-circle me-2"
                 style={{ width: "32px", height: "32px", objectFit: "cover" }}

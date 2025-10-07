@@ -122,7 +122,7 @@ const HeaderBlock = ({
   initialSenderName = "By Sender name",
   initialPrice = "INCL.VAT",
   initialLogoUrl = null, // Changed to match database field
-  backgroundImage = `${API_URL}/uploads/1756710766261.avif`,
+  backgroundImage = `${API_URL}/uploads/1758707343032.png`,
   backgroundColor = "#B99698",
   textColor,
   backgroundFilter,

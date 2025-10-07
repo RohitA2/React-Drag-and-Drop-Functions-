@@ -15,6 +15,7 @@ import { Modal, Button } from "react-bootstrap";
 import Cropper from "react-cropper";
 import "cropperjs/dist/cropper.css";
 import axios from "axios";
+import { X, Check } from "react-bootstrap-icons";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -625,37 +626,57 @@ const BlockSettingsPanel = ({
                   size="lg"
                   backdrop="static"
                   keyboard={false}
+                  className="crop-modal-modern"
                 >
-                  <Modal.Body>
+                  <Modal.Header closeButton={false} className="border-0 pb-0">
+                    <Modal.Title className="w-100 text-center fw-semibold text-muted">
+                      Crop Your Image
+                    </Modal.Title>
+                  </Modal.Header>
+                  <Modal.Body className="p-4">
                     {imageSrc && (
-                      <Cropper
-                        src={imageSrc}
-                        style={{ height: 500, width: "100%" }}
-                        initialAspectRatio={1}
-                        guides={true}
-                        viewMode={1}
-                        background={false}
-                        responsive={true}
-                        autoCropArea={1}
-                        checkOrientation={false}
-                        ref={cropperRef}
-                      />
+                      <div className="cropper-container-modern">
+                        <Cropper
+                          src={imageSrc}
+                          style={{ height: 400, width: "100%" }}
+                          initialAspectRatio={1}
+                          guides={true}
+                          viewMode={1}
+                          background={false}
+                          responsive={true}
+                          autoCropArea={0.8}
+                          checkOrientation={false}
+                          ref={cropperRef}
+                          className="cropper-modern"
+                        />
+                      </div>
                     )}
                   </Modal.Body>
-                  <Modal.Footer>
+                  <Modal.Footer className="border-0 justify-content-center pt-0 pb-3">
                     <Button
-                      variant="secondary"
+                      variant="outline-secondary"
+                      size="sm"
+                      className="rounded-pill px-4 me-2 shadow-sm"
                       onClick={() => setCropModalOpen(false)}
                     >
+                      <X size={16} className="me-1" />
                       Cancel
                     </Button>
-                    <Button onClick={handleCropSave}>Save</Button>
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      className="rounded-pill px-4 shadow-sm"
+                      onClick={handleCropSave}
+                    >
+                      <Check size={16} className="me-1" />
+                      Crop & Save
+                    </Button>
                   </Modal.Footer>
                 </Modal>
               )}
             </div>
             {/* Background filter */}
-            <div className="d-flex justify-content-between align-items-center border-bottom py-1">
+            {/* <div className="d-flex justify-content-between align-items-center border-bottom py-1">
               <label className="form-label mb-0" style={{ fontSize: "0.8rem" }}>
                 Background filter
               </label>
@@ -668,7 +689,7 @@ const BlockSettingsPanel = ({
                 }
                 style={{ width: 30, height: 30 }}
               />
-            </div>
+            </div> */}
             {/* Background Color - Disabled for grid layout */}
             <div
               className={`d-flex justify-content-between align-items-center border-bottom py-1 ${
@@ -749,6 +770,56 @@ const BlockSettingsPanel = ({
           </div>
         </div>
       )}
+      <style>{`/* Add this to your global CSS or component styles */
+.crop-modal-modern .modal-content {
+  border-radius: 16px;
+  border: none;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+}
+
+.crop-modal-modern .modal-header {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+}
+
+.cropper-container-modern {
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
+  background: #fff;
+}
+
+.cropper-modern {
+  border-radius: 12px;
+}
+
+.cropper-modern .cropper-view-box {
+  border-radius: 8px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.cropper-modern .cropper-face {
+  background-color: rgba(255, 255, 255, 0.9);
+}
+
+/* Smooth animations */
+.crop-modal-modern .modal.fade .modal-dialog {
+  transition: transform 0.3s ease-out;
+}
+
+.crop-modal-modern .modal.show .modal-dialog {
+  transform: scale(1);
+}
+
+/* Button hover effects */
+.crop-modal-modern .btn {
+  transition: all 0.2s ease-in-out;
+}
+
+.crop-modal-modern .btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+}`}</style>
     </div>
   );
 };

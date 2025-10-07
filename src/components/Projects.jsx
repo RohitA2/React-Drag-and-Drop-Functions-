@@ -5,6 +5,7 @@ import Overview from "./pages/dashboard/OverView";
 import { Eye, ArrowLeft } from "lucide-react";
 import ProjectDetails from "./ProjectDetails";
 import { useNavigate } from "react-router-dom";
+import Loader from "./Forms/Loader";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -104,11 +105,7 @@ const Projects = () => {
 
   // Show loading state
   if (loading) {
-    return (
-      <div className="app">
-        <div className="loading">Loading projects...</div>
-      </div>
-    );
+    return <Loader />;
   }
 
   // Show error state

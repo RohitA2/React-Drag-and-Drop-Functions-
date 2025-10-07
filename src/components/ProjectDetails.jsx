@@ -1,120 +1,83 @@
 import React, { useState } from "react";
-import { X } from "lucide-react";
+import { X, Copy, ExternalLink, Edit, Save } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { selectedUserId } from "../store/authSlice";
+import ChatSection from "./ChatSection";
+import { Button, OverlayTrigger, Tooltip } from "react-bootstrap";
+import { toast } from "react-toastify";
 
-// Separate Chat Component
-const ChatSection = () => {
-  const navigate = useNavigate();
-  const [messages, setMessages] = useState([
-    {
-      id: 1,
-      text: "Hi there, I wanted to follow up on the proposal we sent last week. Do you have any questions?",
-      time: "2:58 PM",
-      sender: "received",
-      read: true,
-    },
-    {
-      id: 2,
-      text: "The proposal looks good overall. I just need to review it with our team before making a decision.",
-      time: "3:02 PM",
-      sender: "sent",
-      read: true,
-    },
-    {
-      id: 3,
-      text: "Great, please let me know if you need any additional information from our side.",
-      time: "3:05 PM",
-      sender: "received",
-      read: true,
-    },
-  ]);
+const API_URL = import.meta.env.VITE_API_URL;
 
-  const [newMessage, setNewMessage] = useState("");
+const ProjectDetails = ({ project, onClose }) => {
+  if (!project) return null;
 
-  const handleSendMessage = () => {
-    if (newMessage.trim() === "") return;
+  // State to track selected recipient
+  const [selectedRecipientIndex, setSelectedRecipientIndex] = useState(0);
+  const [copiedField, setCopiedField] = useState(null);
 
-    const newMsg = {
-      id: messages.length + 1,
-      text: newMessage,
-      time: new Date().toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
-      sender: "sent",
-      read: false,
-    };
+  // State for expiration date editing
+  const [editingExpiration, setEditingExpiration] = useState(false);
+  const [tempExpiration, setTempExpiration] = useState(
+    project.expirationDate
+      ? new Date(project.expirationDate).toISOString().split("T")[0]
+      : new Date().toISOString().split("T")[0]
+  );
+  const [expirationDate, setExpirationDate] = useState(project.expirationDate);
 
-    setMessages([...messages, newMsg]);
-    setNewMessage("");
+  const selectedRecipient =
+    project.recipients?.[selectedRecipientIndex] || project.recipients?.[0];
+
+  const handleCopy = (text, field) => {
+    navigator.clipboard.writeText(text);
+    setCopiedField(field);
+    setTimeout(() => setCopiedField(null), 2000);
   };
 
-  const handleKeyPress = (e) => {
-    if (e.key === "Enter") {
-      handleSendMessage();
+  const handleEditExpiration = () => {
+    setTempExpiration(
+      expirationDate
+        ? new Date(expirationDate).toISOString().split("T")[0]
+        : new Date().toISOString().split("T")[0]
+    );
+    setEditingExpiration(true);
+  };
+
+  const handleSaveExpiration = async () => {
+    setExpirationDate(new Date(tempExpiration));
+    setEditingExpiration(false);
+
+    try {
+      const response = await fetch(`${API_URL}/api/updateExpireDate`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          proposalEmailId: project.id, // Assuming project.id is the proposalEmailId
+          newExpirationDate: tempExpiration,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log("Updated successfully:", data);
+      } else {
+        console.error("Failed to update expiration date");
+      }
+    } catch (error) {
+      console.error("Error calling API:", error);
     }
   };
 
-  return (
-    <div className="chat-panel">
-      <div className="chat-header">
-        <div className="chat-actions">
-          <button
-            className="btn btn-primary"
-            onClick={() => navigate("/template-builder")}
-          >
-            <i className="fas fa-file"></i> New Document
-          </button>
-          <button className="btn btn-secondary">
-            <i className="fas fa-download"></i> Download PDF
-          </button>
-        </div>
-      </div>
+  const handleCancelEdit = () => {
+    setEditingExpiration(false);
+  };
 
-      <div className="chat-thread">
-        {messages.map((message) => (
-          <div key={message.id} className={`chat-message ${message.sender}`}>
-            <div className="message-content">
-              <p>{message.text}</p>
-              <span className="chat-time">{message.time}</span>
-            </div>
-            {message.sender === "sent" && (
-              <i
-                className={`fas fa-check-double ${
-                  message.read ? "read" : "unread"
-                }`}
-              ></i>
-            )}
-          </div>
-        ))}
-      </div>
-
-      <div className="chat-input-area">
-        <input
-          type="text"
-          placeholder="Write your message here..."
-          value={newMessage}
-          onChange={(e) => setNewMessage(e.target.value)}
-          onKeyPress={handleKeyPress}
-        />
-        <div className="chat-tools">
-          <button className="tool-btn">
-            <i className="fas fa-paperclip"></i>
-          </button>
-          <button className="send-btn" onClick={handleSendMessage}>
-            <i className="fas fa-paper-plane"></i>
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// Main ProjectDetails Component
-const ProjectDetails = ({ project, onClose }) => {
-  if (!project) return null;
+  // Assuming project has amount fields; if not, these can be calculated or fetched
+  const totalAmount = project.totalAmount || 79.5;
+  const tax = project.tax || 15.9;
+  const grandTotal = totalAmount + tax;
 
   return (
     <div className="project-details-sidebar">
@@ -133,14 +96,19 @@ const ProjectDetails = ({ project, onClose }) => {
         </div>
         <div className="header-bottom">
           <div className="recipient-info">
-            <p className="recipient-name">
+            {/* <p className="recipient-name">
               {project.recipients?.[0]?.recipientName || "Unknown Client"}
             </p>
             <p className="recipient-email">
               {project.recipients?.[0]?.recipientEmail || "No email provided"}
-            </p>
+            </p> */}
+            {/* <p className="recipient-phone">
+              {project.recipients?.[0]?.recipientDetails?.phone ||
+                "No phone provided"}
+            </p> */}
           </div>
-          <span
+
+          {/* <span
             className={`proposal-status ${
               project.signatures?.some((sig) => sig.status)
                 ? "signed"
@@ -154,7 +122,7 @@ const ProjectDetails = ({ project, onClose }) => {
               : project.recipients?.some((r) => r.status === "denied")
               ? "Denied"
               : "Sent"}
-          </span>
+          </span> */}
         </div>
       </div>
 
@@ -165,15 +133,17 @@ const ProjectDetails = ({ project, onClose }) => {
             <h4 className="section-heading">Value</h4>
             <div className="detail-item">
               <span className="detail-label">Total Amount</span>
-              <span className="detail-value">SEK 79.50 ex. VAT/Tax</span>
+              <span className="detail-value">
+                SEK {totalAmount.toFixed(2)} ex. VAT/Tax
+              </span>
             </div>
             <div className="detail-item">
               <span className="detail-label">Tax</span>
-              <span className="detail-value">SEK 15.90</span>
+              <span className="detail-value">SEK {tax.toFixed(2)}</span>
             </div>
             <div className="detail-item total">
               <span className="detail-label">Total</span>
-              <span className="detail-value">SEK 95.40</span>
+              <span className="detail-value">SEK {grandTotal.toFixed(2)}</span>
             </div>
           </div>
 
@@ -183,14 +153,84 @@ const ProjectDetails = ({ project, onClose }) => {
             <div className="recipient-list">
               {project.recipients?.length > 0 ? (
                 project.recipients.map((recipient, index) => (
-                  <div key={index} className="recipient-item">
+                  <div
+                    key={index}
+                    className={`recipient-item ${
+                      index === selectedRecipientIndex ? "selected" : ""
+                    }`}
+                    onClick={() => setSelectedRecipientIndex(index)}
+                    style={{
+                      cursor: "pointer",
+                      border:
+                        index === selectedRecipientIndex
+                          ? "2px solid #4a6cf7"
+                          : "none",
+                    }}
+                  >
                     <div className="recipient-info">
                       <p className="recipient-name">
                         {recipient.recipientName}
                       </p>
-                      <p className="recipient-email">
-                        {recipient.recipientEmail}
-                      </p>
+                      <div className="d-flex align-items-center">
+                        <p className="recipient-email me-2">
+                          {recipient.recipientEmail}
+                        </p>
+                        <OverlayTrigger
+                          placement="top"
+                          overlay={
+                            <Tooltip>
+                              {copiedField === `email-${index}`
+                                ? "Copied!"
+                                : "Copy email"}
+                            </Tooltip>
+                          }
+                        >
+                          <Button
+                            variant="link"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleCopy(
+                                recipient.recipientEmail,
+                                `email-${index}`
+                              );
+                            }}
+                          >
+                            <Copy size={14} />
+                          </Button>
+                        </OverlayTrigger>
+                      </div>
+                      <div className="d-flex align-items-center">
+                        <p className="recipient-phone me-2">
+                          {recipient.recipientDetails?.phone || "No phone"}
+                        </p>
+                        {recipient.recipientDetails?.phone && (
+                          <OverlayTrigger
+                            placement="top"
+                            overlay={
+                              <Tooltip>
+                                {copiedField === `phone-${index}`
+                                  ? "Copied!"
+                                  : "Copy phone"}
+                              </Tooltip>
+                            }
+                          >
+                            <Button
+                              variant="link"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleCopy(
+                                  recipient.recipientDetails.phone,
+                                  `phone-${index}`
+                                );
+                              }}
+                            >
+                              <Copy size={14} />
+                            </Button>
+                          </OverlayTrigger>
+                        )}
+                      </div>
                     </div>
                     <span
                       className={`recipient-status ${
@@ -213,7 +253,7 @@ const ProjectDetails = ({ project, onClose }) => {
 
           {/* Event Section */}
           <div className="details-section">
-            <h4 className="section-heading">Event Details</h4>
+            <h4 className="section-heading">More Details</h4>
             <div className="detail-item">
               <span className="detail-label">Created</span>
               <span className="detail-value">
@@ -222,10 +262,64 @@ const ProjectDetails = ({ project, onClose }) => {
             </div>
             <div className="detail-item">
               <span className="detail-label">Expires</span>
-              <span className="detail-value">
-                {new Date(
-                  project.expirationDate || new Date()
-                ).toLocaleDateString()}
+              <span className="detail-value d-flex align-items-center">
+                {editingExpiration ? (
+                  <>
+                    <input
+                      type="date"
+                      value={tempExpiration}
+                      onChange={(e) => setTempExpiration(e.target.value)}
+                      className="form-control me-2"
+                      style={{ width: "auto", minWidth: "150px" }}
+                    />
+                    <OverlayTrigger
+                      placement="top"
+                      overlay={<Tooltip>Save</Tooltip>}
+                    >
+                      <Button
+                        variant="link"
+                        size="sm"
+                        className="ms-1"
+                        onClick={handleSaveExpiration}
+                      >
+                        <Save size={14} />
+                      </Button>
+                    </OverlayTrigger>
+                    <OverlayTrigger
+                      placement="top"
+                      overlay={<Tooltip>Cancel</Tooltip>}
+                    >
+                      <Button
+                        variant="link"
+                        size="sm"
+                        className="ms-1"
+                        onClick={handleCancelEdit}
+                      >
+                        <X size={14} />
+                      </Button>
+                    </OverlayTrigger>
+                  </>
+                ) : (
+                  <>
+                    <span className="me-2">
+                      {new Date(
+                        expirationDate || new Date()
+                      ).toLocaleDateString()}
+                    </span>
+                    <OverlayTrigger
+                      placement="top"
+                      overlay={<Tooltip>Edit expiration date</Tooltip>}
+                    >
+                      <Button
+                        variant="link"
+                        size="sm"
+                        onClick={handleEditExpiration}
+                      >
+                        <Edit size={14} />
+                      </Button>
+                    </OverlayTrigger>
+                  </>
+                )}
               </span>
             </div>
             <div className="detail-item">
@@ -246,11 +340,32 @@ const ProjectDetails = ({ project, onClose }) => {
                   : "Sent"}
               </span>
             </div>
+            {project.link && (
+              <div className="detail-item">
+                <span className="detail-label">Link</span>
+                <OverlayTrigger
+                  placement="top"
+                  overlay={<Tooltip>Open link in new tab</Tooltip>}
+                >
+                  <a
+                    href={project.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="detail-value text-primary d-flex align-items-center"
+                  >
+                    View Proposal <ExternalLink size={14} className="ms-2" />
+                  </a>
+                </OverlayTrigger>
+              </div>
+            )}
           </div>
         </div>
 
         {/* Chat Section - Using the separate component */}
-        <ChatSection />
+        <ChatSection
+          recipientPhone={selectedRecipient?.recipientDetails?.phone}
+          recipientName={selectedRecipient?.recipientName}
+        />
       </div>
 
       <style>{`
@@ -267,10 +382,18 @@ const ProjectDetails = ({ project, onClose }) => {
           box-shadow: -4px 0 15px rgba(0, 0, 0, 0.1);
           animation: slideIn 0.3s ease;
           overflow-y: auto;
+          /* Hide scrollbar for WebKit browsers (Chrome, Safari, Edge) */
+          &::-webkit-scrollbar {
+            display: none;
+          }
+          /* Hide scrollbar for Firefox */
+          scrollbar-width: none;
+          /* Hide scrollbar for IE/Edge */
+          -ms-overflow-style: none;
         }
         
         .project-details-header {
-          background-color: #314aff;
+          background-color: #4364EE;
           color: white;
           padding: 24px 32px;
         }
@@ -381,6 +504,12 @@ const ProjectDetails = ({ project, onClose }) => {
           flex-direction: column;
           gap: 24px;
           overflow-y: auto;
+          /* Hide scrollbar for details-panel as well */
+          &::-webkit-scrollbar {
+            display: none;
+          }
+          scrollbar-width: none;
+          -ms-overflow-style: none;
         }
 
         .chat-panel {
@@ -412,6 +541,7 @@ const ProjectDetails = ({ project, onClose }) => {
           justify-content: space-between;
           margin-bottom: 12px;
           padding: 8px 0;
+          align-items: center;
         }
 
         .detail-item.total {
@@ -456,6 +586,11 @@ const ProjectDetails = ({ project, onClose }) => {
           padding: 12px;
           background-color: #f7fafc;
           border-radius: 8px;
+          transition: all 0.2s;
+        }
+
+        .recipient-item:hover {
+          box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
 
         .recipient-status {
@@ -507,7 +642,7 @@ const ProjectDetails = ({ project, onClose }) => {
         }
 
         .btn {
-          padding: 8px 12px;
+          padding: 4px 12px;
           border-radius: 6px;
           border: none;
           font-size: 13px;
@@ -536,6 +671,12 @@ const ProjectDetails = ({ project, onClose }) => {
           display: flex;
           flex-direction: column;
           gap: 16px;
+          /* Hide scrollbar for chat-thread if applicable */
+          &::-webkit-scrollbar {
+            display: none;
+          }
+          scrollbar-width: none;
+          -ms-overflow-style: none;
         }
         
         .chat-message {

@@ -56,13 +56,6 @@ const Login = () => {
                   </p>
                 </div>
 
-                {/* Status Messages */}
-                {error && (
-                  <div className="alert alert-danger d-flex align-items-center" role="alert">
-                    <BiErrorCircle className="me-2" size={20} />
-                    <div>{error}</div>
-                  </div>
-                )}
 
                 {success && (
                   <div className="alert alert-success d-flex align-items-center" role="alert">

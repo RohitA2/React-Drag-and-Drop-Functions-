@@ -17,6 +17,7 @@ import {
   Edit,
 } from "lucide-react";
 import { updateUserProfile } from "../../../store/authSlice";
+import { toast } from "react-toastify";
 import axios from "axios";
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -52,7 +53,7 @@ const ProfilePage = () => {
         newPassword: "",
         confirmPassword: "",
       });
-      setProfileImage(user.profileImage || "");
+      setProfileImage(user.image || "");
     }
   }, [user]);
 
@@ -78,36 +79,43 @@ const ProfilePage = () => {
     // ✅ Preview locally first
     const reader = new FileReader();
     reader.onload = (e) => {
-      setProfileImage(e.target.result);
+      setProfileImage(e.target.result); // Temp local preview
     };
     reader.readAsDataURL(file);
 
     try {
       // ✅ Upload file to backend
       const formData = new FormData();
-      formData.append("image", file);
+      formData.append("file", file);
 
       const uploadRes = await axios.post(`${API_URL}/upload/img`, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
+        headers: {
+          "Content-Type": "multipart/form-data",
+          Authorization: `Bearer ${localStorage.getItem("token")}`, // ✅ Add auth if backend requires it
+        },
       });
 
-      // assuming backend returns { url: "https://server.com/uploads/xyz.png" }
       const uploadedUrl = uploadRes.data.url;
       console.log("uploadedUrl", uploadedUrl);
 
-      // ✅ Update Redux + backend profile with uploaded URL
+      // ✅ Update Redux with just the image (minimal update)
       dispatch(
         updateUserProfile({
-          ...userData,
           id: user.id,
-          profileImage: uploadedUrl,
+          image: uploadedUrl, // Only send image + id
         })
       );
 
-      // update preview with real URL
+      // ✅ Switch to real URL for preview
       setProfileImage(uploadedUrl);
+
+      // ✅ Clear file input to allow re-upload of same file
+      e.target.value = "";
     } catch (err) {
       console.error("Image upload failed:", err);
+      // ✅ Revert to original on error
+      setProfileImage(user?.profileImage || "");
+      toast.error("Image upload failed. Please try again.");
     }
   };
 
@@ -119,17 +127,30 @@ const ProfilePage = () => {
       userData.newPassword &&
       userData.newPassword !== userData.confirmPassword
     ) {
-      alert("New passwords don't match!");
+      toast.error("New passwords don't match!"); // Use toast for consistency
+      return;
+    }
+    if (userData.newPassword && userData.newPassword.length < 6) {
+      toast.error("New password must be at least 6 characters.");
       return;
     }
 
     dispatch(
       updateUserProfile({
         ...userData,
-        profileImage,
+        password: userData.newPassword || undefined,
+        image: profileImage, // ✅ Current image (uploaded or original)
         id: user.id,
       })
     );
+
+    // ✅ Clear sensitive fields
+    setUserData((prev) => ({
+      ...prev,
+      currentPassword: "",
+      newPassword: "",
+      confirmPassword: "",
+    }));
 
     setIsEditing(false);
   };
@@ -172,9 +193,15 @@ const ProfilePage = () => {
                     >
                       <img
                         src={
-                          profileImage ||
-                          "https://images.unsplash.com/photo-1534528741775-53994a69daeb?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=400&q=80"
+                          profileImage?.trim()
+                            ? profileImage
+                            : "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80"
                         }
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src =
+                            "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80";
+                        }}
                         alt="Profile"
                         className="w-100 h-100 object-fit-cover"
                       />
@@ -198,9 +225,9 @@ const ProfilePage = () => {
                     {userData.firstName} {userData.lastName}
                   </h3>
                   <p className="text-primary bg-opacity-75">{userData.email}</p>
-                  <p className="small text-primary bg-opacity-75 mt-2">
+                  {/* <p className="small text-primary bg-opacity-75 mt-2">
                     Joined January 2023
-                  </p>
+                  </p> */}
                 </div>
                 <h2 className="h5 fw-semibold mb-4 d-flex align-items-center">
                   <User className="me-2" size={24} />

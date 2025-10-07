@@ -25,7 +25,7 @@ const HeaderBar = ({
   const navigate = useNavigate();
 
   const handleReviewSend = () => {
-    // if (!hasElementsOnCanvas) return;
+    if (!hasElementsOnCanvas) return;
     setIsSidebarOpen(true);
   };
 
@@ -148,7 +148,7 @@ const HeaderBar = ({
   };
 
   const handleSaveClick = () => {
-    // if (!hasElementsOnCanvas) return;
+    if (!hasElementsOnCanvas) return;
     setShowSaveOptions(!showSaveOptions);
   };
 
@@ -210,10 +210,7 @@ const HeaderBar = ({
       {hasElementsOnCanvas && (
         <div className="header-center">
           <div className="mode-toggle">
-            <button
-              type="button"
-              className="mode-btn active"
-            >
+            <button type="button" className="mode-btn active">
               Edit
             </button>
             <button type="button" className="mode-btn">
@@ -228,7 +225,9 @@ const HeaderBar = ({
         {/* Save Button with Dropdown */}
         <div className="save-container" ref={dropdownRef}>
           <button
-            className={`save-btn ${hasElementsOnCanvas ? 'enabled' : 'disabled'}`}
+            className={`save-btn ${
+              hasElementsOnCanvas ? "enabled" : "disabled"
+            }`}
             onClick={handleSaveClick}
             onMouseEnter={() => hasElementsOnCanvas && setShowSaveOptions(true)}
             title="Save Options"
@@ -268,7 +267,9 @@ const HeaderBar = ({
         </div> */}
 
         <button
-          className={`review-btn ${hasElementsOnCanvas ? 'enabled' : 'disabled'}`}
+          className={`review-btn ${
+            hasElementsOnCanvas ? "enabled" : "disabled"
+          }`}
           onClick={handleReviewSend}
           title="Review & Send"
         >

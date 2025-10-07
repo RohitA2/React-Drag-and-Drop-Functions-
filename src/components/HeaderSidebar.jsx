@@ -45,6 +45,7 @@ const HeaderSidebar = ({
   const [filteredRecipients, setFilteredRecipients] = useState([]);
   const [selectedRecipients, setSelectedRecipients] = useState([]);
   const [isSending, setIsSending] = useState(false);
+  const [saveAsTemplate, setSaveAsTemplate] = useState(false);
 
   // Auto-select parties
   useEffect(() => {
@@ -155,6 +156,7 @@ const HeaderSidebar = ({
       })),
       expirationDate,
       link: documentLink,
+      saveAsTemplate,
     };
 
     try {
@@ -434,6 +436,8 @@ const HeaderSidebar = ({
               className="form-check-input me-2"
               type="checkbox"
               id="saveTemplate"
+              checked={saveAsTemplate}
+              onChange={(e) => setSaveAsTemplate(e.target.checked)}
             />
             <label
               className="form-check-label small text-muted"

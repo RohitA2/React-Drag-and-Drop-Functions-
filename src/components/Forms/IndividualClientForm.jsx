@@ -92,7 +92,6 @@ export default function IndividualClientForm({ onCreated, recipient }) {
           onChange={handleChange}
         />
 
-        {/* Phone */}
         <CustomPhoneInput
           value={formData.phone}
           onChange={(val) => setFormData({ ...formData, phone: val })}

@@ -490,7 +490,7 @@ const ProposalStatsDashboard = () => {
         .dashboard-container {
             min-height: 100vh;
             background-color: #f3f4f6;
-            padding: 2rem;
+            padding: 1rem;
         }
 
         .dashboard-content {

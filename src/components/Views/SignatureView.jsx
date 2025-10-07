@@ -235,33 +235,42 @@ const SignatureView = ({ user, signatureId, parentId, recipient }) => {
         show={showSignModal}
         onHide={() => setShowSignModal(false)}
         centered
+        contentClassName="bg-gray-50 dark:bg-gray-900 rounded-2xl shadow-xl"
+        dialogClassName="transform transition-all duration-300 ease-out scale-100 hover:scale-105"
       >
-        <Modal.Header closeButton>
-          <Modal.Title className="w-100 text-center">Sign Document</Modal.Title>
+        <Modal.Header
+          closeButton
+          className="border-b-0 bg-gradient-to-r from-green-600 to-teal-500 text-white rounded-t-2xl p-5"
+        >
+          <Modal.Title className="w-100 text-center text-2xl font-bold">
+            Sign Document
+          </Modal.Title>
         </Modal.Header>
-        <Modal.Body>
-          <div className="mb-4 text-center">
-            <p className="mb-3 fw-semibold fs-5 text-dark">
-              Choose a sign method
+        <Modal.Body className="p-6">
+          <div className="mb-6 text-center">
+            <p className="mb-4 font-semibold text-gray-800 dark:text-gray-200 text-xl">
+              Choose a Sign Method
             </p>
             <ToggleButtonGroup
               type="radio"
               name="signMethod"
               value={signMethod}
               onChange={(val) => setSignMethod(val)}
-              className="toggle-group-modern"
+              className="flex justify-center gap-4"
             >
               <ToggleButton
                 id="type-sign"
                 value="type"
-                variant="outline-primary"
+                variant="outline-success"
+                className="px-4 py-2 rounded-lg border-2 border-green-500 text-green-700 hover:bg-green-50 focus:ring-2 focus:ring-green-500 transition-all duration-200"
               >
                 Type
               </ToggleButton>
               <ToggleButton
                 id="draw-sign"
                 value="draw"
-                variant="outline-primary"
+                variant="outline-success"
+                className="px-4 py-2 rounded-lg border-2 border-green-500 text-green-700 hover:bg-green-50 focus:ring-2 focus:ring-green-500 transition-all duration-200"
               >
                 Draw
               </ToggleButton>
@@ -271,24 +280,26 @@ const SignatureView = ({ user, signatureId, parentId, recipient }) => {
           {signMethod === "type" ? (
             <div className="text-center">
               <Form.Group>
-                <Form.Label className="fw-semibold">Signed by</Form.Label>
+                <Form.Label className="font-semibold text-gray-800 dark:text-gray-200 mb-2">
+                  Signed by
+                </Form.Label>
                 <Form.Control
                   type="text"
                   placeholder="Type your name"
                   value={typedName}
                   onChange={(e) => setTypedName(e.target.value)}
-                  className="text-center"
+                  className="w-full max-w-md mx-auto p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 text-center"
                 />
               </Form.Group>
-              <div className="border rounded mt-3 p-3 bg-light text-center fw-bold fs-5 text-primary shadow-sm">
+              <div className="border border-green-300 rounded-lg mt-4 p-4 bg-green-50 dark:bg-green-900 text-center font-bold text-lg text-green-700 dark:text-green-200 shadow-md">
                 {typedName || "Signature Preview"}
               </div>
             </div>
           ) : (
             <div className="text-center">
               <div
-                className="border rounded overflow-hidden shadow-sm mx-auto"
-                style={{ height: 150, maxWidth: 400 }}
+                className="border-2 border-green-300 rounded-lg overflow-hidden shadow-md mx-auto bg-white dark:bg-gray-800"
+                style={{ height: 200, maxWidth: 450 }}
               >
                 <SignatureCanvas
                   ref={sigCanvas}
@@ -297,28 +308,35 @@ const SignatureView = ({ user, signatureId, parentId, recipient }) => {
                 />
               </div>
               <Button
-                variant="light"
+                variant="outline-danger"
                 size="sm"
-                className="mt-1"
+                className="mt-3 px-4 py-2 rounded-lg hover:bg-red-50 focus:ring-2 focus:ring-red-500 transition-all duration-200"
                 onClick={clearSignature}
               >
-                <i className="bi bi-trash"></i>
+                <i className="bi bi-trash"></i> Clear
               </Button>
             </div>
           )}
 
-          <p className="text-muted small mt-4 text-center">
-            By signing the document I agree that the electronic signature is a
+          <p className="text-gray-600 dark:text-gray-400 text-sm mt-6 text-center">
+            By signing the document, I agree that the electronic signature is a
             valid representation of my handwritten signature.
           </p>
         </Modal.Body>
-        <Modal.Footer className="d-flex justify-content-center">
+        <Modal.Footer className="border-t-0 bg-gray-50 dark:bg-gray-900 p-5 rounded-b-2xl">
           <Button
-            style={{ backgroundColor: "#2CC01B", borderColor: "#2CC01B" }}
             onClick={handleAccept}
             disabled={isSubmitting}
+            className="w-full md:w-auto px-6 py-3 bg-gradient-to-r from-green-600 to-teal-500 text-white font-semibold rounded-lg hover:from-green-700 hover:to-teal-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all duration-300 transform hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isSubmitting ? "Signing..." : "Sign & Accept"}
+            {isSubmitting ? (
+              <span className="flex items-center justify-center">
+                <span className="animate-spin inline-block w-5 h-5 border-2 border-white border-t-transparent rounded-full mr-2"></span>
+                Signing...
+              </span>
+            ) : (
+              "Sign & Accept"
+            )}
           </Button>
         </Modal.Footer>
       </Modal>
@@ -328,35 +346,50 @@ const SignatureView = ({ user, signatureId, parentId, recipient }) => {
         show={showDeclineModal}
         onHide={() => setShowDeclineModal(false)}
         centered
+        contentClassName="bg-gray-50 dark:bg-gray-900 rounded-2xl shadow-2xl"
+        dialogClassName="transform transition-all duration-300 ease-out scale-100 hover:scale-105"
       >
-        <Modal.Header closeButton>
-          <Modal.Title className="w-100 text-center">
+        <Modal.Header
+          closeButton
+          className="border-b-0 bg-gradient-to-r from-indigo-600 to-blue-500 text-white rounded-t-2xl p-4"
+        >
+          <Modal.Title className="w-100 text-center text-xl font-bold">
             Decline Document
           </Modal.Title>
         </Modal.Header>
-        <Modal.Body>
-          <p className="text-center">
+        <Modal.Body className="p-6">
+          <p className="text-center text-gray-700 dark:text-gray-300 text-lg leading-relaxed mb-5">
             To decline this document, please confirm by clicking the button
-            below.
+            below. Your decision helps us refine our process!
           </p>
-          <Form.Group className="mt-3">
-            <Form.Label className="fw-semibold">Comment (optional)</Form.Label>
+          <Form.Group className="mt-4">
+            <Form.Label className="fw-semibold text-gray-800 dark:text-gray-200 mb-2">
+              Comment (optional)
+            </Form.Label>
             <Form.Control
               as="textarea"
-              rows={3}
+              rows={4}
               value={comment}
               onChange={(e) => setComment(e.target.value)}
-              placeholder="Add a comment..."
+              placeholder="Add a comment or reason for declining..."
+              className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
             />
           </Form.Group>
         </Modal.Body>
-        <Modal.Footer className="d-flex justify-content-center">
+        <Modal.Footer className="border-t-0 bg-gray-50 dark:bg-gray-900 p-4 rounded-b-2xl">
           <Button
-            style={{ backgroundColor: "#333", borderColor: "#333" }}
             onClick={handleDeclineConfirm}
             disabled={isSubmitting}
+            className="w-full md:w-auto px-6 py-3 bg-gradient-to-r from-red-600 to-red-800 text-white font-semibold rounded-lg hover:from-red-700 hover:to-red-900 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-all duration-300 transform hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isSubmitting ? "Declining..." : "Decline"}
+            {isSubmitting ? (
+              <span className="flex items-center justify-center">
+                <span className="animate-spin inline-block w-5 h-5 border-2 border-white border-t-transparent rounded-full mr-2"></span>
+                Declining...
+              </span>
+            ) : (
+              "Decline"
+            )}
           </Button>
         </Modal.Footer>
       </Modal>

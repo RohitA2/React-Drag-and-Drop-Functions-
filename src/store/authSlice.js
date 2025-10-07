@@ -31,22 +31,28 @@ export const loginUser = createAsyncThunk(
 // 🔹 Update User Profile Thunk
 export const updateUserProfile = createAsyncThunk(
   "auth/updateProfile",
-  async (userData, { rejectWithValue, getState }) => {
+  async (updateData, { rejectWithValue, getState }) => {  // Renamed param to updateData
     try {
-      const token = getState().auth.token || localStorage.getItem("token"); // fallback
+      const state = getState();
+      const token = state.auth.token || localStorage.getItem("token");
+      const currentUser = state.auth.user;  // Get current user
+
+      // ✅ Merge partial update with current user
+      const payload = { ...currentUser, ...updateData };
 
       const { data } = await axios.post(
         `${API_URL}/api/auth/updateProfile`,
-        userData,
+        payload,  // Send merged data
         {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         }
       );
+      console.log(data);
 
       toast.success("Profile updated successfully.");
-      return data.user;
+      return data.user;  // Return full updated user
     } catch (err) {
       return rejectWithValue(
         err.response?.data?.message || "Profile update failed."

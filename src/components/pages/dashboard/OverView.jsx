@@ -1,14 +1,27 @@
 import React, { useState, useEffect } from "react";
-import { Card, Button, Container, Row, Col, Badge, Modal } from "react-bootstrap";
+import {
+  Card,
+  Button,
+  Container,
+  Row,
+  Col,
+  Badge,
+  Modal,
+  OverlayTrigger,
+  Tooltip,
+} from "react-bootstrap";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 import { useSelector } from "react-redux";
 import { parse, format } from "date-fns";
 import { selectedUserId } from "../../../store/authSlice";
+import Loader from "../../Forms/Loader";
+import ProjectDetails from "../../ProjectDetails";
+import { ArrowLeft } from "lucide-react";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-export default function OverView() {
+export default function OverView({ schedules = [], onBackToProjects }) {
   const userId = useSelector(selectedUserId);
   const [value, setValue] = useState(new Date());
   const [currentWeek, setCurrentWeek] = useState({
@@ -20,9 +33,10 @@ export default function OverView() {
   const [scheduleData, setScheduleData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [viewMode, setViewMode] = useState("month"); // day | week | month
+  const [viewMode, setViewMode] = useState("month");
   const [showEventModal, setShowEventModal] = useState(false);
-  const [selectedEvent, setSelectedEvent] = useState(null);
+  const [selectedEvents, setSelectedEvents] = useState([]); // Changed to array for multiple events
+  const [selectedProject, setSelectedProject] = useState(null);
 
   // Fetch schedule data from API
   useEffect(() => {
@@ -38,7 +52,6 @@ export default function OverView() {
         const data = await response.json();
         console.log("response from api", data);
         if (data.success) {
-          // Data is now a flat array, not nested under data.schedules
           setScheduleData(Array.isArray(data.data) ? data.data : []);
         } else {
           setScheduleData([]);
@@ -60,7 +73,7 @@ export default function OverView() {
   const getWeekRange = (date) => {
     const startOfWeek = new Date(date);
     const day = startOfWeek.getDay();
-    const diff = startOfWeek.getDate() - day + (day === 0 ? -6 : 1); // Monday start
+    const diff = startOfWeek.getDate() - day + (day === 0 ? -6 : 1);
     startOfWeek.setDate(diff);
 
     const endOfWeek = new Date(startOfWeek);
@@ -118,13 +131,12 @@ export default function OverView() {
       })`;
     }
     return `${start.getDate()} ${startMonth} - ${end.getDate()} ${endMonth}, ${start.getFullYear()} (Week ${
-        currentWeek.weekNumber
-      })`;
+      currentWeek.weekNumber
+    })`;
   };
 
   // Get events for specific date
   const getEventsForDate = (date) => {
-    // Local date string instead of UTC ISO
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, "0");
     const day = String(date.getDate()).padStart(2, "0");
@@ -163,6 +175,43 @@ export default function OverView() {
 
   const filteredEvents = getFilteredEvents();
 
+  // Function to convert event to project format
+  const convertEventToProject = (event) => {
+    if (!event.proposalEmail) return null;
+
+    return {
+      id: event.proposalEmail.id,
+      proposalName: event.proposalEmail.proposalName || "Proposal",
+      expirationDate: event.proposalEmail.expirationDate,
+      description: event.proposalEmail.description,
+      recipients: event.proposalEmail.recipients || [],
+      signatures: event.proposalEmail.signatures || [],
+      parentId: event.proposalEmail.parentId,
+      schedules: event.proposalEmail.schedules || [],
+      ...event.proposalEmail,
+    };
+  };
+
+  // Handle event click to show project details or event modal
+  const handleEventClick = (events, cellDate) => {
+    if (!Array.isArray(events)) {
+      events = [events];
+    }
+
+    // Check if any event has a project
+    const projectEvents = events.filter((event) => event.proposalEmail);
+    if (projectEvents.length > 0) {
+      // For simplicity, select the first project if multiple
+      const project = convertEventToProject(projectEvents[0]);
+      setSelectedProject(project);
+    } else {
+      setSelectedEvents(
+        events.map((event) => ({ ...event, fullDate: cellDate }))
+      );
+      setShowEventModal(true);
+    }
+  };
+
   // Generate month grid cells
   const generateMonthGrid = () => {
     const firstDay = new Date(value.getFullYear(), value.getMonth(), 1);
@@ -171,24 +220,17 @@ export default function OverView() {
     const daysInMonth = lastDay.getDate();
 
     const grid = [];
-
-    // Add empty cells for days before the first day of month
     for (let i = 0; i < startDay; i++) {
       grid.push({ date: null, events: [] });
     }
-
-    // Add cells for each day of the month
     for (let day = 1; day <= daysInMonth; day++) {
       const currentDate = new Date(value.getFullYear(), value.getMonth(), day);
       const events = getEventsForDate(currentDate);
       grid.push({ date: currentDate, events });
     }
-
-    // Fill remaining cells to complete the grid (42 cells total)
     while (grid.length < 42) {
       grid.push({ date: null, events: [] });
     }
-
     return grid;
   };
 
@@ -205,81 +247,99 @@ export default function OverView() {
     return event.proposalEmail ? "success" : "primary";
   };
 
-  // Handle event click to show details
-  const handleEventClick = (event, cellDate) => {
-    setSelectedEvent({ ...event, fullDate: cellDate });
-    setShowEventModal(true);
-  };
-
   // Event Detail Modal Component
   const EventDetailModal = () => {
-    if (!selectedEvent) return null;
+    if (selectedEvents.length === 0) return null;
 
     return (
-      <Modal show={showEventModal} onHide={() => setShowEventModal(false)} centered>
+      <Modal
+        show={showEventModal}
+        onHide={() => setShowEventModal(false)}
+        centered
+        size={selectedEvents.length > 1 ? "lg" : "md"}
+      >
         <Modal.Header closeButton>
-          <Modal.Title>Event Details</Modal.Title>
+          <Modal.Title>
+            {selectedEvents.length > 1 ? "Multiple Events" : "Event Details"}
+          </Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <div className="mb-3">
-            <strong>Date: </strong>
-            {selectedEvent.fullDate.toLocaleDateString('en-US', { 
-              weekday: 'long', 
-              year: 'numeric', 
-              month: 'long', 
-              day: 'numeric' 
-            })}
-          </div>
-          <div className="mb-3">
-            <strong>Time: </strong>
-            {formatTime(selectedEvent.time)}
-          </div>
-          <div className="mb-3">
-            <strong>Type: </strong>
-            <Badge bg={getEventBadgeColor(selectedEvent)} className="ms-2">
-              {selectedEvent.proposalEmail ? "Proposal" : "Event"}
-            </Badge>
-          </div>
-          <div className="mb-3">
-            <strong>Title: </strong>
-            {getEventDisplayText(selectedEvent)}
-          </div>
-          
-          {selectedEvent.proposalEmail && (
-            <>
-              {selectedEvent.proposalEmail.fromName && (
-                <div className="mb-2">
-                  <strong>From: </strong>
-                  {selectedEvent.proposalEmail.fromName}
-                </div>
+          {selectedEvents.map((event, index) => (
+            <div
+              key={index}
+              className="event-detail-item mb-4"
+              style={{
+                borderBottom:
+                  selectedEvents.length > 1 && index < selectedEvents.length - 1
+                    ? "1px solid #dee2e6"
+                    : "none",
+                paddingBottom: "10px",
+              }}
+            >
+              {selectedEvents.length > 1 && <h5>Event {index + 1}</h5>}
+              <div className="mb-3">
+                <strong>Date: </strong>
+                {event.fullDate.toLocaleDateString("en-US", {
+                  weekday: "long",
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                })}
+              </div>
+              <div className="mb-3">
+                <strong>Time: </strong>
+                {formatTime(event.time)}
+              </div>
+              <div className="mb-3">
+                <strong>Type: </strong>
+                <Badge bg={getEventBadgeColor(event)} className="ms-2">
+                  {event.proposalEmail ? "Proposal" : "Event"}
+                </Badge>
+              </div>
+              <div className="mb-3">
+                <strong>Title: </strong>
+                {getEventDisplayText(event)}
+              </div>
+
+              {event.proposalEmail && (
+                <>
+                  {event.proposalEmail.fromName && (
+                    <div className="mb-2">
+                      <strong>From: </strong>
+                      {event.proposalEmail.fromName}
+                    </div>
+                  )}
+                  {event.proposalEmail.link && (
+                    <div className="mb-2">
+                      <strong>Link: </strong>
+                      <a
+                        href={event.proposalEmail.link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-decoration-none"
+                      >
+                        {event.proposalEmail.link}
+                      </a>
+                    </div>
+                  )}
+                  {event.proposalEmail.expirationDate && (
+                    <div className="mb-2">
+                      <strong>Expiration Date: </strong>
+                      {new Date(
+                        event.proposalEmail.expirationDate
+                      ).toLocaleDateString()}
+                    </div>
+                  )}
+                  {event.proposalEmail.description && (
+                    <div className="mb-2">
+                      <strong>Description: </strong>
+                      {event.proposalEmail.description}
+                    </div>
+                  )}
+                </>
               )}
-              {selectedEvent.proposalEmail.link && (
-                <div className="mb-2">
-                  <strong>Link: </strong>
-                  <a 
-                    href={selectedEvent.proposalEmail.link} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-decoration-none"
-                  >
-                    {selectedEvent.proposalEmail.link}
-                  </a>
-                </div>
-              )}
-              {selectedEvent.proposalEmail.expirationDate && (
-                <div className="mb-2">
-                  <strong>Expiration Date: </strong>
-                  {new Date(selectedEvent.proposalEmail.expirationDate).toLocaleDateString()}
-                </div>
-              )}
-              {selectedEvent.proposalEmail.description && (
-                <div className="mb-2">
-                  <strong>Description: </strong>
-                  {selectedEvent.proposalEmail.description}
-                </div>
-              )}
-            </>
-          )}
+            </div>
+          ))}
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={() => setShowEventModal(false)}>
@@ -291,301 +351,388 @@ export default function OverView() {
   };
 
   return (
-    <Container fluid className="overview-container p-3">
-      <Row>
-        {/* Sidebar */}
-        <Col xs={12} lg={3} className="mb-4">
-          <Card className="shadow-lg border-0 h-100 sidebar-card">
-            <Card.Body>
-              <h5 className="mb-4 fw-bold text-dark">Calendar</h5>
-              <Calendar
-                onChange={setValue}
-                value={value}
-                className="shadow-sm rounded-lg border-0 modern-calendar"
-              />
-              <div className="mt-4">
-                <h6 className="fw-semibold">Summary</h6>
-                <div className="small text-muted">
-                  Total Events: {scheduleData.length}
-                </div>
-                <div className="small text-muted">
-                  This {viewMode}: {filteredEvents.length}
-                </div>
-                <div className="mt-2">
-                  <Badge bg="primary" className="me-2 mb-1">
-                    Event
-                  </Badge>
-                  <Badge bg="success" className="me-2 mb-1">
-                    Proposal
-                  </Badge>
-                </div>
-              </div>
-            </Card.Body>
-          </Card>
-        </Col>
+    <div className="app">
+      {/* Project Details Sidebar */}
+      {selectedProject && (
+        <ProjectDetails
+          project={selectedProject}
+          onClose={() => setSelectedProject(null)}
+        />
+      )}
 
-        {/* Main Content */}
-        <Col xs={12} lg={9}>
-          <div className="d-flex justify-content-between align-items-center mb-4">
-            <h4 className="fw-bold text-dark">
-              {viewMode === "week"
-                ? formatDateRange(currentWeek.start, currentWeek.end)
-                : value.toLocaleString("default", {
-                    month: "long",
-                    year: "numeric",
-                  })}
-            </h4>
-            <div className="d-flex gap-2">
-              <Button
-                variant={viewMode === "day" ? "dark" : "light"}
-                size="sm"
-                onClick={() => setViewMode("day")}
-              >
-                Day
-              </Button>
-              <Button
-                variant={viewMode === "week" ? "dark" : "light"}
-                size="sm"
-                onClick={() => setViewMode("week")}
-              >
-                Week
-              </Button>
-              <Button
-                variant={viewMode === "month" ? "dark" : "light"}
-                size="sm"
-                onClick={() => setViewMode("month")}
-              >
-                Month
-              </Button>
+      {/* Main content */}
+      <div className={`main-content ${selectedProject ? "with-sidebar" : ""}`}>
+        <Container fluid className="overview-container p-3">
+          {/* Back button */}
+          {onBackToProjects && (
+            <div className="mb-3">
+              <button onClick={onBackToProjects} className="btn-back">
+                <ArrowLeft size={16} className="me-1 gap-1" />
+                Back to Projects
+              </button>
             </div>
-          </div>
-
-          {error ? (
-            <div className="alert alert-danger">Error loading: {error}</div>
-          ) : loading ? (
-            <div className="text-center py-5">
-              <div className="spinner-border text-primary" role="status">
-                <span className="visually-hidden">Loading...</span>
-              </div>
-            </div>
-          ) : (
-            <>
-              {/* Month View */}
-              {viewMode === "month" && (
-                <Card className="shadow-lg border-0">
-                  <Card.Body className="p-0">
-                    <div className="month-grid">
-                      {/* Week days header */}
-                      {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(
-                        (day) => (
-                          <div
-                            key={day}
-                            className="month-header text-center fw-bold"
-                          >
-                            {day}
-                          </div>
-                        )
-                      )}
-
-                      {/* Calendar cells */}
-                      {generateMonthGrid().map((cell, index) => (
-                        <div
-                          key={index}
-                          className={`month-cell ${
-                            cell.date
-                              ? cell.date.getMonth() === value.getMonth()
-                                ? "current-month"
-                                : "other-month"
-                              : "empty"
-                          } ${cell.events.length > 0 ? "has-events" : ""}`}
-                        >
-                          {cell.date && (
-                            <>
-                              <div className="date-number">
-                                {cell.date.getDate()}
-                              </div>
-
-                              {cell.events.length > 0 && (
-                                <div className="events-container">
-                                  {cell.events
-                                    .slice(0, 3)
-                                    .map((event, eventIndex) => (
-                                      <div
-                                        key={eventIndex}
-                                        className={`event-item bg-${getEventBadgeColor(
-                                          event
-                                        )} text-white rounded p-1 mb-1 small`}
-                                        onClick={() => handleEventClick(event, cell.date)}
-                                        style={{ cursor: 'pointer' }}
-                                      >
-                                        <div className="event-time">
-                                          {formatTime(event.time)}
-                                        </div>
-                                        <div className="event-title">
-                                          {getEventDisplayText(event)}
-                                        </div>
-                                      </div>
-                                    ))}
-
-                                  {cell.events.length > 3 && (
-                                    <div 
-                                      className="more-events text-center small text-muted"
-                                      onClick={() => {
-                                        // Show all events for this day in modal
-                                        setSelectedEvent({ 
-                                          multipleEvents: true,
-                                          events: cell.events,
-                                          fullDate: cell.date
-                                        });
-                                        setShowEventModal(true);
-                                      }}
-                                      style={{ cursor: 'pointer' }}
-                                    >
-                                      +{cell.events.length - 3} more
-                                    </div>
-                                  )}
-                                </div>
-                              )}
-                            </>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </Card.Body>
-                </Card>
-              )}
-
-              {/* Week View */}
-              {viewMode === "week" && (
-                <Card className="shadow-lg border-0">
-                  <Card.Body className="p-0">
-                    <div className="week-grid">
-                      <div className="time-column">
-                        <div className="time-header"></div>
-                        {Array.from({ length: 14 }, (_, i) => (
-                          <div key={i} className="time-slot">
-                            {8 + i}:00
-                          </div>
-                        ))}
-                      </div>
-                      {daysOfWeek.map((day, dayIndex) => {
-                        const dayEvents = getEventsForDate(day);
-                        return (
-                          <div key={dayIndex} className="day-column">
-                            <div className="day-header">
-                              {formatDate(day)}
-                              {dayEvents.length > 0 && (
-                                <Badge bg="primary" className="ms-2">
-                                  {dayEvents.length}
-                                </Badge>
-                              )}
-                            </div>
-                            {Array.from({ length: 14 }, (_, hourIndex) => {
-                              const hour = 8 + hourIndex;
-                              const hourEvents = dayEvents.filter(
-                                (event) =>
-                                  event.time &&
-                                  event.time.startsWith(
-                                    `${hour.toString().padStart(2, "0")}:`
-                                  )
-                              );
-                              return (
-                                <div key={hourIndex} className="time-slot">
-                                  {hourEvents.map((event, eventIndex) => (
-                                    <div
-                                      key={eventIndex}
-                                      className={`event-item bg-${getEventBadgeColor(
-                                        event
-                                      )} text-white p-1 rounded small`}
-                                      onClick={() => handleEventClick(event, day)}
-                                      style={{ cursor: 'pointer' }}
-                                    >
-                                      {formatTime(event.time)}
-                                    </div>
-                                  ))}
-                                </div>
-                              );
-                            })}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </Card.Body>
-                </Card>
-              )}
-
-              {/* Day View */}
-              {viewMode === "day" && (
-                <Card className="shadow-lg border-0">
-                  <Card.Body>
-                    <h5 className="mb-3">
-                      Events for {new Date().toLocaleDateString()}
-                    </h5>
-                    {filteredEvents.length === 0 ? (
-                      <p className="text-muted">
-                        No events scheduled for today
-                      </p>
-                    ) : (
-                      <div className="day-events">
-                        {filteredEvents.map((event, index) => (
-                          <div
-                            key={index}
-                            className="event-card p-3 mb-3 bg-light rounded border"
-                            onClick={() => handleEventClick(event, new Date(event.date))}
-                            style={{ cursor: 'pointer' }}
-                          >
-                            <div className="d-flex justify-content-between align-items-start">
-                              <div>
-                                <strong className="text-primary">
-                                  {formatTime(event.time)}
-                                </strong>
-                                <div className="mt-1">
-                                  {getEventDisplayText(event)}
-                                </div>
-                                {event.proposalEmail?.fromName && (
-                                  <small className="text-muted">
-                                    From: {event.proposalEmail.fromName}
-                                  </small>
-                                )}
-                                <div>
-                                  {event.proposalEmail?.link && (
-                                    <small className="text-muted">
-                                      Link: {event.proposalEmail.link}
-                                    </small>
-                                  )}
-                                </div>
-                                <div>
-                                  {event.proposalEmail?.expirationDate && (
-                                    <small className="text-muted">
-                                      Expiration:{" "}
-                                      {new Date(
-                                        event.proposalEmail.expirationDate
-                                      ).toLocaleDateString()}
-                                    </small>
-                                  )}
-                                </div>
-                              </div>
-                              <Badge bg={getEventBadgeColor(event)}>
-                                {event.proposalEmail ? "Proposal" : "Event"}
-                              </Badge>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </Card.Body>
-                </Card>
-              )}
-            </>
           )}
-        </Col>
-      </Row>
 
-      {/* Event Detail Modal */}
-      <EventDetailModal />
+          <Row>
+            {/* Calendar Sidebar */}
+            <Col xs={12} lg={3} className="mb-4">
+              <Card className="shadow-lg border-0 h-100 sidebar-card">
+                <Card.Body>
+                  <h5 className="mb-4 fw-bold text-dark">Calendar</h5>
+                  <Calendar
+                    onChange={setValue}
+                    value={value}
+                    className="shadow-sm rounded-lg border-0 modern-calendar"
+                  />
+                  <div className="mt-4">
+                    <h6 className="fw-semibold">Summary</h6>
+                    <div className="small text-muted">
+                      Total Events: {scheduleData.length}
+                    </div>
+                    <div className="small text-muted">
+                      This {viewMode}: {filteredEvents.length}
+                    </div>
+                    <div className="mt-2">
+                      <Badge bg="primary" className="me-2 mb-1">
+                        Event
+                      </Badge>
+                      <Badge bg="success" className="me-2 mb-1">
+                        Proposal
+                      </Badge>
+                    </div>
+                  </div>
+                </Card.Body>
+              </Card>
+            </Col>
 
-      {/* Styles */}
+            {/* Main Content */}
+            <Col xs={12} lg={9}>
+              <div className="d-flex justify-content-between align-items-center mb-4">
+                <h4 className="fw-bold text-dark">
+                  {viewMode === "week"
+                    ? formatDateRange(currentWeek.start, currentWeek.end)
+                    : value.toLocaleString("default", {
+                        month: "long",
+                        year: "numeric",
+                      })}
+                </h4>
+                <div className="d-flex gap-2">
+                  <Button
+                    variant={viewMode === "day" ? "dark" : "light"}
+                    size="sm"
+                    onClick={() => setViewMode("day")}
+                  >
+                    Day
+                  </Button>
+                  <Button
+                    variant={viewMode === "week" ? "dark" : "light"}
+                    size="sm"
+                    onClick={() => setViewMode("week")}
+                  >
+                    Week
+                  </Button>
+                  <Button
+                    variant={viewMode === "month" ? "dark" : "light"}
+                    size="sm"
+                    onClick={() => setViewMode("month")}
+                  >
+                    Month
+                  </Button>
+                </div>
+              </div>
+
+              {error ? (
+                <div className="alert alert-danger">Error loading: {error}</div>
+              ) : loading ? (
+                <Loader />
+              ) : (
+                <>
+                  {/* Month View */}
+                  {viewMode === "month" && (
+                    <Card className="shadow-lg border-0">
+                      <Card.Body className="p-0">
+                        <div className="month-grid">
+                          {[
+                            "Sun",
+                            "Mon",
+                            "Tue",
+                            "Wed",
+                            "Thu",
+                            "Fri",
+                            "Sat",
+                          ].map((day) => (
+                            <div
+                              key={day}
+                              className="month-header text-center fw-bold"
+                            >
+                              {day}
+                            </div>
+                          ))}
+
+                          {generateMonthGrid().map((cell, index) => (
+                            <div
+                              key={index}
+                              className={`month-cell ${
+                                cell.date
+                                  ? cell.date.getMonth() === value.getMonth()
+                                    ? "current-month"
+                                    : "other-month"
+                                  : "empty"
+                              } ${cell.events.length > 0 ? "has-events" : ""}`}
+                            >
+                              {cell.date && (
+                                <>
+                                  <div className="date-number">
+                                    {cell.date.getDate()}
+                                  </div>
+
+                                  {cell.events.length > 0 && (
+                                    <div className="events-container">
+                                      {cell.events
+                                        .slice(0, 3)
+                                        .map((event, eventIndex) => (
+                                          <OverlayTrigger
+                                            key={eventIndex}
+                                            placement="top"
+                                            overlay={
+                                              <Tooltip
+                                                id={`tooltip-${index}-${eventIndex}`}
+                                              >
+                                                {formatTime(event.time)} -{" "}
+                                                {getEventDisplayText(event)}
+                                              </Tooltip>
+                                            }
+                                          >
+                                            <div
+                                              className={`event-item bg-${getEventBadgeColor(
+                                                event
+                                              )} text-white rounded p-1 mb-1 small`}
+                                              onClick={() =>
+                                                handleEventClick(
+                                                  event,
+                                                  cell.date
+                                                )
+                                              }
+                                              style={{ cursor: "pointer" }}
+                                            >
+                                              <div className="event-time">
+                                                {formatTime(event.time)}
+                                              </div>
+                                              <div className="event-title">
+                                                {getEventDisplayText(event)}
+                                              </div>
+                                            </div>
+                                          </OverlayTrigger>
+                                        ))}
+
+                                      {cell.events.length > 3 && (
+                                        <div
+                                          className="more-events text-center small text-muted"
+                                          onClick={() =>
+                                            handleEventClick(
+                                              cell.events,
+                                              cell.date
+                                            )
+                                          }
+                                          style={{ cursor: "pointer" }}
+                                        >
+                                          +{cell.events.length - 3} more
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
+                                </>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </Card.Body>
+                    </Card>
+                  )}
+
+                  {/* Week View */}
+                  {viewMode === "week" && (
+                    <Card className="shadow-lg border-0">
+                      <Card.Body className="p-0">
+                        <div className="week-grid">
+                          <div className="time-column">
+                            <div className="time-header"></div>
+                            {Array.from({ length: 14 }, (_, i) => (
+                              <div key={i} className="time-slot">
+                                {8 + i}:00
+                              </div>
+                            ))}
+                          </div>
+                          {daysOfWeek.map((day, dayIndex) => {
+                            const dayEvents = getEventsForDate(day);
+                            return (
+                              <div key={dayIndex} className="day-column">
+                                <div className="day-header">
+                                  {formatDate(day)}
+                                  {dayEvents.length > 0 && (
+                                    <Badge bg="primary" className="ms-2">
+                                      {dayEvents.length}
+                                    </Badge>
+                                  )}
+                                </div>
+                                {Array.from({ length: 14 }, (_, hourIndex) => {
+                                  const hour = 8 + hourIndex;
+                                  const hourEvents = dayEvents.filter(
+                                    (event) =>
+                                      event.time &&
+                                      event.time.startsWith(
+                                        `${hour.toString().padStart(2, "0")}:`
+                                      )
+                                  );
+                                  return (
+                                    <div key={hourIndex} className="time-slot">
+                                      {hourEvents.map((event, eventIndex) => (
+                                        <OverlayTrigger
+                                          key={eventIndex}
+                                          placement="top"
+                                          overlay={
+                                            <Tooltip
+                                              id={`tooltip-week-${dayIndex}-${hourIndex}-${eventIndex}`}
+                                            >
+                                              {getEventDisplayText(event)}
+                                            </Tooltip>
+                                          }
+                                        >
+                                          <div
+                                            className={`event-item bg-${getEventBadgeColor(
+                                              event
+                                            )} text-white p-1 rounded small`}
+                                            onClick={() =>
+                                              handleEventClick(event, day)
+                                            }
+                                            style={{ cursor: "pointer" }}
+                                          >
+                                            {formatTime(event.time)}
+                                          </div>
+                                        </OverlayTrigger>
+                                      ))}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </Card.Body>
+                    </Card>
+                  )}
+
+                  {/* Day View */}
+                  {viewMode === "day" && (
+                    <Card className="shadow-lg border-0">
+                      <Card.Body>
+                        <h5 className="mb-3">
+                          Events for {new Date().toLocaleDateString()}
+                        </h5>
+                        {filteredEvents.length === 0 ? (
+                          <p className="text-muted">
+                            No events scheduled for today
+                          </p>
+                        ) : (
+                          <div className="day-events">
+                            {filteredEvents.map((event, index) => (
+                              <div
+                                key={index}
+                                className="event-card p-3 mb-3 bg-light rounded border"
+                                onClick={() =>
+                                  handleEventClick(event, new Date(event.date))
+                                }
+                                style={{ cursor: "pointer" }}
+                              >
+                                <div className="d-flex justify-content-between align-items-start">
+                                  <div>
+                                    <strong className="text-primary">
+                                      {formatTime(event.time)}
+                                    </strong>
+                                    <div className="mt-1">
+                                      {getEventDisplayText(event)}
+                                    </div>
+                                    {event.proposalEmail?.fromName && (
+                                      <small className="text-muted">
+                                        From: {event.proposalEmail.fromName}
+                                      </small>
+                                    )}
+                                    <div>
+                                      {event.proposalEmail?.link && (
+                                        <small className="text-muted">
+                                          Link: {event.proposalEmail.link}
+                                        </small>
+                                      )}
+                                    </div>
+                                    <div>
+                                      {event.proposalEmail?.expirationDate && (
+                                        <small className="text-muted">
+                                          Expiration:{" "}
+                                          {new Date(
+                                            event.proposalEmail.expirationDate
+                                          ).toLocaleDateString()}
+                                        </small>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <Badge bg={getEventBadgeColor(event)}>
+                                    {event.proposalEmail ? "Proposal" : "Event"}
+                                  </Badge>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </Card.Body>
+                    </Card>
+                  )}
+                </>
+              )}
+            </Col>
+          </Row>
+
+          {/* Event Detail Modal */}
+          <EventDetailModal />
+        </Container>
+      </div>
+
       <style>{`
+        .app {
+          position: relative;
+          padding: 10px;
+          min-height: 100vh;
+          overflow-x: hidden;
+        }
+        
+        .main-content {
+          transition: all 0.3s ease;
+        }
+        
+        .main-content.with-sidebar {
+          margin-right: 950px;
+          overflow: hidden;
+        }
+        
+        .btn-back {
+          background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+          color: white;
+          border: none;
+          padding: 12px 20px;
+          border-radius: 8px;
+          cursor: pointer;
+          font-weight: 500;
+          display: flex;
+          align-items: center;
+          transition: all 0.3s ease;
+          box-shadow: 0 4px 6px rgba(108, 117, 125, 0.2);
+        }
+        
+        .btn-back:hover {
+          background: linear-gradient(135deg, #5a6268 0%, #495057 100%);
+          transform: translateY(-2px);
+          box-shadow: 0 6px 8px rgba(108, 117, 125, 0.3);
+        }
+        
         .month-grid {
           display: grid;
           grid-template-columns: repeat(7, 1fr);
@@ -636,6 +783,7 @@ export default function OverView() {
         .event-item {
           font-size: 0.75rem;
           transition: all 0.2s;
+          cursor: pointer;
         }
         
         .event-item:hover {
@@ -659,6 +807,11 @@ export default function OverView() {
         .more-events {
           margin-top: 2px;
           font-size: 0.7rem;
+          cursor: pointer;
+        }
+        
+        .more-events:hover {
+          text-decoration: underline;
         }
         
         .week-grid {
@@ -688,7 +841,9 @@ export default function OverView() {
         
         .day-column {
           flex: 1;
-          border-left: 1px
+          border-left: 1px solid #dee2e6;
+        }
+        
         .day-header {
           padding: 10px;
           text-align: center;
@@ -699,13 +854,30 @@ export default function OverView() {
         
         .event-card {
           transition: all 0.2s;
+          cursor: pointer;
         }
         
         .event-card:hover {
           box-shadow: 0 2px 8px rgba(0,0,0,0.1);
           transform: translateY(-1px);
         }
+        
+        @media (max-width: 1200px) {
+          .main-content.with-sidebar {
+            margin-right: 0;
+            opacity: 0.3;
+            pointer-events: none;
+          }
+        }
+        
+        @media (max-width: 992px) {
+          .main-content.with-sidebar {
+            margin-right: 0;
+            opacity: 1;
+            pointer-events: all;
+          }
+        }
       `}</style>
-    </Container>
+    </div>
   );
 }

@@ -1,22 +1,32 @@
 /* Flag styling (don’t touch background-size!) */
 .react-tel-input .country-list .flag {
-  position: relative;
   margin-right: 8px;
   width: 20px;
   height: 15px;
-  background-repeat: no-repeat;
-  background-position: center center;
-  display: inline-block;
 }
 
 /* Dropdown country row */
 .react-tel-input .country-list .country {
   display: flex;
   align-items: center;
-  gap: 8px;
   padding: 6px 12px;
   font-size: 14px;
   cursor: pointer;
+}
+
+/* Remove gap property and use margin-right on flag instead */
+.react-tel-input .country-list .country .flag {
+  margin-right: 12px; /* Increased from 8px to 12px for more space */
+  flex-shrink: 0; /* Prevent flag from shrinking */
+}
+
+/* Country name/dial code styling */
+.react-tel-input .country-list .country-name {
+  margin-right: 6px;
+}
+
+.react-tel-input .country-list .dial-code {
+  color: #6c757d;
 }
 
 /* Hover effect */
@@ -32,4 +42,16 @@
   padding: 6px 10px;
   font-size: 14px;
   outline: none;
+}
+
+/* Ensure proper alignment of country list items */
+.react-tel-input .country-list .country {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.react-tel-input .form-control {
+  padding-left: 48px !important; /* ensures + and flag visible */
+  font-size: 14px;
 }
