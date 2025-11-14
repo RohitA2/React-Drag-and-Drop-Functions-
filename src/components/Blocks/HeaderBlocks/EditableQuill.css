@@ -1,0 +1,75 @@
+/* ===========================
+   EditableQuill Component Styles
+   =========================== */
+
+.editable-quill-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.editable-quill-wrapper.has-content .editable-quill-placeholder {
+  display: none;
+}
+
+.editable-quill-placeholder {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  color: #999;
+  font-style: italic;
+  z-index: 1;
+}
+
+.editable-quill-placeholder::before {
+  content: attr(data-placeholder);
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+/* ===========================
+   Quill Editor Cleanup
+   =========================== */
+
+.editable-quill-wrapper .ql-container.ql-snow,
+.editable-quill-wrapper .ql-editor {
+  border: none;
+  outline: none;
+  box-shadow: none;
+  background: transparent;
+}
+
+.editable-quill-wrapper .ql-editor p {
+  margin: 0;
+  padding: 0;
+}
+
+.editable-quill-wrapper .ql-container.ql-snow {
+  border: none;
+  background: none;
+  box-shadow: none;
+}
+
+/* ===========================
+   Quill Toolbar Cleanup
+   =========================== */
+
+.editable-quill-wrapper .ql-toolbar.ql-snow {
+  display: none; /* Hide default Quill toolbar */
+}
+
+/* ===========================
+   Toolbar Positioning
+   =========================== */
+
+.toolbar-positioned {
+  position: absolute;
+  z-index: 3000;
+}
+
+.toolbar-hidden {
+  display: none;
+}

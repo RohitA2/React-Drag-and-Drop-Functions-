@@ -1,0 +1,266 @@
+/* =========================================
+   📝 Editable Quill Base Cleanup
+   ========================================= */
+
+/* Remove default Quill borders/backgrounds */
+.editable-quill-wrapper,
+.ql-container.ql-snow,
+.ql-editor {
+  border: none;
+  outline: none;
+  box-shadow: none;
+  background: transparent;
+}
+
+/* Reset all inner elements */
+.editable-quill-wrapper * {
+  border: none;
+}
+
+/* Remove extra margins from <p> */
+.ql-editor p {
+  margin: 0;
+  padding: 0;
+}
+
+/* Remove default Quill toolbar/container styles */
+.ql-container.ql-snow,
+.ql-toolbar.ql-snow {
+  border: none;
+  background: none;
+  box-shadow: none;
+}
+
+
+/* =========================================
+   🎛 Toolbar Container Styles
+   ========================================= */
+
+.custom-quill-toolbar {
+  background: #000;
+  border: none;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+  padding: 4px 8px;
+  border-radius: 6px;
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  width: fit-content;
+  max-width: 100%;
+}
+
+
+/* =========================================
+   🔘 Toolbar Buttons (Default Look)
+   ========================================= */
+
+.custom-quill-toolbar button,
+.custom-quill-toolbar select {
+  background: transparent;
+  color: #fff;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: 4px;
+  transition: background 0.2s ease;
+}
+
+.custom-quill-toolbar button:hover,
+.custom-quill-toolbar select:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+
+/* =========================================
+   🔠 Header Buttons (H1, H2, H3)
+   ========================================= */
+
+.custom-quill-toolbar button.ql-header {
+  min-width: 40px;
+  text-align: center;
+  font-size: 14px;
+  line-height: 1.2;
+}
+
+/* Active + Hover state */
+.custom-quill-toolbar .ql-header.ql-active,
+.custom-quill-toolbar .ql-header:hover,
+.custom-quill-toolbar .ql-header[aria-pressed="true"] {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+
+/* =========================================
+   📌 Contextual Toolbar (Selection Based)
+   ========================================= */
+
+.contextual-toolbar button {
+  min-width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  background: transparent;
+  color: #fff;
+  border-radius: 4px;
+  transition: background 0.2s ease;
+}
+
+.contextual-toolbar button:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Font Size Dropdown */
+.contextual-toolbar .ql-size {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  font-weight: bold;
+}
+
+/* Divider Line */
+.toolbar-divider {
+  width: 1px;
+  background: rgba(255, 255, 255, 0.3);
+  margin: 0 6px;
+}
+
+
+/* =========================================
+   🔽 Heading Dropdown
+   ========================================= */
+
+.heading-dropdown-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.heading-dropdown-trigger {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px 6px;
+  color: white;
+}
+
+.heading-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background: #1e1e1e;
+  border-radius: 6px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25);
+  z-index: 10000;
+  min-width: 140px;
+  padding: 4px 0;
+}
+
+.heading-dropdown div {
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+  color: #fff;
+  font-size: 14px;
+}
+
+.heading-dropdown div:hover {
+  background: #333;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.25);
+}
+
+
+/* =========================================
+   🎨 Custom Color Dropdown
+   ========================================= */
+
+.custom-color-dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.custom-color-trigger {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px 6px;
+  color: white;
+}
+
+.custom-color-palette {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background-color: #fff;
+  border-radius: 6px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25);
+  z-index: 10000;
+  padding: 8px;
+  display: grid;
+  grid-template-columns: repeat(6, 24px);
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.custom-color-swatch {
+  width: 24px;
+  height: 24px;
+  border: 1px solid #ddd;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.custom-color-swatch:hover {
+  transform: scale(1.15);
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.3);
+}
+
+/* Gradient swatch (more colors) */
+.custom-color-swatch.gradient {
+  background: linear-gradient(
+    45deg,
+    #ff0000,
+    #ff9900,
+    #ffff00,
+    #00ff00,
+    #0000ff,
+    #9900ff,
+    #ff00ff
+  );
+  position: relative;
+}
+
+.custom-color-swatch.gradient::after {
+  content: "+";
+  color: white;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-weight: bold;
+  font-size: 14px;
+  text-shadow: 0 0 2px black;
+}
+
+
+/* Global Toolbar – always screen bottom */
+.custom-quill-toolbar.global-toolbar {
+  position: fixed !important;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999 !important;
+  display: flex;
+}
+
+/* Contextual Toolbar – fixed to viewport to avoid jumps */
+.custom-quill-toolbar.contextual-toolbar {
+  position: fixed !important;
+  z-index: 2000;
+}
+
