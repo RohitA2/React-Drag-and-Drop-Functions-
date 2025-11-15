@@ -73,3 +73,4 @@ export const onMessageListener = async (callback) => {
   const { messaging } = ctx;
   return onMessage(messaging, callback);
 };
+    

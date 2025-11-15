@@ -142,7 +142,7 @@ const HeaderSidebar = ({
     //   return;
     // }
 
-    const origin = window.location?.origin || "http://13.62.210.204";
+    const origin = window.location?.origin || "https://singlink.se";
     const documentLink = `${origin}/proposal?parentId=${parentId}`;
 
     const payload = {

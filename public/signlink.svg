@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+  <defs>
+    <linearGradient id="signlinkGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ff7a00"/>
+      <stop offset="50%" stop-color="#ff5a00"/>
+      <stop offset="100%" stop-color="#3b82f6"/>
+    </linearGradient>
+  </defs>
+  <path fill="url(#signlinkGrad)" d="M260 60 C180 60 180 150 120 150 C60 150 60 240 120 240 C180 240 180 330 260 330 C305 330 330 300 330 275 C330 255 315 240 295 240 C270 240 250 260 220 260 C190 260 190 230 220 230 C250 230 270 210 295 210 C315 210 330 195 330 165 C330 110 305 60 260 60 Z"/>
+</svg>

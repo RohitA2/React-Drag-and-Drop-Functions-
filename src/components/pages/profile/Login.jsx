@@ -49,9 +49,9 @@ const Login = () => {
             <div className="card shadow-lg border-0 rounded-4">
               <div className="card-body p-5">
                 <div className="text-center mb-4">
-                  <BiLock size={48} className="text-primary" />
-                  <h2 className="mt-3 fw-bold text-primary">Welcome Back</h2>
-                  <p className="text-muted">
+                  {/* <BiLock size={48} className="text-primary" /> */}
+                  <img src="/images/signlink.jpg" alt="SignLink Logo" width={150} />
+                  <p className="text-muted fw-medium mb-0 mt-2 fs-6">
                     Sign in to your account to continue
                   </p>
                 </div>
@@ -152,7 +152,7 @@ const Login = () => {
 
                 {/* Sign up link */}
                 <div className="text-center mt-4">
-                  <p className="text-muted">
+                  <p className="text-muted mb-0 fw-medium fs-6">
                     Don't have an account?{" "}
                     <span
                       className="text-decoration-none fw-medium"

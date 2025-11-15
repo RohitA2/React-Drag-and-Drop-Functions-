@@ -44,7 +44,7 @@ const SignUpForm = () => {
         navigate("/login"); // ✅ Redirect after success
       } else {
         const message = res?.data?.message || "Something went wrong.";
-       toast.error(`Error: ${message}`);
+        toast.error(`Error: ${message}`);
       }
     } catch (error) {
       console.error("Registration error:", error);
@@ -59,8 +59,9 @@ const SignUpForm = () => {
     <div className="signup-container">
       <div className="signup-card">
         <div className="signup-header">
+          <img src="/images/signlink.jpg" alt="SignLink Logo" width={150} />
           <h1>Create Your Account</h1>
-          <p>Join our community and start your journey today</p>
+          {/* <p>Join our community and start your journey today</p> */}
         </div>
         <form onSubmit={handleSubmit} className="signup-form">
           <div className="form-row">
@@ -147,7 +148,7 @@ const SignUpForm = () => {
                 )}
               </button>
             </div>
-            <p className="password-hint">
+            <p className="password-hint mb-0 text-muted fs-12">
               Use 8+ characters with a mix of letters, numbers & symbols
             </p>
           </div>
@@ -183,7 +184,7 @@ const SignUpForm = () => {
           </button>
         </form>
 
-        <div className="divider">
+        {/* <div className="divider">
           <span>Or continue with email</span>
         </div>
         <div className="social-buttons">
@@ -219,7 +220,7 @@ const SignUpForm = () => {
             </span>
             Sign up with Twitter
           </button>
-        </div>
+        </div> */}
 
         <div className="signin-link">
           Already have an account?{" "}
