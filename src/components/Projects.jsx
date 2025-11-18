@@ -112,47 +112,47 @@ const Projects = () => {
     });
   };
 
-  const sendReminder = async (proposalId) => {
-    try {
-      const project = allProposals.find(p => p.id === proposalId);
-      if (!project) {
-        alert("Project not found");
-        return;
-      }
+  // const sendReminder = async (proposalId) => {
+  //   try {
+  //     const project = allProposals.find(p => p.id === proposalId);
+  //     if (!project) {
+  //       alert("Project not found");
+  //       return;
+  //     }
 
-      const clientNames = project.recipients
-        ?.map(r => r.recipientName || "Unknown")
-        .filter(Boolean)
-        .join(", ") || "Client";
+  //     const clientNames = project.recipients
+  //       ?.map(r => r.recipientName || "Unknown")
+  //       .filter(Boolean)
+  //       .join(", ") || "Client";
 
-      const clientEmails = project.recipients
-        ?.map(r => r.recipientEmail)
-        .filter(Boolean)
-        .join(", ") || "";
+  //     const clientEmails = project.recipients
+  //       ?.map(r => r.recipientEmail)
+  //       .filter(Boolean)
+  //       .join(", ") || "";
 
-      const expiry = new Date(project.expirationDate);
-      const expiryFormatted = expiry.toLocaleString("en-US", {
-        dateStyle: "medium",
-        timeStyle: "short",
-      });
+  //     const expiry = new Date(project.expirationDate);
+  //     const expiryFormatted = expiry.toLocaleString("en-US", {
+  //       dateStyle: "medium",
+  //       timeStyle: "short",
+  //     });
 
-      await fetch(`${API_URL}/api/remind`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          proposalId,
-          proposalName: project.proposalName,
-          expiryTime: expiryFormatted,
-          clientNames,
-          clientEmails,
-        }),
-      });
-      toast.success("Reminder sent successfully");
-    } catch (err) {
-      console.error("Reminder failed:", err);
-      toast.error("Failed to send reminder");
-    }
-  };
+  //     await fetch(`${API_URL}/api/remind`, {
+  //       method: "POST",
+  //       headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify({
+  //         proposalId,
+  //         proposalName: project.proposalName,
+  //         expiryTime: expiryFormatted,
+  //         clientNames,
+  //         clientEmails,
+  //       }),
+  //     });
+  //     toast.success("Reminder sent successfully");
+  //   } catch (err) {
+  //     console.error("Reminder failed:", err);
+  //     toast.error("Failed to send reminder");
+  //   }
+  // };
 
   // NEW STATUS: Signed / Not Signed / Declined
   const getStatus = (p) => {
@@ -277,7 +277,7 @@ const Projects = () => {
                           )}
 
                           {/* BELL: Only if NOT signed */}
-                          {isNotSigned && (
+                          {/* {isNotSigned && (
                             <button
                               className="btn-bell"
                               title="Send Reminder"
@@ -285,7 +285,7 @@ const Projects = () => {
                             >
                               <Bell size={16} />
                             </button>
-                          )}
+                          )} */}
                         </div>
                       </td>
                     </tr>

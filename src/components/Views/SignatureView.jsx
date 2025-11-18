@@ -374,7 +374,6 @@
 // }
 
 
-
 import { useMemo, useState } from "react";
 import { Button, Spinner, Modal, Form, Card } from "react-bootstrap";
 import axios from "axios";
@@ -385,7 +384,17 @@ import { ShieldCheck, Fingerprint, ArrowRight, PersonCheck, Lock, Stars } from "
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-// Helper functions remain mostly the same
+// Helper: Convert Blob to Base64 (pure base64 string)
+function blobToBase64(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result.split(",")[1]); // Remove data:application/pdf;base64,
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
+// Helper: Add capture mask to hide UI elements during PDF render
 function addCaptureMask(selector = ".proposal-viewer") {
   const el = document.querySelector(selector);
   if (!el) return () => {};
@@ -406,6 +415,7 @@ function addCaptureMask(selector = ".proposal-viewer") {
   };
 }
 
+// Render proposal to PDF Blob (multi-page support)
 async function renderProposalToPdfBlob(selector = ".proposal-viewer", jpegQuality = 0.72) {
   if (document.fonts?.ready) await document.fonts.ready.catch(() => {});
   await new Promise((r) => setTimeout(r, 100));
@@ -460,6 +470,7 @@ async function renderProposalToPdfBlob(selector = ".proposal-viewer", jpegQualit
   return pdf.output("blob");
 }
 
+// Normalize Swedish NIN (10 or 12 digits)
 function normalizeNin(ninRaw) {
   const digits = (ninRaw || "").replace(/\D/g, "");
   if (digits.length !== 10 && digits.length !== 12) return { ok: false };
@@ -470,7 +481,16 @@ function normalizeNin(ninRaw) {
   return { ok: true, nin12: `${century}${digits}` };
 }
 
-export default function SignatureAction({ user, parentId, recipient, proposalId, proposalName, signatureId, blockId }) {
+export default function SignatureAction({
+  user,
+  parentId,
+  recipient,
+  proposalId,
+  proposalName,
+  signatureId,
+  blockId,
+  debugPdf = import.meta.env.VITE_DEBUG_PDF === "true", // Enable via .env
+}) {
   const [isLoading, setIsLoading] = useState(false);
   const [showNinModal, setShowNinModal] = useState(false);
   const [ninInput, setNinInput] = useState(recipient?.nin || "");
@@ -487,12 +507,42 @@ export default function SignatureAction({ user, parentId, recipient, proposalId,
     const undoMask = addCaptureMask();
 
     try {
-      // Convert proposal to PDF
+      // Generate PDF
       let pdfBlob = await renderProposalToPdfBlob(".proposal-viewer", 0.72);
-      if (pdfBlob.size > 8 * 1024 * 1024) pdfBlob = await renderProposalToPdfBlob(".proposal-viewer", 0.6);
+      if (pdfBlob.size > 8 * 1024 * 1024) {
+        pdfBlob = await renderProposalToPdfBlob(".proposal-viewer", 0.6);
+      }
 
       const fname = `${(proposalName || "proposal").replace(/\s+/g, "-").toLowerCase()}-${effectiveProposalId}.pdf`;
       const pdfFile = new File([pdfBlob], fname, { type: "application/pdf" });
+
+      // ================================
+      // DEBUG: Log PDF Details + Base64
+      // ================================
+      if (debugPdf) {
+        const sizeKB = (pdfBlob.size / 1024).toFixed(2);
+        const sizeMB = (pdfBlob.size / (1024 * 1024)).toFixed(2);
+        const base64 = await blobToBase64(pdfBlob);
+
+        console.group("PDF Debug Info");
+        console.log("File Name:", fname);
+        console.log("MIME Type:", pdfBlob.type || "application/pdf");
+        console.log("Size (bytes):", pdfBlob.size);
+        console.log(`Size: ${sizeKB} KB / ${sizeMB} MB`);
+        console.log("Base64 Preview (first 100 chars):", base64.substring(0, 100) + "...");
+        console.log("Full Base64 Length:", base64.length);
+        console.groupEnd();
+
+        // Auto-download for inspection
+        const url = URL.createObjectURL(pdfBlob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = fname;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
 
       // Prepare FormData
       const fd = new FormData();
@@ -506,7 +556,7 @@ export default function SignatureAction({ user, parentId, recipient, proposalId,
       fd.append("recipientName", recipient?.recipientName || "");
       fd.append("nin", nin12 || "");
 
-      // Call backend to create ZignSec session
+      // Call backend
       const res = await axios.post(`${API_URL}/api/zignsec/create-session`, fd, {
         timeout: 60000,
         headers: { Accept: "application/json" },
@@ -519,8 +569,8 @@ export default function SignatureAction({ user, parentId, recipient, proposalId,
         throw new Error(res.data?.error || "Failed to start signing session.");
       }
     } catch (err) {
-      console.error(err);
-      toast.error(err?.response?.data?.error || err.message);
+      console.error("Signing error:", err);
+      toast.error(err?.response?.data?.error || err.message || "Signing failed.");
     } finally {
       undoMask();
       setIsLoading(false);
@@ -541,7 +591,7 @@ export default function SignatureAction({ user, parentId, recipient, proposalId,
 
   return (
     <>
-      {/* Loader */}
+      {/* Loader Overlay */}
       {isLoading && (
         <div className="signing-overlay">
           <div className="signing-loader text-center">
@@ -579,13 +629,23 @@ export default function SignatureAction({ user, parentId, recipient, proposalId,
             </div>
           </div>
 
-          <Button onClick={handleOpenModal} disabled={isLoading} className="sign-button w-100 mt-4 position-relative overflow-hidden" size="lg">
-            <span className="position-relative z-3">{isLoading ? "Preparing Document..." : "Sign with BankID"}</span>
+          <Button
+            onClick={handleOpenModal}
+            disabled={isLoading}
+            className="sign-button w-100 mt-4 position-relative overflow-hidden"
+            size="lg"
+          >
+            <span className="position-relative z-3">
+              {isLoading ? "Preparing Document..." : "Sign with BankID"}
+            </span>
             {!isLoading && <ArrowRight className="ms-2" size={20} />}
             <div className="shine"></div>
           </Button>
 
-          <div className="trust-badge mt-3"><Lock size={14} className="me-1" /><small>256-bit SSL • GDPR Compliant</small></div>
+          <div className="trust-badge mt-3">
+            <Lock size={14} className="me-1" />
+            <small>256-bit SSL • GDPR Compliant</small>
+          </div>
         </Card.Body>
       </Card>
 
@@ -607,7 +667,14 @@ export default function SignatureAction({ user, parentId, recipient, proposalId,
           <Form onSubmit={handleNinSubmit}>
             <Form.Group>
               <Form.Label className="fw-semibold">Personnummer</Form.Label>
-              <Form.Control type="text" placeholder="ÅÅÅÅMMDDXXXX" value={ninInput} onChange={(e) => setNinInput(e.target.value)} autoFocus inputMode="numeric" />
+              <Form.Control
+                type="text"
+                placeholder="ÅÅÅÅMMDDXXXX"
+                value={ninInput}
+                onChange={(e) => setNinInput(e.target.value)}
+                autoFocus
+                inputMode="numeric"
+              />
               <Form.Text>{ninHint}</Form.Text>
               {ninError && <div className="text-danger mt-2 small">{ninError}</div>}
             </Form.Group>
@@ -615,9 +682,17 @@ export default function SignatureAction({ user, parentId, recipient, proposalId,
         </Modal.Body>
 
         <Modal.Footer className="bg-light border-0">
-          <Button variant="light" onClick={handleCloseModal} disabled={isLoading}>Cancel</Button>
+          <Button variant="light" onClick={handleCloseModal} disabled={isLoading}>
+            Cancel
+          </Button>
           <Button variant="primary" onClick={handleNinSubmit} disabled={isLoading}>
-            {isLoading ? <Spinner size="sm" className="me-2" /> : <>Continue <ArrowRight className="ms-2" /></>}
+            {isLoading ? (
+              <Spinner size="sm" className="me-2" />
+            ) : (
+              <>
+                Continue <ArrowRight className="ms-2" />
+              </>
+            )}
           </Button>
         </Modal.Footer>
       </Modal>

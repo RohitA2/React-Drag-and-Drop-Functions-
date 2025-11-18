@@ -18,11 +18,12 @@ import Client from "./components/pages/profile/Client";
 import Stats from "./components/pages/profile/Stats";
 import OverView from "./components/pages/dashboard/OverView";
 import Notfication from "./components/NotificatioPage";
-import SignWithBankID from "./components/SignWithBankID";
-import SignicatReturn from "./components/signicat-return";
 import axios from "axios";
 import { useSelector } from "react-redux";
 import { selectedUserId } from "./store/authSlice";
+import ForgotPassword from "./components/pages/profile/ForgotPassword";
+import ResetPassword from "./components/pages/profile/ResetPassword";
+import VerifyOtp from "./components/pages/profile/VerifyOtp";
 
 import { requestForToken, onMessageListener } from "./firebase";
 const API_URL = import.meta.env.VITE_API_URL;
@@ -84,11 +85,12 @@ function App() {
 
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/bank" element={<SignWithBankID />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/verify-otp" element={<VerifyOtp />} />
+        <Route path="/reset-password/:token" element={<ResetPassword />} />
         <Route path="/proposal" element={<ProposalViewer />} />
         <Route path="/proposal/:headerId" element={<ProposalViewer />} />
         <Route path="/template-builder" element={<TemplateBuilder />} />
-        <Route path="/signicat-return" element={<SignicatReturn />} />
       </Routes>
     </Router>
   );
