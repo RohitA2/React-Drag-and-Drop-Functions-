@@ -198,12 +198,6 @@ export default function Dashboard() {
               <Dropdown.Item as={Link} to="/profile">
                 Profile
               </Dropdown.Item>
-              <Dropdown.Item as={Link} to="/login">
-                Login
-              </Dropdown.Item>
-              <Dropdown.Item as={Link} to="/register">
-                Register
-              </Dropdown.Item>
               <Dropdown.Item as={Link} to="/settings">
                 Settings
               </Dropdown.Item>

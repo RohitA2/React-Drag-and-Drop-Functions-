@@ -58,10 +58,16 @@ function App() {
       .catch((err) => console.error("Error getting FCM token:", err));
 
     // ✅ Listen for foreground notifications
-    const unsubscribe = onMessageListener().then((payload) => {
-      console.log("🔔 Foreground Notification:", payload);
-      toast.info(`${payload.notification.title}: ${payload.notification.body}`);
-    });
+   const unsubscribe = onMessageListener().then((payload) => {
+  console.log("🔔 Foreground Notification:", payload);
+
+  const title = payload?.notification?.title || payload?.data?.title || "New Notification";
+  const body = payload?.notification?.body || payload?.data?.body || "";
+
+//  toast.info(<><b>{title}</b><br />{body}</>);
+
+});
+
 
     return () => unsubscribe;
   }, [userId]);

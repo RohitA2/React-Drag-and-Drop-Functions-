@@ -1074,48 +1074,91 @@ export default function ProposalViewer() {
   }, [parentIdFromQuery, token]);
 
 
+  // useEffect(() => {
+  //   if (!recipient?.id) return;
+
+  //   let unsubscribe = () => { };
+
+  //   const initPush = async () => {
+  //     try {
+  //       const token = await requestForToken();
+  //       if (!token) return;
+
+  //       console.log("FCM Token:", token);
+
+  //       // SAVE TO YOUR BACKEND
+  //       await axios.post(`${API_BASE}/schedules/save-fcm-token-recipent`, {
+  //         id: recipient.id,
+  //         token,
+  //       });
+
+  //       toast.success("Live updates enabled!", {
+  //         icon: "Bell",
+  //         duration: 4000,
+  //       });
+
+  //       // LISTEN FOR FOREGROUND MESSAGES
+  //       unsubscribe = onMessageListener().then((payload) => {
+  //         const { title, body } = payload.notification || {};
+  //         toast.success(`${title}\n${body}`, {
+  //           duration: 8000,
+  //           style: {
+  //             borderRadius: "16px",
+  //             background: "linear-gradient(135deg, #1e293b, #334155)",
+  //             color: "#fff",
+  //             fontWeight: 600,
+  //           },
+  //         });
+  //       });
+  //     } catch (err) {
+  //       console.error("Push Error:", err);
+  //     }
+  //   };
+
+  //   initPush();
+
+  //   return () => {
+  //     if (typeof unsubscribe === "function") unsubscribe();
+  //   };
+  // }, [recipient?.id]);
+  // ProposalViewer.jsx — Recipient ke liye
   useEffect(() => {
     if (!recipient?.id) return;
 
     let unsubscribe = () => { };
 
-    const initPush = async () => {
+    const setupRecipientPush = async () => {
       try {
+        // 1. View track karo (sender ko pata chale)
+        await axios.post(`${API_BASE}/recipients/track-view`, {
+          recipientId: recipient.id,
+        });
+
+        // 2. Recipient ka FCM token save karo
         const token = await requestForToken();
-        if (!token) return;
 
-        console.log("FCM Token:", token);
-
-        // SAVE TO YOUR BACKEND
-        await axios.post(`${API_BASE}/schedules/save-fcm-token-recipent`, {
-          id: recipient.id,
-          token,
-        });
-
-        toast.success("Live updates enabled!", {
-          icon: "Bell",
-          duration: 4000,
-        });
-
-        // LISTEN FOR FOREGROUND MESSAGES
-        unsubscribe = onMessageListener().then((payload) => {
-          const { title, body } = payload.notification || {};
-          toast.success(`${title}\n${body}`, {
-            duration: 8000,
-            style: {
-              borderRadius: "16px",
-              background: "linear-gradient(135deg, #1e293b, #334155)",
-              color: "#fff",
-              fontWeight: 600,
-            },
+        if (token) {
+          await axios.post(`${API_BASE}/schedules/save-fcm-token-recipent`, {
+            id: recipient.id,
+            token,
           });
+
+          toast.success("Live updates enabled! 🔔", { duration: 4000 });
+        }
+
+        // 3. Recipient ko foreground notifications
+        unsubscribe = onMessageListener().then((payload) => {
+          const title = payload?.notification?.title || "Update";
+          const body = payload?.notification?.body || "";
+          toast.info(`${title}\n${body}`, { duration: 8000 });
         });
+
       } catch (err) {
-        console.error("Push Error:", err);
+        console.error("Recipient FCM/View Track Error:", err);
       }
     };
 
-    initPush();
+    setupRecipientPush();
 
     return () => {
       if (typeof unsubscribe === "function") unsubscribe();
