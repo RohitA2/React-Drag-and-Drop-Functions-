@@ -1,21 +1,13 @@
-// import { useMemo, useState } from "react";
-// import { Button, Spinner, Modal, Form, Card } from "react-bootstrap";
+// import { useState } from "react";
+// import { Button, Spinner } from "react-bootstrap";
 // import axios from "axios";
 // import html2canvas from "html2canvas";
 // import jsPDF from "jspdf";
 // import { toast } from "react-toastify";
-// import {
-//   ShieldCheck,
-//   Fingerprint,
-//   ArrowRight,
-//   PersonCheck,
-//   Lock,
-//   Stars,
-// } from "react-bootstrap-icons";
 
 // const API_URL = import.meta.env.VITE_API_URL;
 
-// // --- Helper functions remain unchanged ---
+// // Helper: Add capture mask to hide UI elements during PDF render
 // function addCaptureMask(selector = ".proposal-viewer") {
 //   const el = document.querySelector(selector);
 //   if (!el) return () => { };
@@ -36,9 +28,10 @@
 //   };
 // }
 
+// // Render proposal to PDF Blob (multi-page support)
 // async function renderProposalToPdfBlob(selector = ".proposal-viewer", jpegQuality = 0.72) {
 //   if (document.fonts?.ready) await document.fonts.ready.catch(() => { });
-//   await new Promise(r => setTimeout(r, 100));
+//   await new Promise((r) => setTimeout(r, 100));
 
 //   const element = document.querySelector(selector);
 //   if (!element) throw new Error("Proposal content not found.");
@@ -47,10 +40,6 @@
 //     scale: Math.min(window.devicePixelRatio || 1, 2),
 //     useCORS: true,
 //     backgroundColor: "#ffffff",
-//     width: element.scrollWidth,
-//     height: element.scrollHeight,
-//     windowWidth: element.scrollWidth,
-//     windowHeight: element.scrollHeight,
 //     logging: false,
 //   });
 
@@ -64,6 +53,7 @@
 //     const imgData = canvas.toDataURL("image/jpeg", jpegQuality);
 //     pdf.addImage(imgData, "JPEG", 0, 0, imgWidth, imgHeight, undefined, "FAST");
 //   } else {
+//     // Multi-page logic
 //     const pageCanvas = document.createElement("canvas");
 //     pageCanvas.width = canvas.width;
 //     const pxPerMm = canvas.width / pageWidth;
@@ -90,314 +80,191 @@
 //   return pdf.output("blob");
 // }
 
-// function normalizeNin(ninRaw) {
-//   const digits = (ninRaw || "").replace(/\D/g, "");
-//   if (digits.length !== 10 && digits.length !== 12) return { ok: false };
-//   if (digits.length === 12) return { ok: true, nin12: digits };
-//   const yy = parseInt(digits.slice(0, 2), 10);
-//   const currentYY = new Date().getFullYear() % 100;
-//   const century = yy <= currentYY ? "20" : "19";
-//   return { ok: true, nin12: `${century}${digits}` };
-// }
-
-// export default function SignatureAction({ user, parentId, recipient, proposalId, proposalName, signatureId, blockId }) {
+// export default function SignatureAction({
+//   user,
+//   parentId,
+//   recipient,
+//   proposalId,
+//   proposalName,
+//   signatureId,
+//   blockId,
+//   debugPdf = import.meta.env.VITE_DEBUG_PDF === "true",
+// }) {
 //   const [isLoading, setIsLoading] = useState(false);
-//   const [showNinModal, setShowNinModal] = useState(false);
-//   const [ninInput, setNinInput] = useState(recipient?.nin || "");
-//   const [ninError, setNinError] = useState("");
-
 //   const effectiveProposalId = proposalId || parentId;
-//   const ninHint = useMemo(() => "YYYYMMDDNNNN or YYMMDDNNNN", []);
 
-//   const handleOpenModal = () => {
-//     if (!isLoading) setShowNinModal(true);
-//   };
-
-//   const handleCloseModal = () => {
-//     if (!isLoading) setShowNinModal(false);
-//   };
-
-//   const startSigning = async (nin12) => {
+//   const startSigning = async () => {
 //     setIsLoading(true);
 //     const undoMask = addCaptureMask();
 
 //     try {
-//       // 1️⃣ Convert proposal to PDF
 //       let pdfBlob = await renderProposalToPdfBlob(".proposal-viewer", 0.72);
 //       if (pdfBlob.size > 8 * 1024 * 1024) {
 //         pdfBlob = await renderProposalToPdfBlob(".proposal-viewer", 0.6);
 //       }
 
 //       const fname = `${(proposalName || "proposal").replace(/\s+/g, "-").toLowerCase()}-${effectiveProposalId}.pdf`;
-//       const pdfFile = new File([pdfBlob], fname, { type: "application/pdf" });
 
-//       // 2️⃣ Prepare payload
+//       // Debug logging only
+//       if (debugPdf) {
+//         console.group("PDF Debug Info");
+//         console.log("File Name:", fname);
+//         console.log("MIME Type:", pdfBlob.type || "application/pdf");
+//         console.log("Size (bytes):", pdfBlob.size);
+//         console.log(`Size: ${(pdfBlob.size / 1024).toFixed(2)} KB`);
+//         console.groupEnd();
+//         console.log("PDF generated successfully - ready for BankID signing");
+//       }
+
 //       const fd = new FormData();
-//       fd.append("file", pdfFile);
-//       fd.append("parentId", parentId || "");
-//       fd.append("proposalId", String(effectiveProposalId || ""));
-//       fd.append("userId", String(user?.id || ""));
-//       fd.append("signatureId", String(signatureId || ""));
-//       fd.append("blockId", String(blockId || ""));
-//       fd.append("recipientEmail", recipient?.recipientEmail || "");
-//       fd.append("recipientName", recipient?.recipientName || "");
-//       fd.append("nin", nin12 || "");
+//       fd.append("file", pdfBlob, fname);
+//       fd.append("message", `Signing proposal: ${proposalName || "Document"}`);
+//       fd.append("relay_state", JSON.stringify({
+//         parentId: parentId || "",
+//         proposalId: String(effectiveProposalId || ""),
+//         userId: String(user?.id || ""),
+//         signatureId: String(signatureId || ""),
+//         blockId: String(blockId || ""),
+//         recipientEmail: recipient?.recipientEmail || "",
+//         recipientName: recipient?.recipientName || ""
+//       }));
 
-//       // 3️⃣ Call backend to create ZignSec session
-//       const res = await axios.post(`${API_URL}/api/zignsec/create-session`, fd, {
+//       const res = await axios.post(`${API_URL}/api/bankid/start-sign-pdf`, fd, {
 //         timeout: 60000,
-//         headers: { Accept: "application/json" },
 //       });
 
-//       if (res.data?.redirectUrl) {
-//         toast.success("Redirecting to BankID...");
-//         window.location.href = res.data.redirectUrl;
+//       if (res.data?.redirect_url) {
+//         toast.success("Redirecting to BankID for secure signing...", { autoClose: 2000 });
+//         setTimeout(() => {
+//           window.location.href = res.data.redirect_url;
+//         }, 800);
 //       } else {
-//         throw new Error(res.data?.error || "Failed to start signing session.");
+//         throw new Error(res.data?.error || "Failed to initiate BankID signing.");
 //       }
 //     } catch (err) {
-//       console.error(err);
-//       toast.error(err?.response?.data?.error || err.message);
+//       console.error("Signing error:", err);
+//       toast.error(err?.response?.data?.error || err.message || "Failed to start signing process.");
 //     } finally {
 //       undoMask();
 //       setIsLoading(false);
 //     }
 //   };
 
-//   const handleNinSubmit = async (e) => {
-//     e.preventDefault();
-//     setNinError("");
-
-//     const { ok, nin12 } = normalizeNin(ninInput);
-//     if (!ok) {
-//       setNinError("Invalid Swedish personal number (10 or 12 digits).");
-//       return;
-//     }
-
-//     setShowNinModal(false);
-//     await startSigning(nin12);
-//   };
-
 //   return (
 //     <>
-//       {/* Fullscreen Loader */}
+//       {/* Fullscreen Loading Overlay */}
 //       {isLoading && (
-//         <div className="signing-overlay">
-//           <div className="signing-loader">
-//             <Spinner animation="border" variant="light" className="mb-3" />
-//             <h5 className="text-white fw-bold">Redirecting to Signicat...</h5>
-//             <p className="text-white-50">Please wait while we securely prepare your document</p>
-//             <div className="pulse-animation">
-//               <Stars size={36} className="text-white" />
-//             </div>
+//         <div className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center bg-dark bg-opacity-90" style={{ zIndex: 9999 }}>
+//           <div className="text-center text-white">
+//             <Spinner animation="border" variant="success" className="mb-4" style={{ width: "4rem", height: "4rem" }} />
+//             <h4 className="fw-bold">Preparing Secure Document</h4>
+//             <p className="opacity-75 mb-4">Generating PDF and connecting to BankID...</p>
 //           </div>
 //         </div>
 //       )}
 
-//       <Card className="signature-card-modern">
-//         <div className="signature-header">
-//           <div className="icon-glow">
-//             <ShieldCheck size={36} />
-//           </div>
-//           <div>
-//             <h4 className="fw-bold text-white mb-1">Secure Digital Signature</h4>
-//             <p className="mb-0 text-white-70">Powered by Signicat & BankID</p>
-//           </div>
-//         </div>
-
-//         <Card.Body className="p-4">
-//           <div className="features-grid">
-//             <div className="feature">
-//               <div className="feature-icon bg-success bg-opacity-20">
-//                 <Fingerprint size={22} />
-//               </div>
-//               <span>BankID Verified</span>
-//             </div>
-//             <div className="feature">
-//               <div className="feature-icon bg-primary bg-opacity-20">
-//                 <PersonCheck size={22} />  {/* Fixed: PersonCheck */}
-//               </div>
-//               <span>Identity Confirmed</span>
-//             </div>
-//             <div className="feature">
-//               <div className="feature-icon bg-purple bg-opacity-20">
-//                 <Lock size={22} />
-//               </div>
-//               <span>End-to-End Encrypted</span>
-//             </div>
+//       {/* Signature Block UI */}
+//       <div
+//         className="position-relative bg-white shadow-sm p-0"
+//         style={{ maxWidth: "1800px", width: "100%" }}
+//       >
+//         <div className="d-flex justify-content-center gap-4 border-bottom p-5 bg-white">
+//           {/* Decline Button with tooltip */}
+//           <div className="tooltip-wrapper">
+//             <button className="btn btn-light text-muted">Decline</button>
+//             <span className="tooltip-text">decline the proposal</span>
 //           </div>
 
-//           <Button
-//             onClick={handleOpenModal}
-//             disabled={isLoading}
-//             className="sign-button w-100 mt-4 position-relative overflow-hidden"
-//             size="lg"
-//           >
-//             <span className="position-relative z-3">
-//               {isLoading ? "Preparing Document..." : "Sign with BankID"}
+//           {/* Sign Button with tooltip */}
+//           <div className="tooltip-wrapper">
+//             <button
+//               onClick={startSigning}
+//               disabled={isLoading}
+//               className="btn px-4 text-white"
+//               style={{
+//                 backgroundColor: "#95df8d",
+//                 borderColor: "#95df8d",
+//                 borderRadius: "0.375rem",
+//               }}
+//             >
+//               {isLoading ? (
+//                 <>
+//                   <Spinner animation="border" size="sm" className="me-2" />
+//                   Preparing...
+//                 </>
+//               ) : (
+//                 <>
+//                   <i className="bi bi-check-lg me-2"></i>Sign with BankID
+//                 </>
+//               )}
+//             </button>
+//             <span className="tooltip-text">
+//               Sign securely using BankID electronic signature
 //             </span>
-//             {!isLoading && <ArrowRight className="ms-2" size={20} />}
-//             <div className="shine"></div>
-//           </Button>
-
-//           <div className="trust-badge mt-3">
-//             <Lock size={14} className="me-1" />
-//             <small>256-bit SSL • GDPR Compliant</small>
 //           </div>
-//         </Card.Body>
-//       </Card>
-
-//       {/* NIN Modal */}
-//       <Modal show={showNinModal} onHide={handleCloseModal} centered backdrop="static">
-//         <div className="modal-gradient-header">
-//           <Modal.Header closeButton className="border-0">
-//             <Modal.Title className="text-white">
-//               <div className="d-flex align-items-center">
-//                 <div className="modal-icon">
-//                   <Fingerprint size={28} />
-//                 </div>
-//                 <div>
-//                   <h5 className="mb-0">Verify Identity</h5>
-//                   <small className="opacity-80">Swedish Personal Number</small>
-//                 </div>
-//               </div>
-//             </Modal.Title>
-//           </Modal.Header>
 //         </div>
 
-//         <Modal.Body className="pt-4">
-//           <Form onSubmit={handleNinSubmit}>
-//             <Form.Group>
-//               <Form.Label className="fw-semibold">Personnummer</Form.Label>
-//               <Form.Control
-//                 type="text"
-//                 placeholder="ÅÅÅÅMMDDXXXX"
-//                 value={ninInput}
-//                 onChange={(e) => setNinInput(e.target.value)}
-//                 autoFocus
-//                 className="nin-input"
-//                 inputMode="numeric"
-//               />
-//               <Form.Text>{ninHint}</Form.Text>
-//               {ninError && <div className="text-danger mt-2 small">{ninError}</div>}
-//             </Form.Group>
-//           </Form>
-//         </Modal.Body>
+//         <style>{`
+//           .tooltip-wrapper {
+//             position: relative;
+//             display: inline-block;
+//           }
 
-//         <Modal.Footer className="bg-light border-0">
-//           <Button variant="light" onClick={handleCloseModal} disabled={isLoading}>
-//             Cancel
-//           </Button>
-//           <Button variant="primary" onClick={handleNinSubmit} disabled={isLoading} className="px-4">
-//             {isLoading ? (
-//               <>
-//                 <Spinner size="sm" className="me-2" />
-//                 Preparing...
-//               </>
-//             ) : (
-//               <>
-//                 Continue <ArrowRight className="ms-2" />
-//               </>
-//             )}
-//           </Button>
-//         </Modal.Footer>
-//       </Modal>
+//           .tooltip-wrapper .tooltip-text {
+//             visibility: hidden;
+//             width: max-content;
+//             background-color: #838383;
+//             color: #fff;
+//             text-align: center;
+//             border-radius: 6px;
+//             padding: 5px 8px;
+//             position: absolute;
+//             z-index: 1000;
+//             bottom: 120%; /* above button */
+//             left: 50%;
+//             transform: translateX(-50%);
+//             opacity: 0;
+//             transition: opacity 0.2s;
+//           }
 
-//       <style>{`
-//         /* Same beautiful styles as before */
-//         .signing-overlay {
-//           position: fixed; inset: 0; background: rgba(0,0,0,0.85);
-//           backdrop-filter: blur(8px); display: flex; align-items: center;
-//           justify-content: center; z-index: 9999; animation: fadeIn 0.4s ease-out;
-//         }
-//         .signing-loader { text-align: center; padding: 2rem; border-radius: 10px;
-//           background: rgba(255,255,255,0.1); backdrop-filter: blur(20px);
-//           border: 1px solid rgba(255,255,255,0.2);
-//         }
-//         .pulse-animation { margin-top: 1.5rem; animation: pulse 2s infinite; }
-//         .signature-card-modern { border: none;  overflow: hidden;
-//           background: rgba(255,255,255,0.95); backdrop-filter: blur(16px);
-//           box-shadow: 0 20px 40px rgba(0,0,0,0.1); transition: all 0.3s ease;
-//         }
-//         .signature-card-modern:hover { transform: translateY(-8px);
-//           box-shadow: 0 30px 60px rgba(0,0,0,0.15);
-//         }
-//         .signature-header { background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-//           padding: 2rem; text-align: center; color: white;
-//         }
-//         .icon-glow { width: 70px; height: 70px; background: rgba(255,255,255,0.2);
-//           border-radius: 50%; display: flex; align-items: center; justify-content: center;
-//           margin: 0 auto 1rem; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.3);
-//           box-shadow: 0 8px 32px rgba(0,0,0,0.2);
-//         }
-//         .features-grid { display: grid; gap: 1rem; }
-//         .feature { display: flex; align-items: center; gap: 1rem; padding: 0.75rem;
-//           border-radius: 16px; background: rgba(102,126,234,0.05); transition: all 0.2s ease;
-//         }
-//         .feature:hover { background: rgba(102,126,234,0.1); transform: translateX(4px); }
-//         .feature-icon { width: 48px; height: 48px; border-radius: 14px;
-//           display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-//         }
-//         .sign-button { background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
-//           border: none; border-radius: 16px; padding: 1rem; font-weight: 600;
-//           font-size: 1.1rem; color: white; position: relative; overflow: hidden;
-//           transition: all 0.3s ease;
-//         }
-//         .sign-button:hover:not(:disabled) { transform: translateY(-2px);
-//           box-shadow: 0 10px 30px rgba(16,185,129,0.4);
-//         }
-//         .shine { position: absolute; top: 0; left: -150%; width: 50%; height: 100%;
-//           background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
-//           transform: skewX(-25deg); transition: left 0.7s ease;
-//         }
-//         .sign-button:hover .shine { left: 150%; }
-//         .trust-badge { text-align: center; color: #6b7280; font-size: 0.85rem; }
-//         .modal-gradient-header { background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); }
-//         .modal-icon { width: 56px; height: 56px; background: rgba(255,255,255,0.2);
-//           border-radius: 50%; display: flex; align-items: center; justify-content: center;
-//           margin-right: 1rem; backdrop-filter: blur(10px);
-//         }
-//         .nin-input { border: 2px solid #e5e7eb; border-radius: 14px; padding: 1rem;
-//           font-size: 1.1rem; transition: all 0.3s ease;
-//         }
-//         .nin-input:focus { border-color: #6366f1; box-shadow: 0 0 0 4px rgba(99,102,241,0.15); }
-//         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-//         @keyframes pulse { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }
-//         @media (max-width: 576px) {
-//           .signature-header { padding: 1.5rem; }
-//           .icon-glow { width: 60px; height: 60px; }
-//           .sign-button { font-size: 1rem; }
-//         }
-//       `}</style>
+//           .tooltip-wrapper:hover .tooltip-text {
+//             visibility: visible;
+//             opacity: 1;
+//           }
+//         `}</style>
+//       </div>
 //     </>
 //   );
 // }
 
 
-import { useMemo, useState } from "react";
-import { Button, Spinner, Modal, Form, Card } from "react-bootstrap";
+
+import { useState } from "react";
+import { Button, Spinner, Card, Modal, Form } from "react-bootstrap";
 import axios from "axios";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { toast } from "react-toastify";
-import { ShieldCheck, Fingerprint, ArrowRight, PersonCheck, Lock, Stars } from "react-bootstrap-icons";
+import {
+  ShieldCheck,
+  Fingerprint,
+  ArrowRight,
+  PersonCheck,
+  Lock,
+  Stars,
+  Check2Circle,
+  XCircle,
+  Person,
+  Envelope,
+  ChatText,
+} from "react-bootstrap-icons";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-// Helper: Convert Blob to Base64 (pure base64 string)
-function blobToBase64(blob) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result.split(",")[1]); // Remove data:application/pdf;base64,
-    reader.onerror = reject;
-    reader.readAsDataURL(blob);
-  });
-}
-
-// Helper: Add capture mask to hide UI elements during PDF render
+// Helper functions remain the same
 function addCaptureMask(selector = ".proposal-viewer") {
   const el = document.querySelector(selector);
-  if (!el) return () => {};
+  if (!el) return () => { };
   const cls = "capture-mode";
   el.classList.add(cls);
   const style = document.createElement("style");
@@ -415,9 +282,8 @@ function addCaptureMask(selector = ".proposal-viewer") {
   };
 }
 
-// Render proposal to PDF Blob (multi-page support)
 async function renderProposalToPdfBlob(selector = ".proposal-viewer", jpegQuality = 0.72) {
-  if (document.fonts?.ready) await document.fonts.ready.catch(() => {});
+  if (document.fonts?.ready) await document.fonts.ready.catch(() => { });
   await new Promise((r) => setTimeout(r, 100));
 
   const element = document.querySelector(selector);
@@ -427,10 +293,6 @@ async function renderProposalToPdfBlob(selector = ".proposal-viewer", jpegQualit
     scale: Math.min(window.devicePixelRatio || 1, 2),
     useCORS: true,
     backgroundColor: "#ffffff",
-    width: element.scrollWidth,
-    height: element.scrollHeight,
-    windowWidth: element.scrollWidth,
-    windowHeight: element.scrollHeight,
     logging: false,
   });
 
@@ -470,17 +332,6 @@ async function renderProposalToPdfBlob(selector = ".proposal-viewer", jpegQualit
   return pdf.output("blob");
 }
 
-// Normalize Swedish NIN (10 or 12 digits)
-function normalizeNin(ninRaw) {
-  const digits = (ninRaw || "").replace(/\D/g, "");
-  if (digits.length !== 10 && digits.length !== 12) return { ok: false };
-  if (digits.length === 12) return { ok: true, nin12: digits };
-  const yy = parseInt(digits.slice(0, 2), 10);
-  const currentYY = new Date().getFullYear() % 100;
-  const century = yy <= currentYY ? "20" : "19";
-  return { ok: true, nin12: `${century}${digits}` };
-}
-
 export default function SignatureAction({
   user,
   parentId,
@@ -489,213 +340,477 @@ export default function SignatureAction({
   proposalName,
   signatureId,
   blockId,
-  debugPdf = import.meta.env.VITE_DEBUG_PDF === "true", // Enable via .env
+  debugPdf = import.meta.env.VITE_DEBUG_PDF === "true",
 }) {
   const [isLoading, setIsLoading] = useState(false);
-  const [showNinModal, setShowNinModal] = useState(false);
-  const [ninInput, setNinInput] = useState(recipient?.nin || "");
-  const [ninError, setNinError] = useState("");
-
+  const [showDeclineModal, setShowDeclineModal] = useState(false);
+  const [declineComment, setDeclineComment] = useState("");
+  const [isDeclining, setIsDeclining] = useState(false);
   const effectiveProposalId = proposalId || parentId;
-  const ninHint = useMemo(() => "YYYYMMDDNNNN or YYMMDDNNNN", []);
 
-  const handleOpenModal = () => !isLoading && setShowNinModal(true);
-  const handleCloseModal = () => !isLoading && setShowNinModal(false);
-
-  const startSigning = async (nin12) => {
+  const startSigning = async () => {
     setIsLoading(true);
     const undoMask = addCaptureMask();
 
     try {
-      // Generate PDF
       let pdfBlob = await renderProposalToPdfBlob(".proposal-viewer", 0.72);
       if (pdfBlob.size > 8 * 1024 * 1024) {
         pdfBlob = await renderProposalToPdfBlob(".proposal-viewer", 0.6);
       }
 
       const fname = `${(proposalName || "proposal").replace(/\s+/g, "-").toLowerCase()}-${effectiveProposalId}.pdf`;
-      const pdfFile = new File([pdfBlob], fname, { type: "application/pdf" });
 
-      // ================================
-      // DEBUG: Log PDF Details + Base64
-      // ================================
       if (debugPdf) {
-        const sizeKB = (pdfBlob.size / 1024).toFixed(2);
-        const sizeMB = (pdfBlob.size / (1024 * 1024)).toFixed(2);
-        const base64 = await blobToBase64(pdfBlob);
-
         console.group("PDF Debug Info");
         console.log("File Name:", fname);
         console.log("MIME Type:", pdfBlob.type || "application/pdf");
         console.log("Size (bytes):", pdfBlob.size);
-        console.log(`Size: ${sizeKB} KB / ${sizeMB} MB`);
-        console.log("Base64 Preview (first 100 chars):", base64.substring(0, 100) + "...");
-        console.log("Full Base64 Length:", base64.length);
+        console.log(`Size: ${(pdfBlob.size / 1024).toFixed(2)} KB`);
         console.groupEnd();
-
-        // Auto-download for inspection
-        const url = URL.createObjectURL(pdfBlob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = fname;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+        console.log("PDF generated successfully - ready for BankID signing");
       }
 
-      // Prepare FormData
       const fd = new FormData();
-      fd.append("file", pdfFile);
-      fd.append("parentId", parentId || "");
-      fd.append("proposalId", String(effectiveProposalId || ""));
-      fd.append("userId", String(user?.id || ""));
-      fd.append("signatureId", String(signatureId || ""));
-      fd.append("blockId", String(blockId || ""));
-      fd.append("recipientEmail", recipient?.recipientEmail || "");
+      fd.append("file", pdfBlob, fname);
+      fd.append("message", `Signing proposal: ${proposalName || "Document"}`);
+      fd.append("signature_id", String(signatureId || ""));
+      fd.append("parent_id", String(parentId || ""));
+      fd.append("receipentEmail", recipient?.recipientEmail || "");
       fd.append("recipientName", recipient?.recipientName || "");
-      fd.append("nin", nin12 || "");
+      fd.append("relay_state", JSON.stringify({
+        parentId: parentId || "",
+        proposalId: String(effectiveProposalId || ""),
+        userId: String(user?.id || ""),
+        signatureId: String(signatureId || ""),
+        blockId: String(blockId || ""),
+        recipientEmail: recipient?.recipientEmail || "",
+        recipientName: recipient?.recipientName || ""
+      }));
 
-      // Call backend
-      const res = await axios.post(`${API_URL}/api/zignsec/create-session`, fd, {
+      const res = await axios.post(`${API_URL}/api/bankid/start-sign-pdf`, fd, {
         timeout: 60000,
-        headers: { Accept: "application/json" },
       });
 
-      if (res.data?.redirectUrl) {
-        toast.success("Redirecting to BankID...");
-        window.location.href = res.data.redirectUrl;
+      if (res.data?.redirect_url) {
+        toast.success("Redirecting to BankID for secure signing...", { autoClose: 2000 });
+        setTimeout(() => {
+          window.location.href = res.data.redirect_url;
+        }, 800);
       } else {
-        throw new Error(res.data?.error || "Failed to start signing session.");
+        throw new Error(res.data?.error || "Failed to initiate BankID signing.");
       }
     } catch (err) {
       console.error("Signing error:", err);
-      toast.error(err?.response?.data?.error || err.message || "Signing failed.");
+      toast.error(err?.response?.data?.error || err.message || "Failed to start signing process.");
     } finally {
       undoMask();
       setIsLoading(false);
     }
   };
 
-  const handleNinSubmit = async (e) => {
-    e.preventDefault();
-    setNinError("");
-    const { ok, nin12 } = normalizeNin(ninInput);
-    if (!ok) {
-      setNinError("Invalid Swedish personal number (10 or 12 digits).");
+  const handleDeclineClick = () => {
+    setShowDeclineModal(true);
+  };
+
+  const handleDeclineConfirm = async () => {
+    if (!declineComment.trim()) {
+      toast.error("Please provide a reason for declining");
       return;
     }
-    setShowNinModal(false);
-    await startSigning(nin12);
+
+    setIsDeclining(true);
+    try {
+      // API call to update signature status
+      const response = await axios.put(`${API_URL}/signatures/decline/${signatureId}`, {
+        status: "true",
+        method:"type",
+        comment: declineComment,
+        receipent_email: recipient?.recipientEmail,
+        receipent_name: recipient?.recipientName
+      });
+
+      if (response.data.success) {
+        toast.success("Proposal declined successfully");
+        setShowDeclineModal(false);
+        setDeclineComment("");
+        // You can add additional logic here, like redirecting or updating UI state
+      } else {
+        throw new Error(response.data.error || "Failed to decline proposal");
+      }
+    } catch (err) {
+      console.error("Decline error:", err);
+      toast.error(err?.response?.data?.error || err.message || "Failed to decline proposal");
+    } finally {
+      setIsDeclining(false);
+    }
+  };
+
+  const handleCloseDeclineModal = () => {
+    setShowDeclineModal(false);
+    setDeclineComment("");
   };
 
   return (
     <>
-      {/* Loader Overlay */}
+      {/* Fullscreen Loading Overlay */}
       {isLoading && (
-        <div className="signing-overlay">
-          <div className="signing-loader text-center">
-            <Spinner animation="border" variant="light" className="mb-3" />
-            <h5 className="text-white fw-bold">Redirecting to BankID...</h5>
-            <p className="text-white-50">Preparing your document securely</p>
-            <div className="pulse-animation"><Stars size={36} className="text-white" /></div>
+        <div className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center bg-dark bg-opacity-90" style={{ zIndex: 9999 }}>
+          <div className="text-center text-white">
+            <Spinner animation="border" variant="success" className="mb-4" style={{ width: "4rem", height: "4rem" }} />
+            <h4 className="fw-bold">Preparing Secure Document</h4>
+            <p className="opacity-75 mb-4">Generating PDF and connecting to BankID...</p>
+            <div className="d-flex justify-content-center gap-2">
+              <Stars size={28} className="text-warning animate__animated animate__flash animate__infinite" />
+              <ShieldCheck size={36} className="text-success" />
+              <Stars size={28} className="text-warning animate__animated animate__flash animate__infinite" />
+            </div>
           </div>
         </div>
       )}
 
-      {/* Signature Card */}
-      <Card className="signature-card-modern">
-        <div className="signature-header">
-          <div className="icon-glow"><ShieldCheck size={36} /></div>
-          <div>
-            <h4 className="fw-bold text-white mb-1">Secure Digital Signature</h4>
-            <p className="mb-0 text-white-70">Powered by Signicat & BankID</p>
-          </div>
-        </div>
-
-        <Card.Body className="p-4">
-          <div className="features-grid">
-            <div className="feature">
-              <div className="feature-icon bg-success bg-opacity-20"><Fingerprint size={22} /></div>
-              <span>BankID Verified</span>
+      {/* Decline Confirmation Modal */}
+      <Modal show={showDeclineModal} onHide={handleCloseDeclineModal} centered>
+        <Modal.Header closeButton className="border-0 pb-0">
+          <Modal.Title className="fw-bold text-danger">
+            <XCircle className="me-2" size={24} />
+            Decline Proposal
+          </Modal.Title>
+        </Modal.Header>
+        
+        <Modal.Body className="pt-0">
+          {/* Recipient Information */}
+          {(recipient?.recipientName || recipient?.recipientEmail) && (
+            <div className="mb-4 p-3 bg-light rounded-3">
+              <h6 className="fw-semibold mb-3">Recipient Information</h6>
+              {recipient?.recipientName && (
+                <div className="d-flex align-items-center mb-2">
+                  <Person size={16} className="text-muted me-2" />
+                  <span className="text-dark">{recipient.recipientName}</span>
+                </div>
+              )}
+              {recipient?.recipientEmail && (
+                <div className="d-flex align-items-center">
+                  <Envelope size={16} className="text-muted me-2" />
+                  <span className="text-dark">{recipient.recipientEmail}</span>
+                </div>
+              )}
             </div>
-            <div className="feature">
-              <div className="feature-icon bg-primary bg-opacity-20"><PersonCheck size={22} /></div>
-              <span>Identity Confirmed</span>
-            </div>
-            <div className="feature">
-              <div className="feature-icon bg-purple bg-opacity-20"><Lock size={22} /></div>
-              <span>End-to-End Encrypted</span>
-            </div>
-          </div>
+          )}
 
-          <Button
-            onClick={handleOpenModal}
-            disabled={isLoading}
-            className="sign-button w-100 mt-4 position-relative overflow-hidden"
-            size="lg"
-          >
-            <span className="position-relative z-3">
-              {isLoading ? "Preparing Document..." : "Sign with BankID"}
-            </span>
-            {!isLoading && <ArrowRight className="ms-2" size={20} />}
-            <div className="shine"></div>
-          </Button>
-
-          <div className="trust-badge mt-3">
-            <Lock size={14} className="me-1" />
-            <small>256-bit SSL • GDPR Compliant</small>
-          </div>
-        </Card.Body>
-      </Card>
-
-      {/* NIN Modal */}
-      <Modal show={showNinModal} onHide={handleCloseModal} centered backdrop="static">
-        <div className="modal-gradient-header">
-          <Modal.Header closeButton className="border-0">
-            <Modal.Title className="text-white d-flex align-items-center">
-              <div className="modal-icon"><Fingerprint size={28} /></div>
-              <div>
-                <h5 className="mb-0">Verify Identity</h5>
-                <small className="opacity-80">Swedish Personal Number</small>
-              </div>
-            </Modal.Title>
-          </Modal.Header>
-        </div>
-
-        <Modal.Body className="pt-4">
-          <Form onSubmit={handleNinSubmit}>
-            <Form.Group>
-              <Form.Label className="fw-semibold">Personnummer</Form.Label>
+          <Form>
+            <Form.Group className="mb-4">
+              <Form.Label className="fw-semibold">
+                <ChatText className="me-2" size={16} />
+                Reason for Declining <span className="text-danger">*</span>
+              </Form.Label>
               <Form.Control
-                type="text"
-                placeholder="ÅÅÅÅMMDDXXXX"
-                value={ninInput}
-                onChange={(e) => setNinInput(e.target.value)}
-                autoFocus
-                inputMode="numeric"
+                as="textarea"
+                rows={4}
+                placeholder="Please provide your reason for declining this proposal..."
+                value={declineComment}
+                onChange={(e) => setDeclineComment(e.target.value)}
+                className="border-2"
+                style={{ resize: 'none' }}
               />
-              <Form.Text>{ninHint}</Form.Text>
-              {ninError && <div className="text-danger mt-2 small">{ninError}</div>}
+              <Form.Text className="text-muted">
+                This comment will be recorded with your decline decision.
+              </Form.Text>
             </Form.Group>
           </Form>
         </Modal.Body>
 
-        <Modal.Footer className="bg-light border-0">
-          <Button variant="light" onClick={handleCloseModal} disabled={isLoading}>
+        <Modal.Footer className="border-0">
+          <Button 
+            variant="outline-secondary" 
+            onClick={handleCloseDeclineModal}
+            disabled={isDeclining}
+          >
             Cancel
           </Button>
-          <Button variant="primary" onClick={handleNinSubmit} disabled={isLoading}>
-            {isLoading ? (
-              <Spinner size="sm" className="me-2" />
+          <Button 
+            variant="danger" 
+            onClick={handleDeclineConfirm}
+            disabled={isDeclining || !declineComment.trim()}
+            className="d-flex align-items-center"
+          >
+            {isDeclining ? (
+              <>
+                <Spinner animation="border" size="sm" className="me-2" />
+                Declining...
+              </>
             ) : (
               <>
-                Continue <ArrowRight className="ms-2" />
+                <XCircle className="me-2" size={18} />
+                Confirm Decline
               </>
             )}
           </Button>
         </Modal.Footer>
       </Modal>
+
+      {/* Premium Signature Card */}
+      <Card className="shadow-lg signature-action-card">
+        <Card.Body className="p-5 text-center">
+          {/* Header Icon */}
+          <div className="mb-4">
+            <div className="signature-main-icon mx-auto">
+              <ShieldCheck size={48} />
+            </div>
+          </div>
+
+          <h3 className="fw-bold text-dark mb-3">Sign Document with BankID</h3>
+          <p className="text-muted mb-4 lead">
+            Your identity will be securely verified using Sweden's most trusted electronic ID
+          </p>
+
+          {/* Feature Badges */}
+          <div className="row g-3 mb-5">
+            <div className="col-md-4">
+              <div className="signature-feature p-3 rounded-3 bg-success bg-opacity-10 border border-success border-opacity-25">
+                <Fingerprint size={28} className="text-success mb-2" />
+                <div className="small fw-semibold">BankID Verified</div>
+              </div>
+            </div>
+            <div className="col-md-4">
+              <div className="signature-feature p-3 rounded-3 bg-warning bg-opacity-10 border border-warning border-opacity-25">
+                <Lock size={28} className="text-warning mb-2" />
+                <div className="small fw-semibold">Encrypted & Secure</div>
+              </div>
+            </div>
+            <div className="col-md-4">
+              <div className="signature-feature p-3 rounded-3 bg-primary bg-opacity-10 border border-primary border-opacity-25">
+                <PersonCheck size={28} className="text-primary mb-2" />
+                <div className="small fw-semibold">Legally Binding</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="d-flex justify-content-center gap-4 modern-buttons-container">
+            {/* Decline Button */}
+            <Button
+              onClick={handleDeclineClick}
+              disabled={isLoading}
+              variant="outline-danger"
+              size="lg"
+              className="px-5 py-3 modern-decline-btn position-relative overflow-hidden"
+            >
+              <span className="position-relative z-3 fw-bold d-flex align-items-center">
+                <XCircle className="me-2" size={20} />
+                Decline
+              </span>
+              <div className="button-shine"></div>
+              <div className="border-glow"></div>
+            </Button>
+
+            {/* Sign Button */}
+            <Button
+              onClick={startSigning}
+              disabled={isLoading}
+              size="lg"
+              className="px-5 py-3 modern-sign-btn position-relative overflow-hidden"
+            >
+              <span className="position-relative z-3 fw-bold d-flex align-items-center">
+                {isLoading ? (
+                  <>
+                    <Spinner animation="border" size="sm" className="me-2" />
+                    Preparing...
+                  </>
+                ) : (
+                  <>
+                    Sign with BankID
+                    <div className="arrow-container ms-2">
+                      <ArrowRight size={20} />
+                    </div>
+                  </>
+                )}
+              </span>
+              <div className="button-shine"></div>
+              <div className="pulse-effect"></div>
+            </Button>
+          </div>
+
+          {/* Trust Indicators */}
+          <div className="mt-4 text-center">
+            <small className="text-success fw-semibold">
+              <Check2Circle className="me-1" />
+              Over 8 million Swedes use BankID daily
+            </small>
+            <br />
+            <small className="text-muted">
+              <Lock size={14} className="me-1" />
+              256-bit encryption • GDPR compliant • No data stored
+            </small>
+          </div>
+        </Card.Body>
+
+        {/* Custom Styles */}
+        <style>{`
+          .modern-buttons-container {
+            position: relative;
+          }
+
+          .modern-decline-btn {
+            background: transparent !important;
+            border: 2px solid transparent !important;
+            border-radius: 16px !important;
+            font-size: 1.1rem;
+            color: #dc3545 !important;
+            box-shadow: 
+              0 4px 15px rgba(220, 53, 69, 0.15),
+              inset 0 0 0 2px #dc3545;
+            transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(135deg, rgba(220, 53, 69, 0.05) 0%, rgba(220, 53, 69, 0.02) 100%) !important;
+          }
+
+          .modern-decline-btn:hover:not(:disabled) {
+            background: linear-gradient(135deg, rgba(220, 53, 69, 0.1) 0%, rgba(220, 53, 69, 0.05) 100%) !important;
+            color: #dc3545 !important;
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 
+              0 8px 25px rgba(220, 53, 69, 0.25),
+              inset 0 0 0 2px #dc3545,
+              0 0 20px rgba(220, 53, 69, 0.3);
+            border-color: transparent !important;
+          }
+
+          .modern-decline-btn:active {
+            transform: translateY(-1px) scale(1.01);
+            box-shadow: 
+              0 4px 15px rgba(220, 53, 69, 0.2),
+              inset 0 0 0 2px #dc3545;
+          }
+
+          .modern-sign-btn {
+            background: linear-gradient(135deg, #20c997 0%, #0dcaf0 100%) !important;
+            border: none !important;
+            border-radius: 16px !important;
+            font-size: 1.1rem;
+            box-shadow: 
+              0 4px 15px rgba(32, 201, 151, 0.3),
+              inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            position: relative;
+            overflow: hidden;
+          }
+
+          .modern-sign-btn:hover:not(:disabled) {
+            background: linear-gradient(135deg, #0dcaf0 0%, #20c997 100%) !important;
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 
+              0 12px 30px rgba(32, 201, 151, 0.5),
+              inset 0 1px 0 rgba(255, 255, 255, 0.3);
+          }
+
+          .modern-sign-btn:active {
+            transform: translateY(-1px) scale(1.01);
+          }
+
+          .button-shine {
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+              90deg,
+              transparent,
+              rgba(255, 255, 255, 0.4),
+              transparent
+            );
+            transition: left 0.8s ease;
+          }
+
+          .modern-decline-btn:hover .button-shine,
+          .modern-sign-btn:hover .button-shine {
+            left: 100%;
+          }
+
+          .border-glow {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 16px;
+            box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7);
+            transition: box-shadow 0.3s ease;
+          }
+
+          .modern-decline-btn:hover .border-glow {
+            box-shadow: 0 0 0 4px rgba(220, 53, 69, 0.3);
+            animation: borderPulse 2s infinite;
+          }
+
+          .pulse-effect {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            opacity: 0;
+          }
+
+          .modern-sign-btn:active .pulse-effect {
+            animation: pulse 0.6s ease-out;
+          }
+
+          .arrow-container {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.3s ease;
+          }
+
+          .modern-sign-btn:hover .arrow-container {
+            transform: translateX(3px);
+          }
+
+          @keyframes pulse {
+            0% {
+              width: 0;
+              height: 0;
+              opacity: 0.8;
+            }
+            100% {
+              width: 200px;
+              height: 200px;
+              opacity: 0;
+            }
+          }
+
+          @keyframes borderPulse {
+            0% {
+              box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7);
+            }
+            70% {
+              box-shadow: 0 0 0 10px rgba(220, 53, 69, 0);
+            }
+            100% {
+              box-shadow: 0 0 0 0 rgba(220, 53, 69, 0);
+            }
+          }
+
+          /* Responsive adjustments */
+          @media (max-width: 768px) {
+            .modern-buttons-container {
+              flex-direction: column;
+              gap: 1rem !important;
+            }
+            
+            .modern-decline-btn,
+            .modern-sign-btn {
+              width: 100%;
+              justify-content: center;
+            }
+          }
+        `}</style>
+      </Card>
     </>
   );
 }

@@ -24,6 +24,9 @@ import { selectedUserId } from "./store/authSlice";
 import ForgotPassword from "./components/pages/profile/ForgotPassword";
 import ResetPassword from "./components/pages/profile/ResetPassword";
 import VerifyOtp from "./components/pages/profile/VerifyOtp";
+import BankIdSuccess from "./components/BankIdSuccess";
+import BankIdFailed from "./components/BankIdFailed";
+import BankIDSignPage from "./components/BankIDSignPage";
 
 import { requestForToken, onMessageListener } from "./firebase";
 const API_URL = import.meta.env.VITE_API_URL;
@@ -97,6 +100,10 @@ function App() {
         <Route path="/proposal" element={<ProposalViewer />} />
         <Route path="/proposal/:headerId" element={<ProposalViewer />} />
         <Route path="/template-builder" element={<TemplateBuilder />} />
+         <Route path="/bankid-success" element={<BankIdSuccess />} />
+        <Route path="/bankid-failed" element={<BankIdFailed />} />
+        <Route path="/bankid-sign" element={<BankIDSignPage />} />
+
       </Routes>
     </Router>
   );
