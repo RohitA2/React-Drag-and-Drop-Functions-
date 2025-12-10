@@ -14,6 +14,10 @@ const roleOptions = [
 
 const signOptions = [
   {
+    label: "BankId",
+    sub: "Signature via BankId authentication",
+  },
+  {
     label: "Signature",
     sub: "Level of proof: IP address, timestamp and device",
   },

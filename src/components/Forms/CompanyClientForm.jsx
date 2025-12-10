@@ -3,7 +3,7 @@ import { Check, Copy, Edit3, ArrowRight } from "lucide-react";
 import { Form, Dropdown } from "react-bootstrap";
 import CustomPhoneInput from "./PhoneInput";
 import { useSelector, useDispatch } from "react-redux";
-import { createRecipient,updateRecipient } from "../../store/recipientSlice"; // ✅ adjust import path
+import { createRecipient, updateRecipient } from "../../store/recipientSlice"; // ✅ adjust import path
 import { selectedUserId } from "../../store/authSlice";
 
 const roleOptions = [
@@ -13,6 +13,10 @@ const roleOptions = [
 ];
 
 const signOptions = [
+  {
+    label: "BankId",
+    sub: "Signature via BankId authentication",
+  },
   {
     label: "Signature",
     sub: "Level of proof: IP address, timestamp and device",
@@ -270,9 +274,8 @@ export default function CompanyClientForm({ onCreated, recipient }) {
               <div className="d-flex flex-column text-start">
                 <span className="small fw-semibold">{formData.signMethod}</span>
                 <span
-                  className={`text-muted ${
-                    formData.signMethod === "Signature" ? "text-truncate" : ""
-                  }`}
+                  className={`text-muted ${formData.signMethod === "Signature" ? "text-truncate" : ""
+                    }`}
                   style={{
                     fontSize:
                       formData.signMethod === "Signature" ? "10px" : "12px",
