@@ -148,17 +148,17 @@ const NotificationsPage = () => {
                                     >
                                         <Card.Body className="p-4">
                                             <div className="d-flex align-items-start justify-content-between">
-                                                <div className="d-flex align-items-start flex-grow-1">
-                                                    <div className={`p-2 rounded-circle bg-${color} bg-opacity-10 me-3 mt-1 flex-shrink-0`}>
+                                                <div className="d-flex align-items-start grow">
+                                                    <div className={`p-2 rounded-circle bg-${color} bg-opacity-10 me-3 mt-1 shrink-0`}>
                                                         <Icon size={20} className={`text-${color}`} />
                                                     </div>
-                                                    <div className="flex-grow-1">
+                                                    <div className="grow">
                                                         <div className="d-flex justify-content-between align-items-start mb-2">
                                                             <h6 className={`mb-1 ${isUnread ? "fw-bold text-dark" : "text-muted"}`}>
                                                                 {notification.title}
                                                             </h6>
                                                             {isUnread && (
-                                                                <div className="flex-shrink-0">
+                                                                <div className="shrink-0">
                                                                     <div
                                                                         className="rounded-circle bg-primary"
                                                                         style={{ width: "8px", height: "8px" }}
@@ -175,7 +175,7 @@ const NotificationsPage = () => {
                                                         </small>
                                                     </div>
                                                 </div>
-                                                <div className="flex-shrink-0 ms-3">
+                                                <div className="shrink-0 ms-3">
                                                     {isUnread && (
                                                         <OverlayTrigger
                                                             placement="top"

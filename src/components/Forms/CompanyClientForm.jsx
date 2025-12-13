@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { Check, Copy, Edit3, ArrowRight } from "lucide-react";
-import { Form, Dropdown } from "react-bootstrap";
+import { Check, Copy, Edit3, ArrowRight, ChevronDown } from "lucide-react";
 import CustomPhoneInput from "./PhoneInput";
 import { useSelector, useDispatch } from "react-redux";
-import { createRecipient, updateRecipient } from "../../store/recipientSlice"; // ✅ adjust import path
+import { createRecipient, updateRecipient } from "../../store/recipientSlice";
 import { selectedUserId } from "../../store/authSlice";
 
 const roleOptions = [
@@ -24,19 +23,17 @@ const signOptions = [
   { label: "In Person", sub: "Signature on print document" },
 ];
 
-export default function CompanyClientForm({ onCreated, recipient }) {
+export default function CompanyClientForm({ onCreated, recipient, mode = "create" }) {
   const [showAdditional, setShowAdditional] = useState(false);
   const [addressType, setAddressType] = useState("work");
-  const [selectedRole, setSelectedRole] = useState(roleOptions[0]);
-  const [selectedSign, setSelectedSign] = useState(signOptions[0]);
-  const [phone, setPhone] = useState("");
+  const [roleOpen, setRoleOpen] = useState(false);
+  const [signOpen, setSignOpen] = useState(false);
 
   const dispatch = useDispatch();
+  const userId = useSelector(selectedUserId);
   const { loading, success, error } = useSelector((state) => state.recipients);
 
-  const userId = useSelector(selectedUserId);
-
-  const [formData, setFormData] = useState({
+  const defaultFormData = {
     type: "company",
     companyName: "",
     name: "",
@@ -45,33 +42,40 @@ export default function CompanyClientForm({ onCreated, recipient }) {
     address: "",
     zip: "",
     city: "",
+    registrationNumber: "",
+    workStreet: "",
+    workZip: "",
+    workCity: "",
     role: roleOptions[0].label,
     signMethod: signOptions[0].label,
-    user_id: useSelector(selectedUserId),
-  });
+    user_id: userId,
+  };
+
+  const [formData, setFormData] = useState(defaultFormData);
 
   useEffect(() => {
     if (recipient) {
       setFormData({
-        ...formData,
-        ...recipient, // overwrite defaults with recipient data
-        user_id: userId, // keep current user
+        ...defaultFormData,
+        ...recipient,
+        user_id: userId,
       });
-      setPhone(recipient.phone || "");
-      if (recipient.role) setSelectedRole({ label: recipient.role });
-      if (recipient.signMethod)
-        setSelectedSign({ label: recipient.signMethod });
+      // Optionally set showAdditional if additional fields present
+      if (recipient.zip || recipient.city || recipient.registrationNumber) {
+        setShowAdditional(true);
+      }
+      // Optionally set addressType if other fields present
+      if (recipient.workStreet || recipient.workZip || recipient.workCity) {
+        setAddressType("other");
+      }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [recipient]);
+  }, [recipient, userId]);
 
-  // ✅ Update formData dynamically
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handlePhoneChange = (value) => {
-    setPhone(value);
     setFormData({ ...formData, phone: value });
   };
 
@@ -99,51 +103,61 @@ export default function CompanyClientForm({ onCreated, recipient }) {
     }
   };
 
+  const selectedRole = roleOptions.find((r) => r.label === formData.role);
+  const selectedSign = signOptions.find((s) => s.label === formData.signMethod);
+
   return (
     <div>
-      <Form className="d-flex flex-column gap-3" onSubmit={handleSubmit}>
+      <form className="flex flex-col gap-3" onSubmit={handleSubmit}>
         {/* Company Name */}
-        <Form.Control
+        <input
           name="companyName"
           placeholder="Company Name"
           value={formData.companyName}
           onChange={handleChange}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
         />
 
         {/* Name */}
-        <Form.Control
+        <input
           name="name"
           placeholder="Name"
           value={formData.name}
           onChange={handleChange}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
         />
 
         {/* Email */}
-        <Form.Control
+        <input
           type="email"
           name="email"
           placeholder="Email"
           value={formData.email}
           onChange={handleChange}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
         />
 
         {/* Address */}
-        <Form.Control
+        <input
           type="text"
           name="address"
           placeholder="Address"
           value={formData.address}
           onChange={handleChange}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
         />
 
         {/* Phone */}
-        <CustomPhoneInput value={phone} onChange={handlePhoneChange} />
+        <CustomPhoneInput
+          value={formData.phone}
+          onChange={handlePhoneChange}
+        />
 
         {/* Toggle additional fields */}
         {!showAdditional && (
           <button
             type="button"
-            className="btn box-shadow text-primary p-0 small d-flex align-items-center gap-1"
+            className="inline-flex items-center gap-1 text-blue-600 text-sm p-0 bg-transparent border-none shadow-md hover:shadow-lg transition-shadow"
             onClick={() => setShowAdditional(true)}
           >
             <ArrowRight size={14} />
@@ -153,180 +167,199 @@ export default function CompanyClientForm({ onCreated, recipient }) {
 
         {showAdditional && (
           <>
-            <Form.Control
+            <input
               placeholder="Company Registration Number"
-              className="mt-2"
+              className="mt-2 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               name="registrationNumber"
               value={formData.registrationNumber || ""}
               onChange={handleChange}
             />
-            <div className="d-flex gap-2 mt-2">
-              <Form.Control
+            <div className="flex gap-2 mt-2">
+              <input
                 placeholder="Zip"
                 name="zip"
                 value={formData.zip}
                 onChange={handleChange}
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
-              <Form.Control
+              <input
                 placeholder="City"
                 name="city"
                 value={formData.city}
                 onChange={handleChange}
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
           </>
         )}
 
         {/* Radio options for address type */}
-        <div className="d-flex gap-3">
-          <Form.Check
-            type="radio"
-            name="addressType"
-            label="Work address same as above"
-            value="work"
-            checked={addressType === "work"}
-            onChange={(e) => setAddressType(e.target.value)}
-          />
-          <Form.Check
-            type="radio"
-            name="addressType"
-            label="Other"
-            value="other"
-            checked={addressType === "other"}
-            onChange={(e) => setAddressType(e.target.value)}
-          />
+        <div className="flex gap-3">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="radio"
+              name="addressType"
+              value="work"
+              checked={addressType === "work"}
+              onChange={(e) => setAddressType(e.target.value)}
+              className="rounded"
+            />
+            <span className="text-sm">Work address same as above</span>
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="radio"
+              name="addressType"
+              value="other"
+              checked={addressType === "other"}
+              onChange={(e) => setAddressType(e.target.value)}
+              className="rounded"
+            />
+            <span className="text-sm">Other</span>
+          </label>
         </div>
 
         {addressType === "other" && (
           <>
-            <Form.Label className="fw-semibold small text-muted mt-2">
+            <p className="font-semibold text-sm text-gray-500 mt-2">
               Work address (Where work is going to be performed)
-            </Form.Label>
-            <Form.Control
+            </p>
+            <input
               placeholder="Street"
               name="workStreet"
               value={formData.workStreet || ""}
               onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
-            <div className="d-flex gap-2 mt-2">
-              <Form.Control
+            <div className="flex gap-2 mt-2">
+              <input
                 placeholder="Zip"
                 name="workZip"
                 value={formData.workZip || ""}
                 onChange={handleChange}
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
-              <Form.Control
+              <input
                 placeholder="City"
                 name="workCity"
                 value={formData.workCity || ""}
                 onChange={handleChange}
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
           </>
         )}
 
         {/* Document role + Sign method */}
-        <div className="d-flex gap-2 mt-2 form-container align-items-center">
+        <div className="flex gap-2 mt-2 w-full items-center">
           {/* Document Role Dropdown */}
-          <Dropdown className="flex-grow-1">
-            <div className="small fw-semibold mb-1">Document role</div>
-            <Dropdown.Toggle
-              variant="light"
-              className="w-100 border rounded d-flex justify-content-between align-items-center small"
+          <div className="flex-1 relative">
+            <p className="text-sm font-semibold mb-1 text-gray-700">Document role</p>
+            <button
+              type="button"
+              onClick={() => setRoleOpen(!roleOpen)}
+              className="w-full border border-gray-300 rounded-md flex justify-between items-center p-2 text-sm bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <div className="d-flex align-items-center gap-2 text-start">
-                <span className="text-secondary">
-                  {roleOptions.find((r) => r.label === formData.role)?.icon}
+              <div className="flex items-center gap-2 text-left flex-1">
+                <span className="text-gray-500">
+                  {selectedRole?.icon}
                 </span>
-                <div className="d-flex flex-column">
-                  <span className="small fw-semibold">{formData.role}</span>
-                  <span className="text-muted small">
-                    {roleOptions.find((r) => r.label === formData.role)?.sub}
+                <div className="flex flex-col min-w-0">
+                  <span className="font-semibold">{formData.role}</span>
+                  <span className="text-gray-500 text-xs truncate">
+                    {selectedRole?.sub}
                   </span>
                 </div>
               </div>
-            </Dropdown.Toggle>
+              <ChevronDown
+                size={16}
+                className={`transition-transform duration-200 ${roleOpen ? "rotate-180" : ""}`}
+              />
+            </button>
 
-            <Dropdown.Menu className="w-100">
-              {roleOptions.map((opt, idx) => (
-                <Dropdown.Item
-                  key={idx}
-                  onClick={() => setFormData({ ...formData, role: opt.label })}
-                  className="d-flex align-items-start gap-2"
-                >
-                  {opt.icon}
-                  <div className="d-flex flex-column">
-                    <span className="small fw-semibold">{opt.label}</span>
-                    <span className="text-muted small">{opt.sub}</span>
-                  </div>
-                </Dropdown.Item>
-              ))}
-            </Dropdown.Menu>
-          </Dropdown>
+            {roleOpen && (
+              <div className="absolute z-10 w-full bg-white border border-gray-300 rounded-md mt-1 shadow-lg">
+                {roleOptions.map((opt, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => {
+                      setFormData({ ...formData, role: opt.label });
+                      setRoleOpen(false);
+                    }}
+                    className="w-full text-left p-2 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 flex items-start gap-2"
+                  >
+                    {opt.icon}
+                    <div className="flex flex-col min-w-0">
+                      <span className="font-semibold text-sm">{opt.label}</span>
+                      <span className="text-gray-500 text-xs">{opt.sub}</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
 
           {/* Sign Method Dropdown */}
-          <Dropdown className="flex-grow-1">
-            <div className="small fw-semibold mb-1">Sign method</div>
-            <Dropdown.Toggle
-              variant="light"
-              className="w-100 border rounded d-flex justify-content-between align-items-center small"
+          <div className="flex-1 relative">
+            <p className="text-sm font-semibold mb-1 text-gray-700">Sign method</p>
+            <button
+              type="button"
+              onClick={() => setSignOpen(!signOpen)}
+              className="w-full border border-gray-300 rounded-md flex justify-between items-center p-2 text-sm bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <div className="d-flex flex-column text-start">
-                <span className="small fw-semibold">{formData.signMethod}</span>
+              <div className="flex flex-col text-left flex-1 min-w-0">
+                <span className="font-semibold">{formData.signMethod}</span>
                 <span
-                  className={`text-muted ${formData.signMethod === "Signature" ? "text-truncate" : ""
-                    }`}
-                  style={{
-                    fontSize:
-                      formData.signMethod === "Signature" ? "10px" : "12px",
-                    maxWidth: "200px",
-                  }}
+                  className={`text-gray-500 text-xs truncate max-w-[200px]`}
                 >
-                  {
-                    signOptions.find((s) => s.label === formData.signMethod)
-                      ?.sub
-                  }
+                  {selectedSign?.sub}
                 </span>
               </div>
-            </Dropdown.Toggle>
+              <ChevronDown
+                size={16}
+                className={`transition-transform duration-200 ${signOpen ? "rotate-180" : ""}`}
+              />
+            </button>
 
-            <Dropdown.Menu className="w-100">
-              {signOptions.map((opt, idx) => (
-                <Dropdown.Item
-                  key={idx}
-                  onClick={() =>
-                    setFormData({ ...formData, signMethod: opt.label })
-                  }
-                  className="d-flex flex-column align-items-start"
-                >
-                  <span className="small fw-semibold">{opt.label}</span>
-                  <span
-                    className="text-muted"
-                    style={{
-                      fontSize: opt.label === "Signature" ? "10px" : "12px",
-                      maxWidth: "220px",
+            {signOpen && (
+              <div className="absolute z-10 w-full bg-white border border-gray-300 rounded-md mt-1 shadow-lg">
+                {signOptions.map((opt, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => {
+                      setFormData({ ...formData, signMethod: opt.label });
+                      setSignOpen(false);
                     }}
+                    className="w-full text-left p-2 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 flex flex-col items-start"
                   >
-                    {opt.sub}
-                  </span>
-                </Dropdown.Item>
-              ))}
-            </Dropdown.Menu>
-          </Dropdown>
+                    <span className="font-semibold text-sm">{opt.label}</span>
+                    <span
+                      className="text-gray-500 text-xs max-w-[220px] truncate"
+                    >
+                      {opt.sub}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Save Button */}
         <button
           type="submit"
-          className="btn btn-primary w-100 fw-semibold"
+          className="w-full bg-blue-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           disabled={loading}
         >
-          {loading ? "Saving..." : "Save recipient"}
+          {loading ? "Saving..." : mode === "edit" ? "Update recipient" : "Save recipient"}
         </button>
 
-        {success && <p className="text-success small mt-2">Recipient saved!</p>}
-        {error && <p className="text-danger small mt-2">{error}</p>}
-      </Form>
+        {success && <p className="text-green-600 text-sm mt-2">
+          {mode === "edit" ? "Recipient updated!" : "Recipient saved!"}
+        </p>}
+        {error && <p className="text-red-600 text-sm mt-2">{error}</p>}
+      </form>
     </div>
   );
 }

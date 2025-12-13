@@ -25,7 +25,7 @@ const PriceView = ({ price }) => {
 
       {/* Main Card */}
       <Card className="shadow-md border-0 rounded-2xl overflow-hidden">
-        <Card.Header className="bg-gradient-to-r from-blue-50 to-indigo-100 border-0 py-4 px-6 flex justify-between items-center">
+        <Card.Header className="bg-linear-to-r from-blue-50 to-indigo-100 border-0 py-4 px-6 flex justify-between items-center">
           <span className="text-lg font-semibold text-gray-700">Single Option</span>
           <span className="badge bg-indigo-600 text-white px-3 py-1 rounded-full">
             {price.pricingType || "N/A"}
