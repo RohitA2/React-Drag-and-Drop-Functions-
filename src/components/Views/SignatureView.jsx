@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button, Spinner, Card, Modal, Form, Row, Col } from "react-bootstrap";
 import axios from "axios";
 import html2canvas from "html2canvas";
@@ -23,6 +23,7 @@ import {
   Eye,
   GeoAlt,
   Laptop,
+  Trash,
 } from "react-bootstrap-icons";
 
 const API_URL = import.meta.env.VITE_API_URL;
@@ -113,10 +114,169 @@ export default function SignatureAction({
   const [declineComment, setDeclineComment] = useState("");
   const [isDeclining, setIsDeclining] = useState(false);
   const [showDigitalSignatureModal, setShowDigitalSignatureModal] = useState(false);
-  const [digitalSignature, setDigitalSignature] = useState("");
+  const [digitalSignature, setDigitalSignature] = useState(""); // Typed signature
   const [showIPDetailsModal, setShowIPDetailsModal] = useState(false);
   const [ipDetails, setIpDetails] = useState(null);
   const effectiveProposalId = proposalId || parentId;
+
+  // Canvas ref and drawing state
+  const canvasRef = useRef(null);
+  const ctxRef = useRef(null);
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [lastX, setLastX] = useState(0);
+  const [lastY, setLastY] = useState(0);
+  const [hasDrawnSignature, setHasDrawnSignature] = useState(false);
+
+  // Initialize canvas
+  useEffect(() => {
+    if (canvasRef.current && showDigitalSignatureModal) {
+      const canvas = canvasRef.current;
+      const ctx = canvas.getContext("2d");
+
+      // Set canvas size
+      canvas.width = canvas.offsetWidth;
+      canvas.height = canvas.offsetHeight;
+
+      // Set drawing style
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = "#000000";
+
+      // Clear canvas
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctxRef.current = ctx;
+    }
+  }, [showDigitalSignatureModal]);
+
+  // Start drawing
+  const startDrawing = (e) => {
+    e.preventDefault();
+    if (!ctxRef.current) return;
+
+    const canvas = canvasRef.current;
+    const rect = canvas.getBoundingClientRect();
+
+    let x, y;
+    if (e.type.includes('touch')) {
+      const touch = e.touches[0];
+      x = touch.clientX - rect.left;
+      y = touch.clientY - rect.top;
+    } else {
+      x = e.clientX - rect.left;
+      y = e.clientY - rect.top;
+    }
+
+    ctxRef.current.beginPath();
+    ctxRef.current.moveTo(x, y);
+
+    setLastX(x);
+    setLastY(y);
+    setIsDrawing(true);
+    setHasDrawnSignature(true);
+  };
+
+  // Draw
+  const draw = (e) => {
+    e.preventDefault();
+    if (!isDrawing || !ctxRef.current) return;
+
+    const canvas = canvasRef.current;
+    const rect = canvas.getBoundingClientRect();
+
+    let x, y;
+    if (e.type.includes('touch')) {
+      const touch = e.touches[0];
+      x = touch.clientX - rect.left;
+      y = touch.clientY - rect.top;
+    } else {
+      x = e.clientX - rect.left;
+      y = e.clientY - rect.top;
+    }
+
+    ctxRef.current.lineTo(x, y);
+    ctxRef.current.stroke();
+
+    setLastX(x);
+    setLastY(y);
+  };
+
+  // Stop drawing
+  const stopDrawing = () => {
+    if (ctxRef.current) {
+      ctxRef.current.closePath();
+    }
+    setIsDrawing(false);
+  };
+
+  // Clear canvas
+  const clearCanvas = () => {
+    const canvas = canvasRef.current;
+    const ctx = ctxRef.current;
+    if (ctx && canvas) {
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      setHasDrawnSignature(false);
+    }
+  };
+
+  // Get signature data URL
+  const getSignatureDataURL = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return "";
+
+    // Create a new canvas to crop the signature
+    const tempCanvas = document.createElement('canvas');
+    const tempCtx = tempCanvas.getContext('2d');
+
+    // Get the bounding box of the signature
+    const ctx = ctxRef.current;
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const { data, width, height } = imageData;
+
+    let minX = width;
+    let minY = height;
+    let maxX = 0;
+    let maxY = 0;
+
+    // Find the bounds of the drawn content
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const alpha = data[(y * width + x) * 4 + 3];
+        if (alpha > 0) {
+          minX = Math.min(minX, x);
+          minY = Math.min(minY, y);
+          maxX = Math.max(maxX, x);
+          maxY = Math.max(maxY, y);
+        }
+      }
+    }
+
+    // Add padding
+    const padding = 20;
+    const cropX = Math.max(0, minX - padding);
+    const cropY = Math.max(0, minY - padding);
+    const cropWidth = Math.min(width - cropX, maxX - minX + padding * 2);
+    const cropHeight = Math.min(height - cropY, maxY - minY + padding * 2);
+
+    // Only crop if we found a signature
+    if (cropWidth > 10 && cropHeight > 10) {
+      tempCanvas.width = cropWidth;
+      tempCanvas.height = cropHeight;
+      tempCtx.fillStyle = "#ffffff";
+      tempCtx.fillRect(0, 0, cropWidth, cropHeight);
+      tempCtx.drawImage(
+        canvas,
+        cropX, cropY, cropWidth, cropHeight,
+        0, 0, cropWidth, cropHeight
+      );
+      return tempCanvas.toDataURL("image/png");
+    }
+
+    return canvas.toDataURL("image/png");
+  };
 
   // Handle BankID signing (with PDF)
   const handleBankIDSigning = async () => {
@@ -163,7 +323,7 @@ export default function SignatureAction({
       }));
 
       const endpoint = `${API_URL}/api/bankid/start-sign-pdf`;
-      
+
       const res = await axios.post(endpoint, fd, {
         timeout: 60000,
       });
@@ -185,9 +345,24 @@ export default function SignatureAction({
     }
   };
 
-  // Handle Digital Signature (without PDF)
+  // Handle Digital Signature (with drawn or typed)
   const handleDigitalSignature = async () => {
-    if (!digitalSignature.trim()) {
+    let signatureData = "";
+    let signatureType = "";
+
+    // Get drawn signature if exists
+    if (hasDrawnSignature) {
+      signatureData = getSignatureDataURL();
+      signatureType = "drawn";
+    } else if (digitalSignature.trim()) {
+      signatureData = digitalSignature.trim();
+      signatureType = "typed";
+    } else {
+      toast.error("Please create or type your signature first");
+      return;
+    }
+
+    if (!signatureData) {
       toast.error("Please create or type your signature first");
       return;
     }
@@ -196,8 +371,9 @@ export default function SignatureAction({
     try {
       const payload = {
         signature_method: "digital",
-        digital_signature: digitalSignature,
-        signature: digitalSignature, // Send as both for backward compatibility
+        digital_signature: signatureData,
+        signature: signatureData,
+        signature_type: signatureType,
         parent_id: parentId || "",
         recipient_email: recipient?.recipientEmail || "",
         recipient_name: recipient?.recipientName || "",
@@ -210,13 +386,14 @@ export default function SignatureAction({
           {
             action: "digital_signature_created",
             timestamp: new Date().toISOString(),
-            method: "digital"
+            method: "digital",
+            type: signatureType
           }
         ]
       };
 
       const endpoint = `${API_URL}/signatures/${signatureId || blockId}`;
-      
+
       const res = await axios.post(endpoint, payload, {
         headers: {
           'Content-Type': 'application/json'
@@ -228,7 +405,9 @@ export default function SignatureAction({
         toast.success("Document signed successfully with digital signature!");
         setShowDigitalSignatureModal(false);
         setDigitalSignature("");
-        
+        clearCanvas();
+        setHasDrawnSignature(false);
+
         // Optional: Refresh page or update UI state
         // window.location.reload();
       } else {
@@ -236,7 +415,7 @@ export default function SignatureAction({
       }
     } catch (err) {
       console.error("Digital signature error:", err);
-      
+
       // Handle specific error cases
       if (err.response?.data?.error?.includes("Already signed")) {
         toast.error("This document has already been signed.");
@@ -293,7 +472,7 @@ export default function SignatureAction({
       };
 
       const endpoint = `${API_URL}/signatures/${signatureId || blockId}`;
-      
+
       const res = await axios.post(endpoint, payload, {
         headers: {
           'Content-Type': 'application/json'
@@ -305,7 +484,7 @@ export default function SignatureAction({
         toast.success("Document signed successfully with IP verification!");
         setShowIPDetailsModal(false);
         setIpDetails(null);
-        
+
         // Optional: Refresh page or update UI state
         // window.location.reload();
       } else {
@@ -313,7 +492,7 @@ export default function SignatureAction({
       }
     } catch (err) {
       console.error("IP verification error:", err);
-      
+
       // Handle specific error cases
       if (err.response?.data?.error?.includes("Already signed")) {
         toast.error("This document has already been signed.");
@@ -389,6 +568,17 @@ export default function SignatureAction({
   // Show digital signature modal
   const showDigitalSignatureModalHandler = () => {
     setShowDigitalSignatureModal(true);
+    // Reset states when modal opens
+    setDigitalSignature("");
+    setHasDrawnSignature(false);
+  };
+
+  // Close digital signature modal
+  const closeDigitalSignatureModal = () => {
+    setShowDigitalSignatureModal(false);
+    setDigitalSignature("");
+    clearCanvas();
+    setHasDrawnSignature(false);
   };
 
   // Handle decline
@@ -421,7 +611,7 @@ export default function SignatureAction({
       };
 
       const endpoint = `${API_URL}/signatures/${signatureId || blockId}`;
-      
+
       const response = await axios.post(endpoint, payload, {
         headers: {
           'Content-Type': 'application/json'
@@ -433,7 +623,7 @@ export default function SignatureAction({
         toast.success("Proposal declined successfully");
         setShowDeclineModal(false);
         setDeclineComment("");
-        
+
         // Optional: Refresh page or update UI state
         // window.location.reload();
       } else {
@@ -441,7 +631,7 @@ export default function SignatureAction({
       }
     } catch (err) {
       console.error("Decline error:", err);
-      
+
       if (err.response?.data?.error?.includes("Already declined")) {
         toast.error("This document has already been declined.");
       } else if (err.response?.status === 404) {
@@ -530,11 +720,12 @@ export default function SignatureAction({
           </Form>
         </Modal.Body>
 
-        <Modal.Footer className="border-0">
+        <Modal.Footer className="border-0 justify-content-between">
           <Button
             variant="outline-secondary"
             onClick={handleCloseDeclineModal}
             disabled={isDeclining}
+            className="px-4"
           >
             Cancel
           </Button>
@@ -542,7 +733,7 @@ export default function SignatureAction({
             variant="danger"
             onClick={handleDeclineConfirm}
             disabled={isDeclining || !declineComment.trim() || declineComment.trim().length < 10}
-            className="d-flex align-items-center"
+            className="d-flex align-items-center px-4"
           >
             {isDeclining ? (
               <>
@@ -560,83 +751,192 @@ export default function SignatureAction({
       </Modal>
 
       {/* Digital Signature Modal */}
-      <Modal show={showDigitalSignatureModal} onHide={() => setShowDigitalSignatureModal(false)} centered size="lg">
-        <Modal.Header closeButton className="border-0 pb-0">
-          <Modal.Title className="fw-bold text-primary">
+      <Modal show={showDigitalSignatureModal} onHide={closeDigitalSignatureModal} centered size="lg">
+        <Modal.Header closeButton className="border-0 pb-0 bg-primary text-white">
+          <Modal.Title className="fw-bold">
             <Pen className="me-2" size={24} />
-            Digital Signature
+            Create Your Digital Signature
           </Modal.Title>
         </Modal.Header>
 
-        <Modal.Body className="pt-0">
-          <div className="mb-4">
-            <p className="text-muted">Draw or type your signature below. This will be timestamped and included in the audit trail.</p>
-
-            {/* Simple signature drawing area */}
-            <div className="signature-canvas-container mb-4 border rounded p-4" style={{ minHeight: '200px', backgroundColor: '#f8f9fa' }}>
-              <div className="text-center">
-                <Pen size={48} className="text-muted mb-3" />
-                <p className="text-muted">Digital signature will be recorded with timestamp</p>
-                <small className="text-muted">(Drawing functionality can be implemented with a canvas library)</small>
+        <Modal.Body className="pt-4">
+          <div className="row g-4">
+            {/* Drawing Canvas Section */}
+            <div className="col-md-7">
+              <div className="mb-3">
+                <h6 className="fw-semibold text-primary mb-2">
+                  <Pen className="me-2" />
+                  Draw Your Signature
+                </h6>
+                <p className="text-muted small">Draw your signature in the box below using your mouse or finger.</p>
+              </div>
+              <div
+                className="signature-canvas-wrapper border border-secondary-subtle rounded-3 p-3 bg-white position-relative overflow-hidden"
+                style={{
+                  minHeight: '250px',
+                  backgroundColor: '#fafbfc',
+                  boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.05)'
+                }}
+              >
+                <canvas
+                  ref={canvasRef}
+                  onMouseDown={startDrawing}
+                  onMouseMove={draw}
+                  onMouseUp={stopDrawing}
+                  onMouseLeave={stopDrawing}
+                  onTouchStart={startDrawing}
+                  onTouchMove={draw}
+                  onTouchEnd={stopDrawing}
+                  className="w-100 h-100"
+                  style={{
+                    borderRadius: '8px',
+                    backgroundColor: '#fff',
+                    display: 'block',
+                    cursor: 'crosshair',
+                    touchAction: 'none'
+                  }}
+                />
+                {!hasDrawnSignature && (
+                  <div className="position-absolute top-50 start-50 translate-middle text-center text-muted">
+                    <Pen size={48} className="mb-2 opacity-75" />
+                    <p className="mb-0 fw-light">Draw your signature here</p>
+                  </div>
+                )}
+              </div>
+              <div className="d-flex justify-content-between mt-3">
+                <Button
+                  variant="outline-secondary"
+                  size="sm"
+                  onClick={clearCanvas}
+                  disabled={!hasDrawnSignature}
+                  className="d-flex align-items-center"
+                >
+                  <Trash className="me-1" size={14} />
+                  Clear Drawing
+                </Button>
+                <Button
+                  variant="outline-primary"
+                  size="sm"
+                  onClick={() => {
+                    if (hasDrawnSignature) {
+                      toast.success("Signature drawn successfully!");
+                    }
+                  }}
+                  disabled={!hasDrawnSignature}
+                  className="d-flex align-items-center"
+                >
+                  <Check2Circle className="me-1" size={14} />
+                  Drawing Complete
+                </Button>
               </div>
             </div>
 
-            <Form.Group className="mb-4">
-              <Form.Label className="fw-semibold">Type Your Signature</Form.Label>
-              <Form.Control
-                type="text"
-                placeholder="Type your full name as digital signature"
-                value={digitalSignature}
-                onChange={(e) => setDigitalSignature(e.target.value)}
-                className="form-control-lg text-center fw-bold"
-                style={{ 
-                  fontFamily: 'cursive', 
-                  fontSize: '1.5rem',
-                  border: '2px solid #dee2e6'
-                }}
-                maxLength={100}
-              />
-              <Form.Text className="text-muted">
-                This will serve as your legally binding digital signature
-              </Form.Text>
-            </Form.Group>
-
-            <div className="alert alert-info">
-              <div className="d-flex align-items-center">
-                <Clock className="me-2" />
-                <span>Timestamp will be automatically recorded: {new Date().toLocaleString()}</span>
+            {/* Typed Signature Section */}
+            <div className="col-md-5">
+              <div className="mb-3">
+                <h6 className="fw-semibold text-primary mb-2">
+                  <Pen className="me-2" />
+                  Or Type Your Name
+                </h6>
+                <p className="text-muted small">Enter your full name for a typed digital signature.</p>
               </div>
-              <div className="d-flex align-items-center mt-2">
-                <HddStack className="me-2" />
-                <span>Full audit trail included with IP and device information</span>
+              <Form.Group className="mb-3">
+                <Form.Control
+                  type="text"
+                  placeholder="Type your full name here..."
+                  value={digitalSignature}
+                  onChange={(e) => setDigitalSignature(e.target.value)}
+                  className="form-control-lg text-center fw-semibold border-primary"
+                  style={{
+                    fontFamily: 'Great Vibes, cursive',
+                    fontSize: '1.8rem',
+                    minHeight: '60px',
+                    borderWidth: '2px',
+                    textShadow: '0 1px 2px rgba(0,0,0,0.1)'
+                  }}
+                  maxLength={100}
+                />
+                <Form.Text className="text-muted text-center w-100">
+                  Legally binding digital signature
+                </Form.Text>
+              </Form.Group>
+
+              {/* Preview */}
+              {(hasDrawnSignature || digitalSignature) && (
+                <div className="mt-4 p-3 bg-light rounded-2">
+                  <h6 className="fw-semibold text-muted mb-2">Signature Preview:</h6>
+                  <div className="text-center py-2">
+                    <small className="text-muted">
+                      {hasDrawnSignature
+                        ? "Your drawn signature will be submitted"
+                        : `Typed signature: ${digitalSignature}`}
+                    </small>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Signature Instructions */}
+          <div className="alert alert-light mt-4 border">
+            <div className="row">
+              <div className="col-md-6">
+                <div className="d-flex align-items-center mb-2">
+                  <div className="bg-primary bg-opacity-10 rounded-circle p-2 me-2">
+                    <Pen size={16} className="text-primary" />
+                  </div>
+                  <small className="text-muted">Draw with mouse or touch</small>
+                </div>
+                <div className="d-flex align-items-center">
+                  <div className="bg-primary bg-opacity-10 rounded-circle p-2 me-2">
+                    <Trash size={16} className="text-primary" />
+                  </div>
+                  <small className="text-muted">Clear if you make a mistake</small>
+                </div>
+              </div>
+              <div className="col-md-6">
+                <div className="d-flex align-items-center mb-2">
+                  <div className="bg-primary bg-opacity-10 rounded-circle p-2 me-2">
+                    <Clock size={16} className="text-primary" />
+                  </div>
+                  <small className="text-muted">Automatically timestamped</small>
+                </div>
+                <div className="d-flex align-items-center">
+                  <div className="bg-primary bg-opacity-10 rounded-circle p-2 me-2">
+                    <ShieldCheck size={16} className="text-primary" />
+                  </div>
+                  <small className="text-muted">Secure and encrypted</small>
+                </div>
               </div>
             </div>
           </div>
         </Modal.Body>
 
-        <Modal.Footer className="border-0">
+        <Modal.Footer className="border-0 justify-content-between bg-light">
           <Button
             variant="outline-secondary"
-            onClick={() => setShowDigitalSignatureModal(false)}
+            onClick={closeDigitalSignatureModal}
             disabled={isLoading}
+            className="px-4"
           >
             Cancel
           </Button>
           <Button
             variant="primary"
             onClick={handleDigitalSignature}
-            disabled={isLoading || !digitalSignature.trim()}
-            className="d-flex align-items-center"
+            disabled={isLoading || (!hasDrawnSignature && !digitalSignature.trim())}
+            className="px-4 d-flex align-items-center fw-semibold"
           >
             {isLoading ? (
               <>
                 <Spinner animation="border" size="sm" className="me-2" />
-                Processing...
+                Signing Document...
               </>
             ) : (
               <>
                 <Pen className="me-2" size={18} />
-                Sign with Digital Signature
+                Apply Digital Signature
+                <ArrowRight className="ms-2" size={18} />
               </>
             )}
           </Button>
@@ -714,11 +1014,12 @@ export default function SignatureAction({
           </div>
         </Modal.Body>
 
-        <Modal.Footer className="border-0">
+        <Modal.Footer className="border-0 justify-content-between">
           <Button
             variant="outline-secondary"
             onClick={() => setShowIPDetailsModal(false)}
             disabled={isLoading}
+            className="px-4"
           >
             Cancel
           </Button>
@@ -726,7 +1027,7 @@ export default function SignatureAction({
             variant="info"
             onClick={handleIPVerificationSigning}
             disabled={isLoading}
-            className="d-flex align-items-center"
+            className="d-flex align-items-center px-4"
           >
             {isLoading ? (
               <>
@@ -744,146 +1045,197 @@ export default function SignatureAction({
       </Modal>
 
       {/* Secure Document Signing Card */}
-      <Card className="shadow-lg signature-action-card">
-        <Card.Body className="p-4">
-          <h3 className="fw-bold text-dark mb-4 text-center">Secure Document Signing</h3>
-          <p className="text-muted text-center mb-4">Choose your preferred signing method. All methods are legally binding and secure.</p>
+      <Card className="shadow-lg signature-action-card border-0 overflow-hidden">
+        <Card.Body className="p-4 p-md-5 bg-white">
+          <div className="text-center mb-4 mb-md-5">
+            <div className="rounded-circle bg-primary bg-opacity-10 d-inline-flex p-3 p-md-4 mb-3 mx-auto">
+              <ShieldCheck size={32} className="text-primary" />
+            </div>
+            <h2 className="fw-bold text-dark mb-2">Secure Document Signing</h2>
+            <p className="text-muted lead">Choose your preferred method. All signatures are legally binding, encrypted, and audit-trail protected.</p>
+          </div>
 
-          <Row className="g-4 mb-4">
+          <Row className="g-3 g-md-4 mb-4 mb-md-5 justify-content-center">
             {/* BankID Signing */}
-            <Col md={4}>
-              <Card className="h-100 border-0 shadow-sm hover-shadow transition-all">
-                <Card.Body className="text-center p-4">
-                  <div className="mb-3">
-                    <div className="rounded-circle bg-success bg-opacity-10 d-inline-flex p-3">
-                      <Fingerprint size={32} className="text-success" />
+            <Col xs={12} md={4}>
+              <Card className="h-100 border-0 shadow-sm hover-lift transition-all bg-white rounded-3">
+                <Card.Body className="text-center p-3 p-md-4 d-flex flex-column">
+                  <div className="mb-3 mb-md-4 flex-shrink-0">
+                    <div className="rounded-circle bg-success bg-opacity-10 d-inline-flex p-2 p-md-3 mx-auto">
+                      <Fingerprint size={24} className="text-success" />
                     </div>
                   </div>
-                  <h5 className="fw-bold mb-3">BANKID Signing</h5>
-                  <p className="text-muted small mb-4">Sweden's most trusted electronic ID with highest legal validity</p>
+                  <h5 className="fw-bold text-dark mb-2 mb-md-3">BANKID Signing</h5>
+                  <p className="text-muted small mb-3 mb-md-4 flex-grow-1">Sweden's premier eID – highest legal validity & instant verification</p>
 
-                  <div className="text-start mb-4">
-                    <div className="d-flex align-items-center mb-2">
-                      <PersonCheck size={16} className="text-success me-2" />
-                      <small className="text-dark">Legal Identification</small>
-                    </div>
-                    <div className="d-flex align-items-center mb-2">
-                      <ShieldCheck size={16} className="text-success me-2" />
-                      <small className="text-dark">Highest security level</small>
-                    </div>
-                    <div className="d-flex align-items-center">
-                      <Clock size={16} className="text-success me-2" />
-                      <small className="text-dark">Instant verification</small>
-                    </div>
-                  </div>
+                  <ul className="text-start mb-3 mb-md-4 list-unstyled flex-grow-1">
+                    <li className="d-flex align-items-center mb-2">
+                      <PersonCheck size={16} className="text-success me-3 flex-shrink-0" />
+                      <small className="text-dark">Government-backed ID</small>
+                    </li>
+                    <li className="d-flex align-items-center mb-2">
+                      <ShieldCheck size={16} className="text-success me-3 flex-shrink-0" />
+                      <small className="text-dark">Bank-grade security</small>
+                    </li>
+                    <li className="d-flex align-items-center">
+                      <Clock size={16} className="text-success me-3 flex-shrink-0" />
+                      <small className="text-dark">Mobile app ready</small>
+                    </li>
+                  </ul>
 
                   <Button
                     onClick={handleBankIDSigning}
                     disabled={isLoading}
                     variant="success"
-                    className="w-100 d-flex align-items-center justify-content-center py-2"
+                    className="w-100 d-flex align-items-center justify-content-center py-3 fw-semibold rounded-2 flex-shrink-0 mt-auto"
+                    style={{
+                      background: 'linear-gradient(135deg, #198754 0%, #157347 100%)',
+                      border: 'none',
+                      boxShadow: '0 4px 15px rgba(25, 135, 84, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)',
+                      position: 'relative',
+                      overflow: 'hidden'
+                    }}
                   >
-                    {isLoading ? (
-                      <>
-                        <Spinner animation="border" size="sm" className="me-2" />
-                        Preparing...
-                      </>
-                    ) : (
-                      <>
-                        Sign with BankID
-                        <ArrowRight className="ms-2" size={18} />
-                      </>
-                    )}
+                    <span className="position-relative z-2 d-flex align-items-center">
+                      {isLoading ? (
+                        <>
+                          <Spinner animation="border" size="sm" className="me-2" />
+                          Preparing Secure Sign...
+                        </>
+                      ) : (
+                        <>
+                          Sign with BankID
+                          <ArrowRight className="ms-2" size={18} />
+                        </>
+                      )}
+                    </span>
+                    <span className="position-absolute top-0 start-0 w-100 h-100 bg-white opacity-0 hover:opacity-10 transition-opacity duration-300"></span>
                   </Button>
                 </Card.Body>
               </Card>
             </Col>
 
             {/* Digital Signature */}
-            <Col md={4}>
-              <Card className="h-100 border-0 shadow-sm hover-shadow transition-all">
-                <Card.Body className="text-center p-4">
-                  <div className="mb-3">
-                    <div className="rounded-circle bg-primary bg-opacity-10 d-inline-flex p-3">
-                      <Pen size={32} className="text-primary" />
+            <Col xs={12} md={4}>
+              <Card className="h-100 border-0 shadow-sm hover-lift transition-all bg-white rounded-3">
+                <Card.Body className="text-center p-3 p-md-4 d-flex flex-column">
+                  <div className="mb-3 mb-md-4 flex-shrink-0">
+                    <div className="rounded-circle bg-primary bg-opacity-10 d-inline-flex p-2 p-md-3 mx-auto">
+                      <Pen size={24} className="text-primary" />
                     </div>
                   </div>
-                  <h5 className="fw-bold mb-3">Digital Signature</h5>
-                  <p className="text-muted small mb-4">Draw or type your signature directly with timestamp verification</p>
+                  <h5 className="fw-bold text-dark mb-2 mb-md-3">Digital Signature</h5>
+                  <p className="text-muted small mb-3 mb-md-4 flex-grow-1">Hand-drawn or typed – elegant, timestamped, and verifiable</p>
 
-                  <div className="text-start mb-4">
-                    <div className="d-flex align-items-center mb-2">
-                      <Pen size={16} className="text-primary me-2" />
-                      <small className="text-dark">Draw or type signature</small>
-                    </div>
-                    <div className="d-flex align-items-center mb-2">
-                      <Clock size={16} className="text-primary me-2" />
-                      <small className="text-dark">Timestamp recorded</small>
-                    </div>
-                    <div className="d-flex align-items-center">
-                      <HddStack size={16} className="text-primary me-2" />
-                      <small className="text-dark">Audit trail included</small>
-                    </div>
-                  </div>
+                  <ul className="text-start mb-3 mb-md-4 list-unstyled flex-grow-1">
+                    <li className="d-flex align-items-center mb-2">
+                      <Pen size={16} className="text-primary me-3 flex-shrink-0" />
+                      <small className="text-dark">Custom drawing pad</small>
+                    </li>
+                    <li className="d-flex align-items-center mb-2">
+                      <Clock size={16} className="text-primary me-3 flex-shrink-0" />
+                      <small className="text-dark">Real-time timestamp</small>
+                    </li>
+                    <li className="d-flex align-items-center">
+                      <HddStack size={16} className="text-primary me-3 flex-shrink-0" />
+                      <small className="text-dark">Complete audit log</small>
+                    </li>
+                  </ul>
 
                   <Button
                     onClick={showDigitalSignatureModalHandler}
                     disabled={isLoading}
                     variant="primary"
-                    className="w-100 d-flex align-items-center justify-content-center py-2"
+                    className="w-100 d-flex align-items-center justify-content-center py-3 fw-semibold rounded-2 flex-shrink-0 mt-auto"
+                    style={{
+                      background: 'linear-gradient(135deg, #0d6efd 0%, #0b5ed7 100%)',
+                      border: 'none',
+                      boxShadow: '0 4px 15px rgba(13, 110, 253, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)',
+                      position: 'relative',
+                      overflow: 'hidden'
+                    }}
                   >
-                    <Pen className="me-2" size={18} />
-                    Add Signature
+                    <span className="position-relative z-2 d-flex align-items-center">
+                      <Pen className="me-2" size={18} />
+                      Create Signature
+                    </span>
+                    <span className="position-absolute top-0 start-0 w-100 h-100 bg-white opacity-0 hover:opacity-10 transition-opacity duration-300"></span>
                   </Button>
                 </Card.Body>
               </Card>
             </Col>
 
             {/* IP Verification */}
-            <Col md={4}>
-              <Card className="h-100 border-0 shadow-sm hover-shadow transition-all">
-                <Card.Body className="text-center p-4">
-                  <div className="mb-3">
-                    <div className="rounded-circle bg-info bg-opacity-10 d-inline-flex p-3">
-                      <Globe size={32} className="text-info" />
+            <Col xs={12} md={4}>
+              <Card className="h-100 border-0 shadow-sm hover-lift transition-all bg-white rounded-3">
+                <Card.Body className="text-center p-3 p-md-4 d-flex flex-column">
+                  <div className="mb-3 mb-md-4 flex-shrink-0">
+                    <div className="rounded-circle bg-info bg-opacity-10 d-inline-flex p-2 p-md-3 mx-auto">
+                      <Globe size={24} className="text-info" />
                     </div>
                   </div>
-                  <h5 className="fw-bold mb-3">IP Verification</h5>
-                  <p className="text-muted small mb-4">Record your digital footprint with IP, location, and device data</p>
+                  <h5 className="fw-bold text-dark mb-2 mb-md-3">IP Verification</h5>
+                  <p className="text-muted small mb-3 mb-md-4 flex-grow-1">Geolocated signing with device fingerprinting</p>
 
-                  <div className="text-start mb-4">
-                    <div className="d-flex align-items-center mb-2">
-                      <GeoAlt size={16} className="text-info me-2" />
-                      <small className="text-dark">Location recorded</small>
-                    </div>
-                    <div className="d-flex align-items-center mb-2">
-                      <Laptop size={16} className="text-info me-2" />
-                      <small className="text-dark">Device information</small>
-                    </div>
-                    <div className="d-flex align-items-center">
-                      <Clock size={16} className="text-info me-2" />
-                      <small className="text-dark">Precise timestamp</small>
-                    </div>
-                  </div>
+                  <ul className="text-start mb-3 mb-md-4 list-unstyled flex-grow-1">
+                    <li className="d-flex align-items-center mb-2">
+                      <GeoAlt size={16} className="text-info me-3 flex-shrink-0" />
+                      <small className="text-dark">Precise location data</small>
+                    </li>
+                    <li className="d-flex align-items-center mb-2">
+                      <Laptop size={16} className="text-info me-3 flex-shrink-0" />
+                      <small className="text-dark">Device profiling</small>
+                    </li>
+                    <li className="d-flex align-items-center">
+                      <Clock size={16} className="text-info me-3 flex-shrink-0" />
+                      <small className="text-dark">Immutable timestamp</small>
+                    </li>
+                  </ul>
 
-                  <div className="d-flex gap-2">
+                  <div className="d-flex gap-3 flex-shrink-0 mt-auto">
                     <Button
                       variant="outline-info"
-                      className="grow py-2"
+                      className="flex-fill py-3 fw-semibold rounded-2"
                       onClick={showIPVerificationModal}
                       disabled={isLoading}
+                      style={{
+                        background: 'transparent',
+                        border: '2px solid #0dcaf0',
+                        color: '#0dcaf0',
+                        transition: 'all 0.3s ease'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = 'rgba(13, 202, 240, 0.1)';
+                        e.currentTarget.style.transform = 'translateY(-2px)';
+                        e.currentTarget.style.boxShadow = '0 6px 12px rgba(13, 202, 240, 0.2)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = 'transparent';
+                        e.currentTarget.style.transform = 'translateY(0)';
+                        e.currentTarget.style.boxShadow = 'none';
+                      }}
                     >
                       <Eye className="me-2" size={16} />
-                      View Details
+                      Review Details
                     </Button>
                     <Button
                       onClick={showIPVerificationModal}
                       disabled={isLoading}
                       variant="info"
-                      className="grow py-2"
+                      className="flex-fill py-3 fw-semibold rounded-2"
+                      style={{
+                        background: 'linear-gradient(135deg, #0dcaf0 0%, #0baccc 100%)',
+                        border: 'none',
+                        boxShadow: '0 4px 15px rgba(13, 202, 240, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)',
+                        position: 'relative',
+                        overflow: 'hidden'
+                      }}
                     >
-                      <Globe className="me-2" size={16} />
-                      Verify with IP
+                      <span className="position-relative z-2 d-flex align-items-center justify-content-center">
+                        <Globe className="me-2" size={16} />
+                        Sign via IP
+                      </span>
+                      <span className="position-absolute top-0 start-0 w-100 h-100 bg-white opacity-0 hover:opacity-10 transition-opacity duration-300"></span>
                     </Button>
                   </div>
                 </Card.Body>
@@ -892,66 +1244,187 @@ export default function SignatureAction({
           </Row>
 
           {/* Decline Section */}
-          <div className="text-center mt-4 pt-4 border-top">
-            <h6 className="fw-bold text-muted mb-3">Need to decline?</h6>
-            <p className="text-muted small mb-3">Provide a reason for declining this proposal</p>
+          <div className="text-center mt-4 mt-md-5 pt-4 pt-md-4 border-top border-light">
+            <h6 className="fw-bold text-muted mb-3">Not ready to sign?</h6>
+            <p className="text-muted small mb-3 mb-md-4">You can decline with a detailed reason for the record.</p>
             <Button
               onClick={handleDeclineClick}
               variant="outline-danger"
               size="lg"
-              className="px-5 py-2"
+              className="px-5 py-3 fw-semibold rounded-2"
               disabled={isLoading}
+              style={{
+                background: 'transparent',
+                border: '2px solid #dc3545',
+                color: '#dc3545',
+                transition: 'all 0.3s ease',
+                position: 'relative',
+                overflow: 'hidden'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'linear-gradient(135deg, rgba(220, 53, 69, 0.1) 0%, rgba(220, 53, 69, 0.05) 100%)';
+                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.boxShadow = '0 8px 20px rgba(220, 53, 69, 0.25)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'transparent';
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = 'none';
+              }}
             >
-              <XCircle className="me-2" size={20} />
-              Decline Proposal
+              <span className="position-relative z-2 d-flex align-items-center justify-content-center">
+                <XCircle className="me-2" size={20} />
+                Decline This Proposal
+              </span>
             </Button>
           </div>
 
           {/* Security Badges */}
-          <div className="mt-4 pt-3 border-top text-center">
-            <div className="d-flex flex-wrap justify-content-center gap-4">
-              <small className="text-muted d-flex align-items-center">
-                <Lock size={14} className="me-1" />
-                256-bit Encryption
-              </small>
-              <small className="text-muted d-flex align-items-center">
-                <ShieldCheck size={14} className="me-1" />
-                GDPR Compliant
-              </small>
-              <small className="text-muted d-flex align-items-center">
-                <Clock size={14} className="me-1" />
-                Timestamped Audit Trail
-              </small>
+          <div className="mt-4 mt-md-5 pt-4 pt-md-4 border-top border-light text-center">
+            <div className="row g-2 g-md-3 justify-content-center">
+              <div className="col-auto">
+                <small className="text-muted d-flex align-items-center justify-content-center">
+                  <Lock size={14} className="me-1 text-primary" />
+                  AES-256 Encryption
+                </small>
+              </div>
+              <div className="col-auto">
+                <small className="text-muted d-flex align-items-center justify-content-center">
+                  <ShieldCheck size={14} className="me-1 text-success" />
+                  GDPR & eIDAS Compliant
+                </small>
+              </div>
+              <div className="col-auto">
+                <small className="text-muted d-flex align-items-center justify-content-center">
+                  <Clock size={14} className="me-1 text-info" />
+                  Blockchain-Ready Audit Trail
+                </small>
+              </div>
             </div>
           </div>
         </Card.Body>
 
         {/* Custom Styles */}
         <style>{`
-          .hover-shadow:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1) !important;
-          }
-          
-          .transition-all {
-            transition: all 0.3s ease;
-          }
-          
-          @media (max-width: 768px) {
-            .card {
-              margin-bottom: 1rem;
-            }
-            
-            .d-flex.gap-2 {
-              flex-direction: column;
-              gap: 0.5rem !important;
-            }
-            
-            .d-flex.gap-2 button {
-              width: 100%;
-            }
-          }
-        `}</style>
+    @import url('https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap');
+    
+    .bg-primary {
+      --bs-btn-bg: #0d6efd;
+      --bs-btn-border-color: #0d6efd;
+      --bs-btn-hover-bg: #0b5ed7;
+      --bs-btn-hover-border-color: #0a58ca;
+    }
+    
+    .shadow-lg {
+      box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+    }
+    
+    .shadow-sm {
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    }
+    
+    .hover-lift:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 16px 32px rgba(0,0,0,0.12) !important;
+    }
+    
+    .transition-all {
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .signature-canvas-wrapper {
+      transition: box-shadow 0.3s ease;
+    }
+    
+    .signature-canvas-wrapper:hover {
+      box-shadow: inset 0 2px 8px rgba(0,0,0,0.08);
+    }
+    
+    canvas {
+      touch-action: none;
+    }
+    
+    .d-flex.flex-column .flex-grow-1 {
+      min-height: 0;
+    }
+    
+    /* Modern button hover effects */
+    .btn-success, .btn-primary, .btn-info {
+      transition: all 0.3s ease !important;
+    }
+    
+    .btn-success:hover:not(:disabled),
+    .btn-primary:hover:not(:disabled),
+    .btn-info:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.2) !important;
+    }
+    
+    .btn-success:active:not(:disabled),
+    .btn-primary:active:not(:disabled),
+    .btn-info:active:not(:disabled) {
+      transform: translateY(0);
+      transition-duration: 0.1s;
+    }
+    
+    /* Pulse animation for loading states */
+    @keyframes pulse-glow {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+    
+    .btn:disabled {
+      opacity: 0.7;
+      animation: pulse-glow 2s infinite;
+    }
+    
+    /* Button focus states */
+    .btn:focus:not(:disabled) {
+      outline: 2px solid rgba(13, 110, 253, 0.5);
+      outline-offset: 2px;
+    }
+    
+    @media (max-width: 768px) {
+      .signature-action-card {
+        margin: 0 -1rem;
+        border-radius: 0;
+      }
+      
+      .signature-action-card .card-body {
+        padding: 1.5rem 1rem !important;
+      }
+      
+      .d-flex.gap-3 {
+        flex-direction: column;
+        gap: 0.75rem !important;
+      }
+      
+      .d-flex.gap-3 button {
+        width: 100%;
+      }
+      
+      .signature-canvas-wrapper {
+        min-height: 200px;
+      }
+      
+      .row.g-3.g-md-4 > [class*="col-"] {
+        margin-bottom: 1rem;
+      }
+    }
+    
+    @media (max-width: 576px) {
+      .modal-footer,
+      .modal-header {
+        padding-left: 1rem;
+        padding-right: 1rem;
+      }
+      
+      .btn {
+        font-size: 0.875rem;
+        padding: 0.75rem 1rem !important;
+      }
+    }
+  `}</style>
       </Card>
     </>
   );

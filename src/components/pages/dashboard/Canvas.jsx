@@ -998,65 +998,375 @@ const Canvas = forwardRef(
               minHeight: "80vh",
               color: "#888",
               textAlign: "center",
+              fontFamily: "'Inter', -apple-system, sans-serif",
+              background: "linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)",
+              position: "relative",
+              overflow: "hidden",
             }}
           >
+            {/* Animated background elements */}
+            <div style={{
+              position: "absolute",
+              width: "300px",
+              height: "300px",
+              background: "linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(139, 92, 246, 0.05) 100%)",
+              borderRadius: "50%",
+              top: "-150px",
+              right: "-150px",
+              animation: "float 20s infinite ease-in-out"
+            }} />
+            <div style={{
+              position: "absolute",
+              width: "200px",
+              height: "200px",
+              background: "linear-gradient(135deg, rgba(236, 72, 153, 0.03) 0%, rgba(239, 68, 68, 0.03) 100%)",
+              borderRadius: "50%",
+              bottom: "-100px",
+              left: "-100px",
+              animation: "float 20s infinite ease-in-out reverse"
+            }} />
+
+            {/* Main 3D card */}
             <div
               style={{
-                backgroundColor: "#fff",
-                borderRadius: "8px",
-                padding: "0.75rem 1rem",
-                boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
-                display: "flex",
-                alignItems: "center",
-                marginBottom: "1rem",
-                gap: "0.5rem",
+                perspective: "1000px",
+                marginBottom: "3rem",
               }}
             >
               <div
                 style={{
-                  width: "14px",
-                  height: "14px",
-                  border: "2px solid #0aaeff",
-                  borderRadius: "50%",
-                }}
-              />
-              <div
-                style={{
+                  backgroundColor: "rgba(255, 255, 255, 0.95)",
+                  borderRadius: "24px",
+                  padding: "2.5rem 3rem",
+                  boxShadow: `
+            0 20px 60px rgba(0, 0, 0, 0.08),
+            0 5px 15px rgba(0, 0, 0, 0.05),
+            inset 0 1px 0 rgba(255, 255, 255, 0.8)
+          `,
+                  transformStyle: "preserve-3d",
+                  animation: "cardFloat 6s infinite ease-in-out",
+                  border: "1px solid rgba(255, 255, 255, 0.8)",
                   position: "relative",
-                  width: "80px",
-                  height: "10px",
-                  backgroundColor: "#ddd",
-                  borderRadius: "4px",
+                  backdropFilter: "blur(20px)",
                 }}
               >
-                <div
-                  style={{
-                    position: "absolute",
-                    top: "-2px",
-                    left: "0",
-                    animation: "handMove 3s infinite ease-in-out",
-                  }}
-                >
-                  <Hand size={22} color="#666" />
+                {/* 3D effect edge */}
+                <div style={{
+                  position: "absolute",
+                  inset: "-1px",
+                  background: "linear-gradient(135deg, transparent 60%, rgba(59, 130, 246, 0.2) 100%)",
+                  borderRadius: "25px",
+                  zIndex: -1,
+                  transform: "translateZ(-20px)",
+                }} />
+
+                {/* Interactive elements */}
+                <div style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "1.5rem",
+                  marginBottom: "1.5rem"
+                }}>
+                  {/* Source panel */}
+                  <div style={{
+                    width: "80px",
+                    height: "120px",
+                    background: "linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)",
+                    borderRadius: "12px",
+                    padding: "1rem",
+                    boxShadow: "inset 0 2px 8px rgba(0, 0, 0, 0.05)",
+                    transformStyle: "preserve-3d",
+                    transform: "rotateY(-5deg)",
+                    position: "relative",
+                    border: "1px solid rgba(203, 213, 225, 0.5)",
+                  }}>
+                    {/* Blocks in source */}
+                    {[0, 30, 60].map((top, i) => (
+                      <div key={i} style={{
+                        position: "absolute",
+                        width: "60px",
+                        height: "12px",
+                        background: "linear-gradient(90deg, #3b82f6, #60a5fa)",
+                        borderRadius: "6px",
+                        top: `${top}px`,
+                        left: "10px",
+                        opacity: 0.8 - i * 0.2,
+                        boxShadow: "0 2px 4px rgba(59, 130, 246, 0.2)",
+                      }} />
+                    ))}
+                  </div>
+
+                  {/* Dragging animation */}
+                  <div style={{
+                    position: "relative",
+                    width: "120px",
+                    height: "120px",
+                  }}>
+                    {/* Arrow path */}
+                    <svg
+                      width="120"
+                      height="120"
+                      style={{
+                        position: "absolute",
+                        top: 0,
+                        left: 0,
+                      }}
+                    >
+                      <path
+                        d="M10,60 C40,30 80,30 110,60"
+                        fill="none"
+                        stroke="url(#gradient)"
+                        strokeWidth="2"
+                        strokeDasharray="5,5"
+                      />
+                      <defs>
+                        <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                          <stop offset="0%" stopColor="#3b82f6" />
+                          <stop offset="100%" stopColor="#8b5cf6" />
+                        </linearGradient>
+                      </defs>
+                    </svg>
+
+                    {/* Dragged block */}
+                    <div style={{
+                      position: "absolute",
+                      width: "60px",
+                      height: "12px",
+                      background: "linear-gradient(90deg, #3b82f6, #8b5cf6)",
+                      borderRadius: "6px",
+                      top: "54px",
+                      left: "30px",
+                      animation: "moveBlock 3s infinite ease-in-out",
+                      boxShadow: "0 4px 12px rgba(59, 130, 246, 0.3)",
+                      transform: "rotate(0deg)",
+                      zIndex: 2,
+                    }}>
+                      {/* Block shine effect */}
+                      <div style={{
+                        position: "absolute",
+                        top: "0",
+                        left: "0",
+                        width: "20px",
+                        height: "100%",
+                        background: "linear-gradient(90deg, rgba(255,255,255,0.3), transparent)",
+                        borderRadius: "6px",
+                      }} />
+                    </div>
+                  </div>
+
+                  {/* Destination area */}
+                  <div style={{
+                    width: "100px",
+                    height: "140px",
+                    background: "linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)",
+                    borderRadius: "12px",
+                    padding: "1rem",
+                    boxShadow: "inset 0 2px 8px rgba(34, 197, 94, 0.1)",
+                    transformStyle: "preserve-3d",
+                    transform: "rotateY(5deg)",
+                    border: "1px solid rgba(134, 239, 172, 0.5)",
+                    position: "relative",
+                    overflow: "hidden",
+                  }}>
+                    {/* Drop zone highlight */}
+                    <div style={{
+                      position: "absolute",
+                      inset: "4px",
+                      border: "2px dashed rgba(34, 197, 94, 0.3)",
+                      borderRadius: "8px",
+                      animation: "pulseBorder 2s infinite",
+                    }} />
+
+                    {/* Preview blocks */}
+                    {[
+                      { top: 20, color: "rgba(34, 197, 94, 0.1)" },
+                      { top: 50, color: "rgba(34, 197, 94, 0.15)" },
+                      { top: 80, color: "rgba(34, 197, 94, 0.2)" },
+                    ].map((item, i) => (
+                      <div key={i} style={{
+                        position: "absolute",
+                        width: "60px",
+                        height: "12px",
+                        background: item.color,
+                        borderRadius: "6px",
+                        top: `${item.top}px`,
+                        left: "20px",
+                      }} />
+                    ))}
+                  </div>
+                </div>
+
+                {/* Action text */}
+                <div style={{
+                  fontSize: "13px",
+                  fontWeight: "500",
+                  color: "#64748b",
+                  letterSpacing: "0.02em",
+                  textTransform: "uppercase",
+                  marginTop: "1rem",
+                }}>
+                  <span style={{ color: "#3b82f6" }}>Drag</span> & <span style={{ color: "#10b981" }}>Drop</span>
                 </div>
               </div>
             </div>
 
-            <p style={{ fontSize: "12px" }}>
-              Start with{" "}
-              <span style={{ color: "#3C3C3C", fontWeight: "bold" }}>
-                drag & <br /> dropping
-              </span>{" "}
-              a block from <br /> the left menu.
-            </p>
+            {/* Main message */}
+            <div style={{ maxWidth: "300px" }}>
+              <h3 style={{
+                fontSize: "28px",
+                fontWeight: "700",
+                background: "linear-gradient(135deg, #3b82f6 0%, #8b5cf6 50%, #ec4899 100%)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                marginBottom: "1rem",
+                letterSpacing: "-0.02em",
+              }}>
+                Visual Builder
+              </h3>
+              <p style={{
+                fontSize: "15px",
+                lineHeight: "1.6",
+                color: "#64748b",
+                marginBottom: "1.5rem",
+              }}>
+                Drag blocks from the sidebar to this area
+                <br />
+                to create your interface visually
+              </p>
+
+              {/* Feature highlights */}
+              {/* <div style={{
+        display: "flex",
+        gap: "1rem",
+        justifyContent: "center",
+        flexWrap: "wrap",
+      }}>
+        {[
+          { icon: "🔄", text: "Real-time Preview" },
+          { icon: "🎨", text: "Visual Editing" },
+          { icon: "⚡", text: "Instant Results" },
+        ].map((item, i) => (
+          <div key={i} style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "0.5rem",
+            padding: "0.5rem 0.75rem",
+            background: "rgba(255, 255, 255, 0.7)",
+            borderRadius: "8px",
+            fontSize: "13px",
+            color: "#475569",
+            boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
+          }}>
+            <span>{item.icon}</span>
+            <span>{item.text}</span>
+          </div>
+        ))}
+      </div> */}
+            </div>
+
+            {/* Floating particles */}
+            <div style={{
+              position: "absolute",
+              width: "100%",
+              height: "100%",
+              top: 0,
+              left: 0,
+              pointerEvents: "none",
+            }}>
+              {Array.from({ length: 20 }).map((_, i) => (
+                <div
+                  key={i}
+                  style={{
+                    position: "absolute",
+                    width: `${Math.random() * 6 + 2}px`,
+                    height: `${Math.random() * 6 + 2}px`,
+                    background: `rgba(59, 130, 246, ${Math.random() * 0.1 + 0.05})`,
+                    borderRadius: "50%",
+                    top: `${Math.random() * 100}%`,
+                    left: `${Math.random() * 100}%`,
+                    animation: `particleFloat ${Math.random() * 20 + 10}s infinite linear`,
+                    animationDelay: `${Math.random() * 5}s`,
+                  }}
+                />
+              ))}
+            </div>
 
             <style>{`
-              @keyframes handMove {
-                0% { transform: translateX(0); }
-                50% { transform: translateX(50px); }
-                100% { transform: translateX(0); }
-              }
-            `}</style>
+      @keyframes moveBlock {
+        0% {
+          transform: translateX(0) rotate(0deg) scale(1);
+          opacity: 1;
+        }
+        20% {
+          transform: translateX(60px) rotate(5deg) scale(1.1);
+          opacity: 1;
+        }
+        40% {
+          transform: translateX(120px) rotate(0deg) scale(1.1);
+          opacity: 1;
+        }
+        60% {
+          transform: translateX(120px) rotate(0deg) scale(1);
+          opacity: 0;
+        }
+        100% {
+          transform: translateX(0) rotate(0deg) scale(1);
+          opacity: 0;
+        }
+      }
+      
+      @keyframes cardFloat {
+        0%, 100% {
+          transform: translateY(0) rotateX(2deg);
+        }
+        50% {
+          transform: translateY(-10px) rotateX(-2deg);
+        }
+      }
+      
+      @keyframes pulseBorder {
+        0%, 100% {
+          border-color: rgba(34, 197, 94, 0.3);
+        }
+        50% {
+          border-color: rgba(34, 197, 94, 0.6);
+        }
+      }
+      
+      @keyframes float {
+        0%, 100% {
+          transform: translate(0, 0) rotate(0deg);
+        }
+        33% {
+          transform: translate(30px, 30px) rotate(120deg);
+        }
+        66% {
+          transform: translate(-20px, 40px) rotate(240deg);
+        }
+      }
+      
+      @keyframes particleFloat {
+        0% {
+          transform: translateY(100vh) rotate(0deg);
+          opacity: 0;
+        }
+        10% {
+          opacity: 1;
+        }
+        90% {
+          opacity: 1;
+        }
+        100% {
+          transform: translateY(-100px) rotate(360deg);
+          opacity: 0;
+        }
+      }
+      
+      /* Smooth hover effects */
+      * {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+    `}</style>
           </div>
         ) : (
           <div

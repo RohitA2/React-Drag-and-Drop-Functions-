@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { selectedUserId } from "../../store/authSlice";
 import { setScheduleId } from "../../store/scheduleSlice";
@@ -7,7 +7,7 @@ import {
   CalendarClock, Clock, Calendar, CheckCircle, Plus, Trash,
   Loader, ChevronDown, MessageSquare, PlusCircle, X,
   AlertCircle, ListChecks, CalendarDays, MoreVertical,
-  Clock4, Search
+  Clock4, Search, Save
 } from "lucide-react";
 import { toast } from "react-toastify";
 
@@ -39,8 +39,12 @@ const Schedule = ({ blockId, parentId }) => {
   const [serviceSearchTerm, setServiceSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(0);
   const [servicesPerPage] = useState(10);
+  const [autoSaving, setAutoSaving] = useState(false);
+  const [lastSaved, setLastSaved] = useState(null);
 
+  const saveTimeoutRef = useRef(null);
   const dropdownRef = useRef(null);
+  const scheduleSnapshotRef = useRef([]); // Store previous state for comparison
 
   const filteredServices = useMemo(() => {
     if (!serviceSearchTerm.trim()) return allServices;
@@ -56,6 +60,177 @@ const Schedule = ({ blockId, parentId }) => {
   }, [filteredServices, currentPage, servicesPerPage]);
 
   const totalPages = Math.ceil(filteredServices.length / servicesPerPage);
+
+  // Check if a schedule is complete and ready to auto-save
+  const isScheduleComplete = useCallback((schedule) => {
+    return schedule.date && schedule.time && schedule.services.length > 0;
+  }, []);
+
+  // Check if schedule data has changed
+  const hasScheduleChanged = useCallback((oldSchedule, newSchedule) => {
+    return (
+      oldSchedule.date !== newSchedule.date ||
+      oldSchedule.time !== newSchedule.time ||
+      JSON.stringify(oldSchedule.services) !== JSON.stringify(newSchedule.services)
+    );
+  }, []);
+
+  // Check if any schedule is complete
+  const hasCompleteSchedules = useMemo(() => {
+    return schedules.some(schedule => isScheduleComplete(schedule));
+  }, [schedules, isScheduleComplete]);
+
+  // Auto-save function for UPDATING existing schedules
+  const updateExistingSchedule = useCallback(async (schedule) => {
+    if (!schedule.id) return null; // Not an existing schedule
+    
+    try {
+      const res = await axios.post(`${API_URL}/schedules/updateSchedule`, {
+        scheduleId: schedule.id,
+        date: schedule.date,
+        time: schedule.time + ":00", // Add seconds for API format
+        comment: schedule.services.join(" | "),
+        userId,
+        blockId,
+        parentId
+      });
+
+      if (res.data.success) {
+        toast.success("Schedule updated successfully!", {
+          icon: "🔄",
+          autoClose: 2000,
+        });
+        return schedule.id;
+      }
+      return null;
+    } catch (err) {
+      console.error("Update schedule error:", err.message);
+      toast.error("Failed to update schedule");
+      return null;
+    }
+  }, [userId, blockId, parentId]);
+
+  // Auto-save function for CREATING new schedules
+  const createNewSchedule = useCallback(async (schedule) => {
+    try {
+      const res = await axios.post(`${API_URL}/schedules/save`, {
+        schedules: [{
+          ...schedule,
+          comment: schedule.services.join(" | "),
+          userId,
+          blockId,
+          parentId
+        }],
+      });
+
+      if (res.data.success) {
+        const scheduleId = Array.isArray(res.data.id) ? res.data.id[0] : res.data.id;
+        toast.success("Schedule created successfully!", {
+          icon: "💾",
+          autoClose: 2000,
+        });
+        return scheduleId;
+      }
+      return null;
+    } catch (err) {
+      console.error("Create schedule error:", err.message);
+      toast.error("Failed to create schedule");
+      return null;
+    }
+  }, [userId, blockId, parentId]);
+
+  // Main auto-save function
+  const autoSaveSchedules = useCallback(async () => {
+    const schedulesToSave = [];
+    const updatedSchedules = [...schedules];
+
+    // Find schedules that have changed and are complete
+    schedules.forEach((schedule, index) => {
+      if (!isScheduleComplete(schedule)) return;
+      
+      const oldSchedule = scheduleSnapshotRef.current[index];
+      if (!oldSchedule || hasScheduleChanged(oldSchedule, schedule)) {
+        schedulesToSave.push({ schedule, index });
+      }
+    });
+
+    if (schedulesToSave.length === 0) return;
+
+    setAutoSaving(true);
+    
+    try {
+      for (const { schedule, index } of schedulesToSave) {
+        let newId = schedule.id;
+        
+        if (schedule.id) {
+          // Update existing schedule
+          await updateExistingSchedule(schedule);
+        } else {
+          // Create new schedule
+          newId = await createNewSchedule(schedule);
+          if (newId) {
+            updatedSchedules[index] = { ...schedule, id: newId };
+          }
+        }
+      }
+
+      // Update schedule IDs in Redux
+      const scheduleIds = updatedSchedules
+        .filter(s => s.id !== null)
+        .map(s => s.id);
+      
+      if (scheduleIds.length > 0) {
+        dispatch(setScheduleId(scheduleIds));
+      }
+
+      // Update local state
+      if (updatedSchedules.some((s, i) => s.id !== schedules[i].id)) {
+        setSchedules(updatedSchedules);
+      }
+      
+      setLastSaved(new Date());
+    } catch (err) {
+      console.error("Auto-save error:", err.message);
+    } finally {
+      setAutoSaving(false);
+      // Update snapshot after save
+      scheduleSnapshotRef.current = updatedSchedules.map(s => ({ ...s }));
+    }
+  }, [schedules, isScheduleComplete, hasScheduleChanged, updateExistingSchedule, createNewSchedule, dispatch]);
+
+  // Initialize snapshot and debounced auto-save
+  useEffect(() => {
+    // Initialize snapshot
+    if (scheduleSnapshotRef.current.length === 0 && schedules.length > 0) {
+      scheduleSnapshotRef.current = schedules.map(s => ({ ...s }));
+    }
+
+    // Clear existing timeout
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+
+    // Check if any complete schedule has changed
+    const hasChangedSchedules = schedules.some((schedule, index) => {
+      if (!isScheduleComplete(schedule)) return false;
+      
+      const oldSchedule = scheduleSnapshotRef.current[index];
+      return !oldSchedule || hasScheduleChanged(oldSchedule, schedule);
+    });
+
+    // Only auto-save if there are changed complete schedules
+    if (hasChangedSchedules) {
+      saveTimeoutRef.current = setTimeout(() => {
+        autoSaveSchedules();
+      }, 2000); // 2 second debounce for better UX
+    }
+
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, [schedules, isScheduleComplete, hasScheduleChanged, autoSaveSchedules]);
 
   useEffect(() => {
     const fetchServices = async () => {
@@ -129,7 +304,10 @@ const Schedule = ({ blockId, parentId }) => {
   };
 
   const addSchedule = () => {
-    setSchedules([...schedules, { date: "", time: "", services: [], id: null }]);
+    const newSchedules = [...schedules, { date: "", time: "", services: [], id: null }];
+    setSchedules(newSchedules);
+    // Update snapshot
+    scheduleSnapshotRef.current = newSchedules.map(s => ({ ...s }));
   };
 
   const removeSchedule = async (index) => {
@@ -151,6 +329,8 @@ const Schedule = ({ blockId, parentId }) => {
             .map(s => s.id)
             .filter(id => id !== null);
           dispatch(setScheduleId(remainingIds));
+          // Update snapshot
+          scheduleSnapshotRef.current = newSchedules.map(s => ({ ...s }));
         } else {
           toast.error(res.data.message || "Failed to delete schedule");
         }
@@ -163,6 +343,8 @@ const Schedule = ({ blockId, parentId }) => {
     } else {
       const newSchedules = currentSchedules.filter((_, i) => i !== index);
       setSchedules(newSchedules);
+      // Update snapshot
+      scheduleSnapshotRef.current = newSchedules.map(s => ({ ...s }));
     }
     setHoverIndex(null);
     setDropdownOpen(null);
@@ -236,39 +418,6 @@ const Schedule = ({ blockId, parentId }) => {
     }
   };
 
-  const handleSave = async () => {
-    const validSchedules = schedules.filter((s) => s.date && s.time && s.services.length > 0);
-    if (!validSchedules.length) return;
-    setLoading(true);
-    try {
-      const schedulesForAPI = validSchedules.map((s) => ({
-        ...s,
-        comment: s.services.join(" | "),
-        userId,
-        blockId,
-        parentId
-      }));
-      const res = await axios.post(`${API_URL}/schedules/save`, {
-        schedules: schedulesForAPI,
-      });
-      if (res.data.success) {
-        const scheduleIds = Array.isArray(res.data.id) ? res.data.id : [res.data.id];
-        dispatch(setScheduleId(scheduleIds));
-        toast.success("Schedules saved successfully!");
-        const updatedSchedules = schedules.map((s, i) => ({
-          ...s,
-          id: scheduleIds[i] || s.id,
-        }));
-        setSchedules(updatedSchedules);
-      }
-    } catch (err) {
-      toast.error("Failed to save schedules");
-      console.error(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const getScheduledTimeString = (date, time) => {
     if (!date || !time) return "";
     const scheduledDate = new Date(`${date}T${time}`);
@@ -304,6 +453,25 @@ const Schedule = ({ blockId, parentId }) => {
     }
   };
 
+  // Format last saved time
+  const formatLastSaved = () => {
+    if (!lastSaved) return null;
+    const now = new Date();
+    const diffMs = now - lastSaved;
+    const diffSec = Math.floor(diffMs / 1000);
+    const diffMin = Math.floor(diffSec / 60);
+    
+    if (diffMin < 1) return "Just now";
+    if (diffMin === 1) return "1 minute ago";
+    if (diffMin < 60) return `${diffMin} minutes ago`;
+    
+    const diffHour = Math.floor(diffMin / 60);
+    if (diffHour === 1) return "1 hour ago";
+    if (diffHour < 24) return `${diffHour} hours ago`;
+    
+    return lastSaved.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
   return (
     <div className="relative max-w-10xl mx-auto p-4 md:p-8 w-full border border-gray-200 bg-linear-to-br from-blue-500 via-purple-600 to-pink-500 shadow-2xl overflow-visible backdrop-blur-sm">
       {/* Animated background elements */}
@@ -311,16 +479,36 @@ const Schedule = ({ blockId, parentId }) => {
       <div className="absolute bottom-[-15%] left-[-5%] w-48 h-48 rounded-full bg-radial-gradient from-white/8 to-transparent animate-float-reverse blur-sm"></div>
       <div className="absolute top-1/2 left-10% w-36 h-36 rounded-full bg-radial-gradient from-white/5 to-transparent animate-float-slow blur-sm"></div>
 
-      {/* Header */}
-      <div className="flex items-center mb-8 relative">
-        <div className="flex justify-center items-center rounded-2xl mr-4 shadow-lg w-14 h-14 bg-white/20 backdrop-blur-sm border border-white/30 shadow-white/10">
-          <CalendarClock size={28} className="text-white" />
+      {/* Header with auto-save status */}
+      <div className="flex items-center justify-between mb-8 relative">
+        <div className="flex items-center">
+          <div className="flex justify-center items-center rounded-2xl mr-4 shadow-lg w-14 h-14 bg-white/20 backdrop-blur-sm border border-white/30 shadow-white/10">
+            <CalendarClock size={28} className="text-white" />
+          </div>
+          <div>
+            <h3 className="font-bold text-white text-2xl mb-1 drop-shadow-lg">Schedule Content</h3>
+            <p className="text-white/80 text-sm font-light">
+              Plan multiple services for each schedule
+            </p>
+          </div>
         </div>
-        <div>
-          <h3 className="font-bold text-white text-2xl mb-1 drop-shadow-lg">Schedule Content</h3>
-          <p className="text-white/80 text-sm font-light">
-            Plan multiple services for each schedule
-          </p>
+        
+        {/* Auto-save status indicator */}
+        <div className="flex items-center gap-2">
+          {autoSaving && (
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/20 backdrop-blur-sm border border-white/30">
+              <Loader size={14} className="animate-spin text-white" />
+              <span className="text-white text-sm font-medium">Auto-saving...</span>
+            </div>
+          )}
+          {lastSaved && !autoSaving && (
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-500/20 backdrop-blur-sm border border-green-300/30">
+              <Save size={14} className="text-green-300" />
+              <span className="text-green-100 text-sm font-medium">
+                Saved {formatLastSaved()}
+              </span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -362,15 +550,36 @@ const Schedule = ({ blockId, parentId }) => {
       <div className="flex flex-col items-center gap-6 relative z-10">
         {schedules.map((schedule, index) => {
           const isActive = showServiceManager === index || dropdownOpen === index;
+          const isComplete = isScheduleComplete(schedule);
+          
           return (
             <div
               key={index}
-              className={`rounded-3xl p-6 w-full max-w-4xl bg-white/95 backdrop-blur-sm border border-white/30 shadow-2xl transition-all duration-300 ${hoverIndex === index ? 'transform -translate-y-1 border-blue-300 shadow-[0_0_0_3px_rgba(102,126,234,0.2)]' : ''
+              className={`rounded-3xl p-6 w-full max-w-4xl bg-white/95 backdrop-blur-sm border-2 transition-all duration-300 ${isComplete ? 'border-green-200' : 'border-white/30'} ${hoverIndex === index ? 'transform -translate-y-1 shadow-[0_0_0_3px_rgba(102,126,234,0.2)]' : 'shadow-2xl'
                 } ${isActive ? 'z-50' : 'z-10'}`}
               onMouseEnter={() => setHoverIndex(index)}
               onMouseLeave={() => setHoverIndex(null)}
             >
-              <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4">
+              {/* Schedule status indicator */}
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  {isComplete ? (
+                    <>
+                      <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                      <small className="text-green-600 font-medium">
+                        {schedule.id ? "Saved & Complete" : "Ready to save"}
+                      </small>
+                    </>
+                  ) : (
+                    <>
+                      <div className="w-2 h-2 rounded-full bg-amber-500"></div>
+                      <small className="text-amber-600 font-medium">
+                        Incomplete - fill all fields
+                      </small>
+                    </>
+                  )}
+                </div>
+                
                 <div className="flex flex-col md:flex-row items-start md:items-center gap-4 text-gray-600">
                   <div className="flex items-center">
                     <Calendar size={16} className="mr-2 text-blue-500" />
@@ -381,6 +590,9 @@ const Schedule = ({ blockId, parentId }) => {
                     <small className="font-medium">All timezones</small>
                   </div>
                 </div>
+              </div>
+
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4">
                 <div className="flex gap-3">
                   <button
                     className="px-4 py-2 text-sm font-medium rounded-full border border-blue-300 text-blue-600 hover:bg-blue-50 flex items-center gap-2 disabled:opacity-50"
@@ -689,22 +901,35 @@ const Schedule = ({ blockId, parentId }) => {
 
               {/* Scheduled time display */}
               {schedule.date && schedule.time ? (
-                <div className="p-6 rounded-2xl bg-linear-to-r from-green-500 to-emerald-600 text-white shadow-lg overflow-hidden">
+                <div className={`p-6 rounded-2xl text-white shadow-lg overflow-hidden ${isComplete ? 'bg-linear-to-r from-green-500 to-emerald-600' : 'bg-linear-to-r from-amber-500 to-orange-600'}`}>
                   {/* Top decorative line */}
                   <div className="h-0.5 w-full bg-linear-to-r from-transparent via-white/30 to-transparent mb-4"></div>
                   <div className="flex items-center gap-2 mb-1">
                     <Clock4 size={20} />
-                    <span className="font-semibold">Scheduled</span>
+                    <span className="font-semibold">
+                      {isComplete ? 'Scheduled' : 'Incomplete Schedule'}
+                    </span>
                     {schedule.id && (
                       <span className="ml-2 px-2 py-0.5 bg-white text-gray-800 text-xs font-medium rounded-full">Saved</span>
+                    )}
+                    {isComplete && !schedule.id && (
+                      <span className="ml-2 px-2 py-0.5 bg-white/20 text-white text-xs font-medium rounded-full">
+                        {autoSaving ? 'Saving...' : 'Will save'}
+                      </span>
                     )}
                   </div>
                   <div className="text-center">
                     <div className="font-bold text-lg">{getScheduledTimeString(schedule.date, schedule.time)}</div>
-                    {schedule.services.length > 0 && (
+                    {schedule.services.length > 0 ? (
                       <div className="mt-2">
                         <small className="opacity-90 font-medium">
-                          Services: {schedule.services.length} scheduled
+                          {schedule.services.length} service{schedule.services.length !== 1 ? 's' : ''} scheduled
+                        </small>
+                      </div>
+                    ) : (
+                      <div className="mt-2">
+                        <small className="opacity-90 font-medium">
+                          Add at least one service to save
                         </small>
                       </div>
                     )}
@@ -722,33 +947,30 @@ const Schedule = ({ blockId, parentId }) => {
           );
         })}
 
-        {/* Buttons */}
+        {/* Add Another Schedule Button */}
         <div className="flex flex-col gap-4 w-full max-w-4xl">
           <button
             className="px-6 py-4 rounded-full bg-white/90 backdrop-blur-sm border-2 border-white/30 text-blue-600 hover:bg-blue-50 font-semibold flex items-center justify-center gap-2 transition-all duration-300 disabled:opacity-50"
             onClick={addSchedule}
-            disabled={loading || deletingIndex !== null}
+            disabled={autoSaving || deletingIndex !== null}
           >
             <Plus size={18} />
             <span>Add Another Schedule</span>
           </button>
-          <button
-            className={`px-6 py-4 rounded-full text-white font-bold flex items-center justify-center gap-2 text-lg transition-all duration-300 ${loading || !schedules.some((s) => s.date && s.time && s.services.length > 0) || deletingIndex !== null
-              ? 'bg-gray-400 cursor-not-allowed'
-              : 'bg-linear-to-r from-green-500 to-emerald-600 hover:shadow-xl'
-              }`}
-            onClick={handleSave}
-            disabled={loading || !schedules.some((s) => s.date && s.time && s.services.length > 0) || deletingIndex !== null}
-          >
-            {loading ? (
-              <>
-                <Loader size={18} className="animate-spin" />
-                <span>Saving Schedules...</span>
-              </>
-            ) : (
-              <span>Save All Schedules</span>
-            )}
-          </button>
+          
+          {/* Auto-save status footer */}
+          <div className="text-center py-4">
+            <small className="text-white/70 font-medium">
+              {hasCompleteSchedules ? (
+                <div className="flex items-center justify-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                  <span>Changes will auto-save</span>
+                </div>
+              ) : (
+                <span>Fill date, time, and add services to enable auto-save</span>
+              )}
+            </small>
+          </div>
         </div>
       </div>
 
