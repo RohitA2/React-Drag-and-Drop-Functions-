@@ -4,14 +4,20 @@ import { createSignature } from "../../store/signatureSlice";
 import { useSelector, useDispatch } from "react-redux";
 import "bootstrap/dist/css/bootstrap.min.css";
 
-const SignatureBlock = ({ blockId, parentId }) => {
+const SignatureBlock = ({ blockId, parentId, data, isExisting }) => {
   const dispatch = useDispatch();
+  const [isCreated, setIsCreated] = useState(isExisting || false);
 
-  console.log("i am from signature block ids", blockId);
+  console.log("SignatureBlock - blockId:", blockId, "isExisting:", isExisting, "hasData:", !!data);
 
+  // Only create signature if this is a NEW block (not existing/edit mode)
   useEffect(() => {
-    dispatch(createSignature({ blockId, parentId }));
-  }, []);
+    if (!isCreated && !isExisting && !data && blockId && parentId) {
+      console.log("Creating new signature for block:", blockId);
+      dispatch(createSignature({ blockId, parentId }));
+      setIsCreated(true);
+    }
+  }, [blockId, parentId, isExisting, data, isCreated, dispatch]);
 
   return (
     <div

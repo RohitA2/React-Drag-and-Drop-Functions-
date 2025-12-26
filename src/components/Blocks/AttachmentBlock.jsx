@@ -25,21 +25,56 @@ const getFileIcon = (file) => {
   return <File size={20} className="text-muted" />;
 };
 
-const AttachmentBlock = ({ blockId }) => {
+const AttachmentBlock = ({ blockId, parentId, data, isExisting }) => {
   const dispatch = useDispatch();
   const user_id = useSelector(selectedUserId);
   const { items: storeItems, loading, error } = useSelector((s) => s.attachments);
 
-  const [items, setItems] = useState([]);
+  // Initialize from existing data if in edit mode
+  const getInitialItems = () => {
+    if (isExisting && data) {
+      const attachments = Array.isArray(data) ? data : [data];
+      return attachments.map(att => ({
+        id: att.id,
+        displayName: att.displayName || att.name || att.filename || "Attachment",
+        preview: att.preview || att.url || null,
+        type: att.type || att.mimeType || "",
+        url: att.url || att.fileUrl || "",
+      }));
+    }
+    return [];
+  };
+
+  const [items, setItems] = useState(getInitialItems);
   const [renamingIndex, setRenamingIndex] = useState(null);
   const [tempName, setTempName] = useState("");
+  const [isInitialized, setIsInitialized] = useState(isExisting || false);
 
   const fileInputRef = useRef();
 
-  // Sync local items with Redux store
+  // Initialize from data prop if it loads later
   useEffect(() => {
-    setItems(storeItems);
-  }, [storeItems]);
+    if (isExisting && data && !isInitialized) {
+      const attachments = Array.isArray(data) ? data : [data];
+      const mappedItems = attachments.map(att => ({
+        id: att.id,
+        displayName: att.displayName || att.name || att.filename || "Attachment",
+        preview: att.preview || att.url || null,
+        type: att.type || att.mimeType || "",
+        url: att.url || att.fileUrl || "",
+      }));
+      setItems(mappedItems);
+      setIsInitialized(true);
+      console.log("AttachmentBlock loaded existing data:", mappedItems);
+    }
+  }, [data, isExisting, isInitialized]);
+
+  // Sync local items with Redux store (only for new items)
+  useEffect(() => {
+    if (!isInitialized && storeItems.length > 0) {
+      setItems(storeItems);
+    }
+  }, [storeItems, isInitialized]);
 
   const handleFiles = async (incomingFiles) => {
     const valid = Array.from(incomingFiles).map((f) => ({

@@ -24,6 +24,11 @@ const HeaderBar = ({
   onNewProposal,
   isPreviewMode = false,
   onTogglePreview,
+  // Add these props:
+ parentId = null,
+  projectId = null,
+  isEditing = false,
+  editProject = null,
 }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [showSaveOptions, setShowSaveOptions] = useState(false);
@@ -231,9 +236,9 @@ const HeaderBar = ({
             title="New Project"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="me-2">
-              <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M2 17L12 22L22 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M2 12L12 17L22 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M2 17L12 22L22 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M2 12L12 17L22 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
             New Project
           </button>
@@ -252,8 +257,8 @@ const HeaderBar = ({
               <Edit3 size={16} className="me-1" />
               Edit
             </button>
-            <button 
-              type="button" 
+            <button
+              type="button"
               className={`mode-btn ${isPreviewMode ? 'active' : ''}`}
               onClick={() => handleModeToggle('preview')}
             >
@@ -300,14 +305,6 @@ const HeaderBar = ({
           )}
         </div>
 
-        {/* Trial info */}
-        {/* <div className="trial-info">
-          <span className="trial-text">11 days left</span>
-          <div className="trial-progress">
-            <div className="trial-progress-bar"></div>
-          </div>
-        </div> */}
-
         <button
           className={`review-btn ${hasElementsOnCanvas ? 'enabled' : 'disabled'}`}
           onClick={handleReviewSend}
@@ -324,6 +321,11 @@ const HeaderBar = ({
           handleAddSignatureBlock={handleAddSignatureBlock}
           canvasRef={canvasRef}
           blocks={blocks}
+          // Pass editing details:
+          isEditing={isEditing}
+          editProject={editProject}
+          parentId={parentId}
+          projectId={projectId}
         />
 
         {/* Confirmation Modal */}

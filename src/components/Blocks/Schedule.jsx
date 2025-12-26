@@ -13,16 +13,47 @@ import { toast } from "react-toastify";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-const Schedule = ({ blockId, parentId }) => {
+const Schedule = ({ blockId, parentId, data, isExisting }) => {
   const dispatch = useDispatch();
   const userId = useSelector(selectedUserId);
 
-  const [schedules, setSchedules] = useState([{
-    date: "",
-    time: "",
-    services: [],
-    id: null
-  }]);
+  // Initialize schedules from existing data if in edit mode
+  const getInitialSchedules = () => {
+    if (isExisting && data) {
+      // Handle different data formats
+      const rawData = Array.isArray(data) ? data : data?.schedules ? data.schedules : [data];
+      if (rawData.length > 0 && (rawData[0]?.date || rawData[0]?.time)) {
+        return rawData.map(item => ({
+          date: item.date || item.scheduleDate || "",
+          time: item.time || item.scheduleTime || "",
+          services: item.comment ? item.comment.split(" | ") : item.services || [],
+          id: item.id || item.scheduleId || null
+        }));
+      }
+    }
+    return [{ date: "", time: "", services: [], id: null }];
+  };
+
+  const [schedules, setSchedules] = useState(getInitialSchedules);
+  const [isInitialized, setIsInitialized] = useState(isExisting || false);
+
+  // Update schedules when data changes (e.g., when data is loaded after component mount)
+  useEffect(() => {
+    if (isExisting && data && !isInitialized) {
+      const rawData = Array.isArray(data) ? data : data?.schedules ? data.schedules : [data];
+      if (rawData.length > 0 && (rawData[0]?.date || rawData[0]?.time)) {
+        const mappedSchedules = rawData.map(item => ({
+          date: item.date || item.scheduleDate || "",
+          time: item.time || item.scheduleTime || "",
+          services: item.comment ? item.comment.split(" | ") : item.services || [],
+          id: item.id || item.scheduleId || null
+        }));
+        setSchedules(mappedSchedules);
+        setIsInitialized(true);
+        console.log("Schedule loaded existing data:", mappedSchedules);
+      }
+    }
+  }, [data, isExisting, isInitialized]);
 
   const [loading, setLoading] = useState(false);
   const [hoverIndex, setHoverIndex] = useState(null);

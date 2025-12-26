@@ -499,15 +499,39 @@ import { toast } from "react-toastify";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-const Parties = ({ blockId, parentId }) => {
+const Parties = ({ blockId, parentId, data, isExisting }) => {
   const dispatch = useDispatch();
   const rawUserId = useSelector(selectedUserId);
   const userId = rawUserId && rawUserId !== "null" ? Number(rawUserId) : null;
   const userFullName = useSelector(selectUserFullName);
   const userEmail = useSelector(selectUserEmail);
 
-  const [toParties, setToParties] = useState([]);
-  const [fromParty, setFromParty] = useState(null);
+  // Initialize from existing data if in edit mode
+  const getInitialToParties = () => {
+    if (isExisting && data) {
+      const toData = data.toParty || data.to || data.recipients || [];
+      if (Array.isArray(toData)) {
+        return toData.map(r => ({
+          companyName: r.companyName || r.company || r.organization || "",
+          name: r.recipientName || r.name || "",
+          email: r.recipientEmail || r.email || "",
+          phone: r.phone || r.phoneNumber || "",
+        }));
+      }
+    }
+    return [];
+  };
+
+  const getInitialFromParty = () => {
+    if (isExisting && data) {
+      return data.fromParty || data.from || data.sender || null;
+    }
+    return null;
+  };
+
+  const [toParties, setToParties] = useState(getInitialToParties);
+  const [fromParty, setFromParty] = useState(getInitialFromParty);
+  const [isInitialized, setIsInitialized] = useState(isExisting || false);
   const [showModal, setShowModal] = useState(false);
   const [showFromModal, setShowFromModal] = useState(false);
   const [currentSection, setCurrentSection] = useState("to");
@@ -583,8 +607,32 @@ const Parties = ({ blockId, parentId }) => {
   }, [searchTerm, recipients, toParties]);
 
   // Fetch saved data when component mounts
+  // Initialize from data prop if in edit mode
   useEffect(() => {
-    if (!userId) return;
+    if (isExisting && data && !isInitialized) {
+      const toData = data.toParty || data.to || data.recipients || [];
+      const fromData = data.fromParty || data.from || data.sender || null;
+      
+      if (Array.isArray(toData)) {
+        const mappedTo = toData.map(r => ({
+          companyName: r.companyName || r.company || r.organization || "",
+          name: r.recipientName || r.name || "",
+          email: r.recipientEmail || r.email || "",
+          phone: r.phone || r.phoneNumber || "",
+        }));
+        setToParties(mappedTo);
+        setFromParty(fromData);
+        dispatch(setParties({ toParties: mappedTo, fromParty: fromData }));
+        setIsInitialized(true);
+        console.log("Parties loaded from existing data:", { toParties: mappedTo, fromParty: fromData });
+        return;
+      }
+    }
+  }, [data, isExisting, isInitialized, dispatch]);
+
+  // Fetch parties from server only if not in edit mode or no data provided
+  useEffect(() => {
+    if (!userId || isInitialized) return;
 
     const fetchParties = async () => {
       try {
@@ -603,7 +651,7 @@ const Parties = ({ blockId, parentId }) => {
     };
 
     fetchParties();
-  }, [userId, dispatch]);
+  }, [userId, dispatch, isInitialized]);
 
   // Auto-save when state changes
   useEffect(() => {

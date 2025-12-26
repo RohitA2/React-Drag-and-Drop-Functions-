@@ -89,24 +89,55 @@ const emptyItem = () => ({
   envType: "exclusive",
 });
 
-const PricingAndServices3 = ({ isPreview = false, blockId, parentId }) => {
+const PricingAndServices3 = ({ isPreview = false, blockId, parentId, data, isExisting }) => {
   const dispatch = useDispatch();
   const userId = useSelector(selectedUserId);
   const { loading } = useSelector((state) => state.pricing);
 
-  const [title, setTitle] = useState("Scope of Work");
-  const [currency, setCurrency] = useState(currencyOptions[0]);
-  const [items, setItems] = useState([emptyItem()]);
-  const [notes, setNotes] = useState("<p>Add optional notes or terms here.</p>");
+  // Initialize from existing data if in edit mode
+  const getInitialTitle = () => data?.title || "Scope of Work";
+  const getInitialCurrency = () => {
+    if (data?.currency) {
+      const found = currencyOptions.find(c => c.value === data.currency?.value || c.value === data.currency);
+      return found || currencyOptions[0];
+    }
+    return currencyOptions[0];
+  };
+  const getInitialItems = () => {
+    if (isExisting && data?.items && Array.isArray(data.items)) {
+      return data.items.map(item => ({
+        ...emptyItem(),
+        name: item.name || "",
+        price: item.price || 0,
+        description: item.description || "",
+        quantity: item.quantity || 1,
+        vatRate: item.vatRate ?? 25,
+        vatType: item.vatType || "exclusive",
+        rutDiscount: item.rutDiscount || 0,
+        rutType: item.rutType || "apply",
+        rotDiscount: item.rotDiscount || 0,
+        rotType: item.rotType || "apply",
+        envTaxRate: item.envTaxRate || 0,
+        envType: item.envType || "exclusive",
+      }));
+    }
+    return [emptyItem()];
+  };
+  const getInitialNotes = () => data?.notes || "<p>Add optional notes or terms here.</p>";
 
-  const [globalVatRate, setGlobalVatRate] = useState(25);
-  const [globalVatType, setGlobalVatType] = useState("exclusive");
-  const [globalRutDiscount, setGlobalRutDiscount] = useState(0);
-  const [globalRutType, setGlobalRutType] = useState("apply");
-  const [globalRotDiscount, setGlobalRotDiscount] = useState(0);
-  const [globalRotType, setGlobalRotType] = useState("apply");
-  const [globalEnvTaxRate, setGlobalEnvTaxRate] = useState(0);
-  const [globalEnvType, setGlobalEnvType] = useState("exclusive");
+  const [title, setTitle] = useState(getInitialTitle);
+  const [currency, setCurrency] = useState(getInitialCurrency);
+  const [items, setItems] = useState(getInitialItems);
+  const [notes, setNotes] = useState(getInitialNotes);
+
+  const [globalVatRate, setGlobalVatRate] = useState(data?.globalVatRate ?? 25);
+  const [globalVatType, setGlobalVatType] = useState(data?.globalVatType || "exclusive");
+  const [globalRutDiscount, setGlobalRutDiscount] = useState(data?.globalRutDiscount || 0);
+  const [globalRutType, setGlobalRutType] = useState(data?.globalRutType || "apply");
+  const [globalRotDiscount, setGlobalRotDiscount] = useState(data?.globalRotDiscount || 0);
+  const [globalRotType, setGlobalRotType] = useState(data?.globalRotType || "apply");
+  const [globalEnvTaxRate, setGlobalEnvTaxRate] = useState(data?.globalEnvTaxRate || 0);
+  const [globalEnvType, setGlobalEnvType] = useState(data?.globalEnvType || "exclusive");
 
   // Service Management State
   const [allServices, setAllServices] = useState([]);

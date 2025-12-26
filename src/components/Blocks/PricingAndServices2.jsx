@@ -1328,9 +1328,38 @@ const PackageCard = ({
   );
 };
 
-const PricingAndServices2 = ({ blockId, parentId }) => {
-  const [overallTitle, setOverallTitle] = useState("Scope of Work");
-  const [packages, setPackages] = useState([
+const PricingAndServices2 = ({ blockId, parentId, data, isExisting }) => {
+  // Initialize from existing data if in edit mode
+  const getInitialTitle = () => data?.title || data?.overallTitle || "Scope of Work";
+  const getInitialPackages = () => {
+    if (isExisting && data?.packages && Array.isArray(data.packages)) {
+      return data.packages.map(pkg => ({
+        name: pkg.name || "Product/Service",
+        richContent: pkg.richContent || pkg.description || "",
+        pricing: pkg.pricing || "fixed",
+        currency: currencyOptions.find(c => c.value === pkg.currency?.value || c.value === pkg.currency) || currencyOptions[0],
+        items: Array.isArray(pkg.items) ? pkg.items.map(item => ({
+          name: item.name || "",
+          price: item.price || 0,
+          description: item.description || "",
+          quantity: item.quantity || 1,
+          tax: item.tax ?? 25,
+          vatType: item.vatType || "exclusive",
+          rutDiscount: item.rutDiscount || 0,
+          rutType: item.rutType || "apply",
+          rotDiscount: item.rotDiscount || 0,
+          rotType: item.rotType || "apply",
+          envTaxRate: item.envTaxRate || 0,
+          envType: item.envType || "exclusive",
+        })) : [],
+      }));
+    }
+    return null; // Return null to use default
+  };
+
+  const initialPackages = getInitialPackages();
+  const [overallTitle, setOverallTitle] = useState(getInitialTitle);
+  const [packages, setPackages] = useState(initialPackages || [
     {
       name: "Product/Service A",
       richContent: "<p>(Description) Premium service package with comprehensive features</p>",

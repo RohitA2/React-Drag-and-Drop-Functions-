@@ -75,20 +75,40 @@ const envTaxOptions = [
   { value: "none", label: "No Env Tax", badge: "secondary" },
 ];
 
-const PricingAndServices = ({ blockId, parentId, isPreview }) => {
+const PricingAndServices = ({ blockId, parentId, isPreview, data, isExisting }) => {
   const dispatch = useDispatch();
   const userId = useSelector(selectedUserId);
   const { loading } = useSelector((state) => state.pricing);
-  const [title, setTitle] = useState("Scope of Work");
-  const [packageName, setPackageName] = useState("Product/service");
-  const [currency, setCurrency] = useState(
-    currencyOptions.find((opt) => opt.value === "SEK")
-  );
-  const [packageDescription, setPackageDescription] = useState(
-    "Comprehensive service package designed to meet your business needs"
-  );
-  const [items, setItems] = useState([
-    {
+
+  // Initialize from existing data if in edit mode
+  const getInitialTitle = () => data?.title || "Scope of Work";
+  const getInitialPackageName = () => data?.packageName || "Product/service";
+  const getInitialCurrency = () => {
+    if (data?.currency) {
+      const found = currencyOptions.find(opt => opt.value === data.currency);
+      return found || currencyOptions.find(opt => opt.value === "SEK");
+    }
+    return currencyOptions.find(opt => opt.value === "SEK");
+  };
+  const getInitialDescription = () => data?.packageDescription || data?.description || "Comprehensive service package designed to meet your business needs";
+  const getInitialItems = () => {
+    if (isExisting && data?.items && Array.isArray(data.items)) {
+      return data.items.map(item => ({
+        name: item.name || item.title || "",
+        price: item.price || 0,
+        description: item.description || "",
+        quantity: item.quantity || 1,
+        vatRate: item.vatRate ?? 25,
+        vatType: item.vatType || "exclusive",
+        rutDiscount: item.rutDiscount || 0,
+        rutType: item.rutType || "apply",
+        rotDiscount: item.rotDiscount || 0,
+        rotType: item.rotType || "apply",
+        envTaxRate: item.envTaxRate || 0,
+        envType: item.envType || "exclusive",
+      }));
+    }
+    return [{
       name: "Consultation Service",
       price: 1000,
       description: "Initial consultation and planning",
@@ -101,8 +121,49 @@ const PricingAndServices = ({ blockId, parentId, isPreview }) => {
       rotType: "apply",
       envTaxRate: 0,
       envType: "exclusive",
-    },
-  ]);
+    }];
+  };
+
+  const [title, setTitle] = useState(getInitialTitle);
+  const [packageName, setPackageName] = useState(getInitialPackageName);
+  const [currency, setCurrency] = useState(getInitialCurrency);
+  const [packageDescription, setPackageDescription] = useState(getInitialDescription);
+  const [items, setItems] = useState(getInitialItems);
+  const [isInitialized, setIsInitialized] = useState(isExisting || false);
+
+  // Update from data prop if it loads later
+  useEffect(() => {
+    if (isExisting && data && !isInitialized) {
+      if (data.title) setTitle(data.title);
+      if (data.packageName) setPackageName(data.packageName);
+      if (data.currency) {
+        const found = currencyOptions.find(opt => opt.value === data.currency);
+        if (found) setCurrency(found);
+      }
+      if (data.packageDescription || data.description) {
+        setPackageDescription(data.packageDescription || data.description);
+      }
+      if (data.items && Array.isArray(data.items)) {
+        const mappedItems = data.items.map(item => ({
+          name: item.name || item.title || "",
+          price: item.price || 0,
+          description: item.description || "",
+          quantity: item.quantity || 1,
+          vatRate: item.vatRate ?? 25,
+          vatType: item.vatType || "exclusive",
+          rutDiscount: item.rutDiscount || 0,
+          rutType: item.rutType || "apply",
+          rotDiscount: item.rotDiscount || 0,
+          rotType: item.rotType || "apply",
+          envTaxRate: item.envTaxRate || 0,
+          envType: item.envType || "exclusive",
+        }));
+        setItems(mappedItems);
+      }
+      setIsInitialized(true);
+      console.log("PricingAndServices loaded existing data:", data);
+    }
+  }, [data, isExisting, isInitialized]);
 
   const [globalVatRate, setGlobalVatRate] = useState(25);
   const [globalVatType, setGlobalVatType] = useState("exclusive");

@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
 import { toast } from "react-toastify";
+import { Building } from "lucide-react";
 
 const SignUpForm = () => {
   const navigate = useNavigate();
@@ -34,7 +35,6 @@ const SignUpForm = () => {
 
       if (res.status === 200 || res.status === 201) {
         toast.success("Registration successful!");
-        // In your SignUpForm after successful registration
         navigate("/verify-otp", { state: { email: formData.email } });
       } else {
         const message = res?.data?.message || "Something went wrong.";
@@ -186,6 +186,22 @@ const SignUpForm = () => {
             </button>
           </form>
 
+          {/* Company Registration Option */}
+          <div className="company-option">
+            <div className="company-option-content">
+              <div className="company-icon">
+                <Building size={20} />
+              </div>
+              <div className="company-text">
+                <h4>Register as a Company</h4>
+                <p>Create a company account with team management features</p>
+              </div>
+            </div>
+            <Link to="/register/company" className="company-register-button">
+              Register Company
+            </Link>
+          </div>
+
           <div className="login-section">
             <p className="login-text">
               Already have an account?{" "}
@@ -200,7 +216,7 @@ const SignUpForm = () => {
         </div>
       </div>
 
-      <style jsx>{`
+      <style>{`
         .signup-container {
           min-height: 100vh;
           display: flex;
@@ -305,7 +321,7 @@ const SignUpForm = () => {
         }
 
         .signup-form {
-          margin-bottom: 24px;
+          margin-bottom: 32px;
         }
 
         .form-row {
@@ -454,6 +470,84 @@ const SignUpForm = () => {
           to { transform: rotate(360deg); }
         }
 
+        /* Company Registration Option */
+        .company-option {
+          background: linear-gradient(135deg, #f8fafc 0%, #edf2f7 100%);
+          border: 2px solid #e2e8f0;
+          border-radius: 16px;
+          padding: 24px;
+          margin: 32px 0;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 20px;
+          transition: all 0.3s ease;
+        }
+
+        .company-option:hover {
+          border-color: #667eea;
+          box-shadow: 0 10px 25px rgba(102, 126, 234, 0.15);
+          transform: translateY(-2px);
+        }
+
+        .company-option-content {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+        }
+
+        .company-icon {
+          width: 48px;
+          height: 48px;
+          border-radius: 12px;
+          background: linear-gradient(135deg, #667eea20 0%, #764ba220 100%);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: #667eea;
+        }
+
+        .company-text h4 {
+          font-size: 16px;
+          font-weight: 600;
+          color: #2d3748;
+          margin: 0 0 4px 0;
+        }
+
+        .company-text p {
+          font-size: 14px;
+          color: #718096;
+          margin: 0;
+          line-height: 1.4;
+        }
+
+        .company-register-button {
+          padding: 12px 24px;
+          background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+          color: white;
+          border: none;
+          border-radius: 12px;
+          font-size: 14px;
+          font-weight: 600;
+          text-decoration: none;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          white-space: nowrap;
+          text-align: center;
+          display: inline-block;
+        }
+
+        .company-register-button:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
+          color: white;
+          text-decoration: none;
+        }
+
+        .company-register-button:active {
+          transform: translateY(0);
+        }
+
         .login-section {
           text-align: center;
           padding-top: 24px;
@@ -477,6 +571,27 @@ const SignUpForm = () => {
         .login-link:hover {
           color: #5a67d8;
           text-decoration: underline;
+        }
+
+        /* Divider */
+        .divider {
+          display: flex;
+          align-items: center;
+          text-align: center;
+          margin: 24px 0;
+          color: #718096;
+          font-size: 14px;
+        }
+
+        .divider::before,
+        .divider::after {
+          content: '';
+          flex: 1;
+          border-bottom: 1px solid #e2e8f0;
+        }
+
+        .divider span {
+          padding: 0 16px;
         }
 
         /* Mobile Responsive */
@@ -516,6 +631,29 @@ const SignUpForm = () => {
             gap: 0;
           }
 
+          .company-option {
+            flex-direction: column;
+            text-align: center;
+            gap: 16px;
+          }
+
+          .company-option-content {
+            flex-direction: column;
+            text-align: center;
+          }
+
+          .company-text h4 {
+            font-size: 15px;
+          }
+
+          .company-text p {
+            font-size: 13px;
+          }
+
+          .company-register-button {
+            width: 100%;
+          }
+
           .form-input {
             padding: 16px;
             font-size: 16px;
@@ -539,6 +677,10 @@ const SignUpForm = () => {
           .signup-logo {
             width: 140px;
           }
+
+          .company-option {
+            padding: 20px;
+          }
         }
 
         /* Reduced motion for accessibility */
@@ -546,7 +688,8 @@ const SignUpForm = () => {
           .signup-card,
           .form-input,
           .signup-button,
-          .password-toggle {
+          .password-toggle,
+          .company-option {
             transition: none;
           }
 

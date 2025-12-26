@@ -18,6 +18,7 @@ import Client from "./components/pages/profile/Client";
 import Stats from "./components/pages/profile/Stats";
 import OverView from "./components/pages/dashboard/OverView";
 import Notfication from "./components/NotificatioPage";
+import CompanyRegisterForm from "./components/pages/profile/CompanyRegisterForm";
 import axios from "axios";
 import { useSelector } from "react-redux";
 import { selectedUserId } from "./store/authSlice";
@@ -93,6 +94,7 @@ function App() {
         </Route>
 
         <Route path="/register" element={<Register />} />
+        <Route path="/register/company" element={<CompanyRegisterForm />} />
         <Route path="/login" element={<Login />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/verify-otp" element={<VerifyOtp />} />
@@ -110,3 +112,5 @@ function App() {
 }
 
 export default App;
+
+

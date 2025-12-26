@@ -73,7 +73,7 @@ const VideoView = ({ videoUrl }) => {
     >
       <div
         style={{
-          width: "900px",
+          width: "1800px",
           borderRadius: "2px",
           overflow: "hidden",
         }}
