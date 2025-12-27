@@ -1284,7 +1284,6 @@ export default function OverView({ schedules = [], onBackToProjects }) {
                   </div>
                   <p className="text-gray-600 text-lg font-medium max-w-2xl">
                     Manage and view all your proposals and notes in one unified workspace
-                    <span className="text-blue-400 ml-2">✨</span>
                   </p>
                 </div>
               </div>

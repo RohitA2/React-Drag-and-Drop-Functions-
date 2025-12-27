@@ -1209,8 +1209,8 @@ const HeaderBlock2 = ({
   initialSenderName = "By Sender name",
   initialPrice = "INCL.VAT",
   initialLogo = null, // Changed back to initialLogo to match Canvas.jsx
-  backgroundImage = `${API_URL}/uploads/1758707221597.png`,
-  backgroundColor = "#1A2557",
+  backgroundImage = `${API_URL}/uploads/1766830308568.jpg`,
+  backgroundColor = "#c0b462",
   textColor,
   backgroundFilter,
   textAlign,

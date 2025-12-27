@@ -361,12 +361,13 @@ import PricingPreviewPortal from "./PricingPreviewPortal";
 
 const blockItems = [
   { type: "header", label: "Header", hasPreview: true },
+  { type: "calender", label: "Calender" },
   { type: "parties", label: "Participants", hasPreview: false },
   { type: "price", label: "Costing", hasPreview: true },
   { type: "text", label: "Content", hasPreview: false },
   { type: "signature", label: "Authorization", hasPreview: false },
   { type: "cover", label: "Cover Page", hasPreview: true },
-  { type: "video", label: "Media", hasPreview: true },
+  { type: "video", label: "Media", hasPreview: false },
   { type: "link", label: "Resources", hasPreview: false },
   { type: "pdf", label: "PDF", hasPreview: false },
   { type: "terms", label: "Terms", hasPreview: false },
@@ -642,6 +643,7 @@ const Sidebar = () => {
 
         /* Icon styles - simplified for clarity */
         .sidebar-icon[data-type="header"] { content: url("./images/sidebar/header.png"); }
+         .sidebar-icon[data-type="calender"] { content: url("./images/sidebar/calender.png"); }
         .sidebar-icon[data-type="parties"] { content: url("./images/sidebar/parties.png"); }
         .sidebar-icon[data-type="price"] { content: url("./images/sidebar/price.png"); }
         .sidebar-icon[data-type="text"] { content: url("./images/sidebar/text.png"); }
@@ -670,6 +672,7 @@ const Sidebar = () => {
         .block-item:hover .sidebar-icon[data-type="tutorial"] { content: url("./images/sidebar/tutorial-hover.png"); }
 
         .block-item.hover-active .sidebar-icon[data-type="header"] { content: url("./images/sidebar/header.svg"); }
+        .block-item.hover-active .sidebar-icon[data-type="calender"] { content: url("./images/sidebar/calender.png"); }
         .block-item.hover-active .sidebar-icon[data-type="parties"] { content: url("./images/sidebar/parties.png"); }
         .block-item.hover-active .sidebar-icon[data-type="price"] { content: url("./images/sidebar/price.png"); }
         .block-item.hover-active .sidebar-icon[data-type="text"] { content: url("./images/sidebar/text.png"); }

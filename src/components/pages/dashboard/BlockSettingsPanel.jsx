@@ -655,7 +655,7 @@ const BlockSettingsPanel = ({
               )}
             </div>
             {/* Background filter */}
-            <div className="d-flex justify-content-between align-items-center border-bottom py-1">
+            {/* <div className="d-flex justify-content-between align-items-center border-bottom py-1">
               <label className="form-label mb-0" style={{ fontSize: "0.8rem" }}>
                 Background filter
               </label>
@@ -668,7 +668,7 @@ const BlockSettingsPanel = ({
                 }
                 style={{ width: 30, height: 30 }}
               />
-            </div>
+            </div> */}
             {/* Background Color - Disabled for grid layout */}
             <div
               className={`d-flex justify-content-between align-items-center border-bottom py-1 ${

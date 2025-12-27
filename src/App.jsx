@@ -28,6 +28,7 @@ import VerifyOtp from "./components/pages/profile/VerifyOtp";
 import BankIdSuccess from "./components/BankIdSuccess";
 import BankIdFailed from "./components/BankIdFailed";
 import BankIDSignPage from "./components/BankIDSignPage";
+import Template from "./components/templates/Templates"
 
 import { requestForToken, onMessageListener } from "./firebase";
 const API_URL = import.meta.env.VITE_API_URL;
@@ -83,7 +84,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Dashboard />}>
           <Route index element={<Projects />} />
-          <Route path="templates" element={<Templates />} />
+          {/* <Route path="templates" element={<Template />} /> */}
           <Route path="products" element={<Products />} />
           <Route path="snippets" element={<Snippets />} />
           <Route path="profile" element={<Profile />} />
@@ -105,6 +106,7 @@ function App() {
          <Route path="/bankid-success" element={<BankIdSuccess />} />
         <Route path="/bankid-failed" element={<BankIdFailed />} />
         <Route path="/bankid-sign" element={<BankIDSignPage />} />
+        <Route path="/templates" element={<Template />} />
 
       </Routes>
     </Router>

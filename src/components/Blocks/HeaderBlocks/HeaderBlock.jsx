@@ -1221,7 +1221,7 @@ const HeaderBlock = ({
   initialSenderName = "By Sender name",
   initialPrice = "INCL.VAT",
   initialLogoUrl = null,
-  backgroundImage = `${API_URL}/uploads/1758707155754.png`,
+  backgroundImage = `${API_URL}/uploads/1766829715438.jpg`,
   backgroundColor = "#2D5000",
   textColor,
   backgroundFilter,

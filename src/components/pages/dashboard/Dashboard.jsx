@@ -413,7 +413,7 @@ export default function Dashboard() {
                   <ChevronDown size={12} className="text-muted rotate-90" />
                 </NavDropdown.Item>
 
-                <div className="mt-3 pt-3 border-top">
+                {/* <div className="mt-3 pt-3 border-top">
                   <Button
                     variant="outline-primary"
                     size="sm"
@@ -422,7 +422,7 @@ export default function Dashboard() {
                   >
                     Manage Library
                   </Button>
-                </div>
+                </div> */}
               </div>
             </NavDropdown>
 
@@ -451,7 +451,7 @@ export default function Dashboard() {
               transition: "all 0.3s ease",
               boxShadow: "0 4px 15px rgba(102, 126, 234, 0.3)",
             }}
-            onClick={() => navigate("/template-builder")}
+            onClick={() => navigate("/templates")}
             onMouseEnter={(e) => {
               e.currentTarget.style.transform = "translateY(-2px)";
               e.currentTarget.style.boxShadow = "0 6px 20px rgba(102, 126, 234, 0.4)";

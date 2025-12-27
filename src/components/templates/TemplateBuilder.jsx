@@ -521,6 +521,7 @@ const TemplateBuilder = () => {
             isPreviewMode={isPreviewMode}
             externalParentId={externalParentId}
             forceNewProject={forceNewProject}
+            isNewProject={forceNewProject || newProject || isNewProjectFromURL} 
           />
         </div>
 
