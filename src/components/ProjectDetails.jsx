@@ -2116,4 +2116,5 @@ const ProjectDetails = ({ project, onClose }) => {
   );
 };
 
+
 export default ProjectDetails;
